@@ -1,0 +1,8 @@
+{"jsonrpc": "2.0",
+ "method": "methodWithoutRequiredParam",
+ "params": {
+ 	 "param1": "stringParam1",
+ 	 "param2": "stringParam2"
+},
+ "id": 1
+}

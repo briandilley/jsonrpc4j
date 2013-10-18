@@ -1,0 +1,242 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.googlecode</groupId>
+	<artifactId>jsonrpc4j</artifactId>
+	<version>0.29-SNAPSHOT</version>
+	<name>JSON-RPC for java</name>
+	<packaging>jar</packaging>
+	<url>http://code.google.com/p/jsonrpc4j/</url>
+
+	<properties>
+		<spring.version>3.1.2.RELEASE</spring.version>
+		<jackson.version>2.0.2</jackson.version>
+		<jdk.version>1.5</jdk.version>
+	</properties>
+
+	<!--
+     | Developers on the project
+     +-->
+	<developers>
+		<developer>
+			<email>brian.dilley@gmail.com</email>
+			<id>brian.dilley</id>
+			<name>Brian Dilley</name>
+		</developer>
+	</developers>
+
+	<!--
+     | scm configuration
+     +-->
+	<scm>
+		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</connection>
+		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</developerConnection>
+		<url>jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</url>
+	</scm>
+	
+	<!--
+	 | distribution (deployment) configuration
+	 +-->
+	<distributionManagement>
+		<repository>
+			<id>jsonrpc4j-webdav-maven-repo</id>
+			<name>jsonrpc4j maven repository</name>
+			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/repo/</url>
+			<uniqueVersion>false</uniqueVersion>
+			<layout>default</layout>
+		</repository>
+		<!-- <site>
+			<id>jsonrpc4j-webdav-maven-site</id>
+			<name>jsonrpc4j site server</name>
+			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/site/</url>
+		</site> -->
+	</distributionManagement>
+
+	<build>
+
+		<!-- build extensions -->
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-webdav</artifactId>
+				<version>1.0-beta-2</version>
+			</extension>
+		</extensions>
+
+		<!-- resource directories -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+			</testResource>
+		</testResources>
+
+		<plugins>
+			<!-- compiler plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+				</configuration>
+			</plugin>
+			
+			<!-- 
+			 | Deploy sources too
+			 +-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+
+	</build>
+
+	<dependencies>
+
+		<!-- 
+		 | json dependencies
+		 +-->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+ 			<version>${jackson.version}</version>
+ 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- 
+		 | servlet\portlet dependencies
+		 +-->
+		<dependency>
+			<groupId>javax.portlet</groupId>
+			<artifactId>portlet-api</artifactId>
+			<version>2.0</version>
+			<optional>true</optional>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- 
+		 | spring dependencies
+		 +-->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!--
+		| apache http client
+		+-->
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.4</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpcore-nio</artifactId>
+			<version>4.2.1</version>
+			<optional>true</optional>
+		</dependency>
+		
+
+		<!-- 
+		 | Servlet
+		 +-->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.1-b06</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- 
+		 | test dependencies
+		 +-->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.10</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jmock</groupId>
+			<artifactId>jmock-junit4</artifactId>
+			<version>2.5.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jmock</groupId>
+			<artifactId>jmock</artifactId>
+			<version>2.5.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>9.0.0.RC0</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>javax.servlet</artifactId>
+					<groupId>org.eclipse.jetty.orbit</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+			<version>9.0.0.RC0</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>javax.servlet</artifactId>
+					<groupId>org.eclipse.jetty.orbit</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+
+</project>
+
