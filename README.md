@@ -24,45 +24,22 @@ This project is built with [Maven](http://maven.apache.org). Be
 sure to check the pom.xml for the dependencies if you're not using
 maven.  If you're already using spring you should have most (if not all)
 of the dependencies already - outside of maybe the
-[Jackson Library](http://jackson.codehaus.org/).  The jsonrpc4j maven
-repository is located at http://jsonrpc4j.googlecode.com/svn/maven/repo/. 
-Add the following to your pom.xml if you're using maven:
+[Jackson Library](http://jackson.codehaus.org/).  Jsonrpc4j is available
+from the maven central repo. Add the following to your pom.xml if you're
+using maven:
 
-In `<repositories>`:
-
-```xml
-    <repository>
-        <id>jsonrpc4j-webdav-maven-repo</id>
-        <name>jsonrpc4j maven repository</name>
-        <url>http://jsonrpc4j.googlecode.com/svn/maven/repo/</url>
-        <layout>default</layout>
-    </repository>
-```
 
 In `<dependencies>`:
 
 ```xml
+
+	<!-- jsonrpc4j -->
 	<dependency>
-		<groupId>com.googlecode</groupId>
+		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>0.28</version>
+		<version>1.0</version>
 	</dependency>
-	<dependency>
-		<groupId>com.fasterxml.jackson.core</groupId>
-		<artifactId>jackson-core</artifactId>
-		<version>2.0.2</version>
-	</dependency>
-	<dependency>
-		<groupId>com.fasterxml.jackson.core</groupId>
-		<artifactId>jackson-databind</artifactId>
-		<version>2.0.2</version>
- 	</dependency>
- 	<!-- optional, add if using jackon's annotations -->
-	<dependency>
-		<groupId>com.fasterxml.jackson.core</groupId>
-		<artifactId>jackson-annotations</artifactId>
-		<version>2.0.2</version>
-	</dependency>
+
 ```
 
 ## JSON-RPC specification
