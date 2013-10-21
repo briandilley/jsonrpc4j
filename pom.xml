@@ -1,10 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>github.briandilley.jsonrpc4j</groupId>
+	<groupId>com.github.briandilley.jsonrpc4j</groupId>
 	<artifactId>jsonrpc4j</artifactId>
-	<version>0.29-SNAPSHOT</version>
-	<name>JSON-RPC for java</name>
+	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
+
+	<name>JSON-RPC for java</name>
+	<description>Library for using JSON-RPC with Java</description>
 	<url>https://github.com/briandilley/jsonrpc4j</url>
 
 	<properties>
@@ -14,7 +16,18 @@
 	</properties>
 
 	<!--
-     | Developers on the project
+     | Licenses
+     +-->
+	<licenses>
+		<license>
+			<name>The MIT License (MIT)</name>
+			<url>http://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<!--
+     | Developers
      +-->
 	<developers>
 		<developer>
@@ -25,42 +38,35 @@
 	</developers>
 
 	<!--
-     | scm configuration
+     | SCM
      +-->
 	<scm>
-		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</connection>
-		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</developerConnection>
-		<url>jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</url>
+		<connection>scm:git:git@github.com:briandilley/jsonrpc4j.git</connection>
+		<url>scm:git:git@github.com:briandilley/jsonrpc4j.git</url>
+		<developerConnection>scm:git:git@github.com:briandilley/jsonrpc4j.git</developerConnection>
 	</scm>
 	
 	<!--
-	 | distribution (deployment) configuration
+	 | Distribution config
 	 +-->
 	<distributionManagement>
 		<repository>
-			<id>jsonrpc4j-webdav-maven-repo</id>
-			<name>jsonrpc4j maven repository</name>
-			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/repo/</url>
+			<id>oss-sonatype-release</id>
+			<name>oss-sonatype-release</name>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 			<uniqueVersion>false</uniqueVersion>
 			<layout>default</layout>
 		</repository>
-		<!-- <site>
-			<id>jsonrpc4j-webdav-maven-site</id>
-			<name>jsonrpc4j site server</name>
-			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/site/</url>
-		</site> -->
+		<snapshotRepository>
+			<id>oss-sonatype-snapshots</id>
+			<name>oss-sonatype-snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
+			<layout>default</layout>
+		</snapshotRepository>
 	</distributionManagement>
 
 	<build>
-
-		<!-- build extensions -->
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-webdav</artifactId>
-				<version>1.0-beta-2</version>
-			</extension>
-		</extensions>
 
 		<!-- resource directories -->
 		<resources>
@@ -165,8 +171,8 @@
 		</dependency>
 		
 		<!--
-		| apache http client
-		+-->
+		 | apache http client
+		 +-->
 		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
