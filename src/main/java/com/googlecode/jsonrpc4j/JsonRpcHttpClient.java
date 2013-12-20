@@ -1,8 +1,11 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -38,7 +41,7 @@ public class JsonRpcHttpClient
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
 	 * The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
-	 * 
+	 *
 	 * @param mapper the {@link ObjectMapper} to use for json<->java conversion
 	 * @param serviceUrl the service end-point URL
 	 * @param headers the headers
@@ -53,7 +56,7 @@ public class JsonRpcHttpClient
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
 	 * The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
-	 * 
+	 *
 	 * @param serviceUrl the service end-point URL
 	 * @param headers the headers
 	 */
@@ -65,7 +68,7 @@ public class JsonRpcHttpClient
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
 	 * The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
-	 * 
+	 *
 	 * @param serviceUrl the service end-point URL
 	 */
 	public JsonRpcHttpClient(URL serviceUrl) {
@@ -74,7 +77,7 @@ public class JsonRpcHttpClient
 
 	/**
 	 * Invokes the given method with the given argument.
-	 * 
+	 *
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
@@ -88,7 +91,7 @@ public class JsonRpcHttpClient
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
-	 * 
+	 *
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param argument the arguments to the method
@@ -105,7 +108,7 @@ public class JsonRpcHttpClient
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
-	 * 
+	 *
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param argument the arguments to the method
@@ -123,7 +126,7 @@ public class JsonRpcHttpClient
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
-	 * 
+	 *
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
@@ -150,18 +153,43 @@ public class JsonRpcHttpClient
 		}
 
 		// read and return value
-		InputStream ips = con.getInputStream();
 		try {
-			return super.readResponse(returnType, ips);
+			InputStream ips = con.getInputStream();
+			try {
+				// in case of http error try to read response body and return it in exception
+				return super.readResponse(returnType, ips);
+			} finally {
+				ips.close();
+			}
+		} catch (IOException e) {
+			throw new HttpException(readString(con.getErrorStream()), e);
+		}
+	}
+
+	private static String readString(InputStream stream) {
+		try {
+			StringBuilder buf = new StringBuilder();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+			for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
+				buf.append((char) ch);
+			}
+			return buf.toString();
+		} catch (UnsupportedEncodingException e) {
+			return e.getMessage();
+		} catch (IOException e) {
+			return e.getMessage();
 		} finally {
-			ips.close();
+			try {
+				stream.close();
+			} catch (IOException e) {
+			}
 		}
 	}
 
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
-	 * 
+	 *
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
@@ -182,11 +210,11 @@ public class JsonRpcHttpClient
 	 * Prepares a connection to the server.
 	 * @param extraHeaders extra headers to add to the request
 	 * @return the unopened connection
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	protected HttpURLConnection prepareConnection(Map<String, String> extraHeaders)
 		throws IOException {
-		
+
 		// create URLConnection
 		HttpURLConnection con = (HttpURLConnection)serviceUrl.openConnection(connectionProxy);
 		con.setConnectTimeout(connectionTimeoutMillis);
