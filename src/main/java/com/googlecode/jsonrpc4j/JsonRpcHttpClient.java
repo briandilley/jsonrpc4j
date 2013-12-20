@@ -167,6 +167,7 @@ public class JsonRpcHttpClient
 	}
 
 	private static String readString(InputStream stream) {
+		if (stream == null) return "null";
 		try {
 			StringBuilder buf = new StringBuilder();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
