@@ -417,6 +417,27 @@ public class JsonRpcServerTest {
         assertEquals("custom", json.get("result").textValue());
     }
 
+
+    @Test
+    public void callMethodWithCustomMethodNameAndParamTest() throws Exception {
+        jsonRpcServerAnnotatedMethod.handle(new ClassPathResource("jsonRpcServerCustomMethodNameAndParamTest.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+        JsonNode json = mapper.readTree(response);
+
+        assertEquals("custom2", json.get("result").textValue());
+    }
+
+    @Test
+    public void callMethodWithoutCustomMethodNameAndParamTest() throws Exception {
+        jsonRpcServerAnnotatedMethod.handle(new ClassPathResource("jsonRpcServerNotCustomMethodNameAndParamTest.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+        JsonNode json = mapper.readTree(response);
+
+        assertEquals("custom2", json.get("result").textValue());
+    }
+
 	// Service and service interfaces used in test
 	
 	private interface ServiceInterface {        
@@ -442,6 +463,9 @@ public class JsonRpcServerTest {
     private interface ServiceInterfaceWithCustomMethodNameAnnotation {
         @JsonRpcMethod("Test.custom")
         public String customMethod();
+
+        @JsonRpcMethod("Test.custom2")
+        public String customMethod2(String stringParam1);
     }
 
 	private class Service implements ServiceInterface, ServiceInterfaceWithParamNameAnnotation,
@@ -452,6 +476,11 @@ public class JsonRpcServerTest {
         public String customMethod() {
             return "custom";
         }
+
+        public String customMethod2(String stringParam1) {
+            return "custom2";
+        }
+
 		public String overloadedMethod() {
 			return "noParam";
 		}
