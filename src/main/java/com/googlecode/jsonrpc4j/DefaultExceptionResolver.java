@@ -76,12 +76,12 @@ public class DefaultExceptionResolver
 	 * @return the exception
 	 */
 	private JsonRpcClientException createJsonRpcClientException(ObjectNode errorObject) {
+		int code = errorObject.has("code") ? errorObject.get("code").asInt() : 0;
 		return new JsonRpcClientException(
-			errorObject.get("code").asInt(),
+			code,
 			errorObject.get("message").asText(),
 			errorObject.get("data"));
 	}
-
 
 	/**
 	 * Attempts to create an {@link Throwable} of the given type
