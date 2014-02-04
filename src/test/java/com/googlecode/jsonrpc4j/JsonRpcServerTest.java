@@ -28,12 +28,15 @@ public class JsonRpcServerTest {
 
 	private JsonRpcServer jsonRpcServerAnnotatedParam;
 
+    private JsonRpcServer jsonRpcServerAnnotatedMethod;
+
 	@Before
 	public void setup() {
 		mapper = new ObjectMapper();
 		baos = new ByteArrayOutputStream();
 		jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
-		jsonRpcServerAnnotatedParam = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithParamNameAnnotaion.class);
+		jsonRpcServerAnnotatedParam = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithParamNameAnnotation.class);
+        jsonRpcServerAnnotatedMethod = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithCustomMethodNameAnnotation.class);
 	}
 
     @Test
@@ -394,6 +397,26 @@ public class JsonRpcServerTest {
 		assertEquals(-32700, json.get("error").get("code").asInt());
 	}
 
+    @Test
+    public void callMethodWithCustomMethodNameTest() throws Exception {
+        jsonRpcServerAnnotatedMethod.handle(new ClassPathResource("jsonRpcServerCustomMethodNameTest.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+        JsonNode json = mapper.readTree(response);
+
+        assertEquals("custom", json.get("result").textValue());
+    }
+
+    @Test
+    public void callMethodWithoutCustomMethodNameTest() throws Exception {
+        jsonRpcServerAnnotatedMethod.handle(new ClassPathResource("jsonRpcServerNotCustomMethodNameTest.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+        JsonNode json = mapper.readTree(response);
+
+        assertEquals("custom", json.get("result").textValue());
+    }
+
 	// Service and service interfaces used in test
 	
 	private interface ServiceInterface {        
@@ -405,7 +428,7 @@ public class JsonRpcServerTest {
 		public String overloadedMethod(int intParam1, int intParam2);
 	}
 	
-	private interface ServiceInterfaceWithParamNameAnnotaion {        
+	private interface ServiceInterfaceWithParamNameAnnotation {
 		public String testMethod(@JsonRpcParam("param1") String param1);    
 		public String overloadedMethod();
 		public String overloadedMethod(@JsonRpcParamName("param1") String stringParam1);
@@ -416,10 +439,19 @@ public class JsonRpcServerTest {
 		public String methodWithoutRequiredParam(@JsonRpcParamName("param1") String stringParam1, @JsonRpcParamName(value="param2") String stringParam2);
 	}
 
-	private class Service implements ServiceInterface, ServiceInterfaceWithParamNameAnnotaion {
+    private interface ServiceInterfaceWithCustomMethodNameAnnotation {
+        @JsonRpcMethod("Test.custom")
+        public String customMethod();
+    }
+
+	private class Service implements ServiceInterface, ServiceInterfaceWithParamNameAnnotation,
+            ServiceInterfaceWithCustomMethodNameAnnotation {
 		public String testMethod(String param1) {
 			return "success";
 		}
+        public String customMethod() {
+            return "custom";
+        }
 		public String overloadedMethod() {
 			return "noParam";
 		}
