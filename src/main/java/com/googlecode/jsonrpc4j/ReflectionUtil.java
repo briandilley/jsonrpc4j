@@ -29,7 +29,7 @@ public abstract class ReflectionUtil {
 
 	/**
 	 * Finds methods with the given name on the given class.
-	 * @param clazz the class
+	 * @param clazzes the classes
 	 * @param name the method name
 	 * @return the methods
 	 */
@@ -45,7 +45,7 @@ public abstract class ReflectionUtil {
 		Set<Method> methods = new HashSet<Method>();
 		for (Class<?> clazz : clazzes) {
 			for (Method method : clazz.getMethods()) {
-				if (method.getName().equals(name)) {
+				if (method.getName().equals(name) || annotationMatches(method, name) ) {
 					methods.add(method);
 				}
 			}
@@ -54,6 +54,19 @@ public abstract class ReflectionUtil {
 		methodCache.put(cacheKey, methods);
 		return methods;
 	}
+
+    /**
+     * Checks for the annotation {@link JsonRpcMethod} on {@param method} to see if its value matches {@param name}
+     */
+    public static boolean annotationMatches(Method method, String name) {
+        if (method.isAnnotationPresent(JsonRpcMethod.class)) {
+            JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
+            if (methodAnnotation.value().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 	/**
 	 * Returns the parameter types for the given {@link Method}.
@@ -65,9 +78,7 @@ public abstract class ReflectionUtil {
 			return parameterTypeCache.get(method);
 		}
 		List<Class<?>> types = new ArrayList<Class<?>>();
-		for (Class<?> type : method.getParameterTypes()) {
-			types.add(type);
-		}
+        Collections.addAll(types, method.getParameterTypes());
 		types = Collections.unmodifiableList(types);
 		parameterTypeCache.put(method, types);
 		return types;
@@ -84,9 +95,7 @@ public abstract class ReflectionUtil {
 			return methodAnnotationCache.get(method);
 		}
 		List<Annotation> annotations = new ArrayList<Annotation>();
-		for (Annotation a : method.getAnnotations()) {
-			annotations.add(a);
-		}
+        Collections.addAll(annotations,method.getAnnotations());
 		annotations = Collections.unmodifiableList(annotations);
 		methodAnnotationCache.put(method, annotations);
 		return annotations;
@@ -142,9 +151,7 @@ public abstract class ReflectionUtil {
 		List<List<Annotation>> annotations = new ArrayList<List<Annotation>>();
 		for (Annotation[] paramAnnotations : method.getParameterAnnotations()) {
 			List<Annotation> listAnnotations = new ArrayList<Annotation>();
-			for (Annotation a : paramAnnotations) {
-				listAnnotations.add(a);
-			}
+            Collections.addAll(listAnnotations, paramAnnotations);
 			annotations.add(listAnnotations);
 		}
 		annotations = Collections.unmodifiableList(annotations);
