@@ -29,7 +29,7 @@ import com.googlecode.jsonrpc4j.JsonRpcService;
  * <pre>
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter&quot;/&gt;
  * 
- * &ltbean class="MyServiceBean"/>
+ * &ltbean class="MyServiceBean"/&gt;
  * </pre>
  */
 public class AutoJsonRpcServiceExporter
