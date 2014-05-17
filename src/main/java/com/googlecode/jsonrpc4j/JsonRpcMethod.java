@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for annotating service parameters as
- * JsonRpc params by name.
+ * Annotation for annotating service methods as
+ * JsonRpc method by name.
  *
  */
 @Target(ElementType.METHOD)
@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 public @interface JsonRpcMethod {
 
 	/**
-	 * The parameter's name.
+	 * The method's name.
 	 */
 	String value();
 

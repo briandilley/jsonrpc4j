@@ -3,8 +3,8 @@
 This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
 [Jackson](http://jackson.codehaus.org/) library to convert java
-objects to and from json objects (and other things related to 
-JSON-RPC). 
+objects to and from json objects (and other things related to
+JSON-RPC).
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
@@ -154,8 +154,8 @@ public interface UserService {
 ```
 
 By default all error message responses contain the the message as returned by
-Exception.getmessage() with a code of 0.  This is not always desirable.  
-jsonrpc4j supports annotated based customization of these error messages and 
+Exception.getmessage() with a code of 0.  This is not always desirable.
+jsonrpc4j supports annotated based customization of these error messages and
 codes, for example:
 
 ```java
@@ -171,8 +171,8 @@ public interface UserService {
 ```
 
 The previous example will return the error code `-5678` with the message
-`User already exists` if the service throws a UserExistsException.  In the 
-case of any other exception the code `-187` is returned with the value 
+`User already exists` if the service throws a UserExistsException.  In the
+case of any other exception the code `-187` is returned with the value
 of `getMessage()` as returned by the exception itself.
 
 ### Auto Discovery With Annotations
@@ -216,7 +216,7 @@ Configuring a client is just as easy:
 </beans>
 ```
 
-Where the `baseUrl` is added to the front of the path value provided by the 
+Where the `baseUrl` is added to the front of the path value provided by the
 `JsonRpcService` annotation and `scanPackage` tells spring which packages
 to scan for services.
 
@@ -261,7 +261,7 @@ After having created the server it's simply a matter of calling one of the
 very same `UserService`:
 
 ```java
-class UserServiceServlet 
+class UserServiceServlet
     extends HttpServlet {
 
     private UserService userService;
@@ -413,3 +413,20 @@ public void addFriend(UserObjectEx userObjectEx);
 The reason being that there is no efficient way for the server to
 determine the difference in the json between the `UserObject`
 and `UserObjectEx` pojos.
+
+#### Custom method names
+
+In some instances, you may need to expose a JsonRpc method that is not a valid Java method name.
+In this case, use the annotation @JsonRpcMethod on the service method.
+
+```java
+@JsonRpcService("/jsonrpc")
+public interface LibraryService {
+    @JsonRpcMethod("VideoLibrary.GetTVShows")
+    List<TVShow> fetchTVShows(@JsonRpcParam("properties") final List<String> properties);
+}
+```
+
+```json
+{"jsonrpc":"2.0", "method": "VideoLibrary.GetTVShows", "params": { "properties": ["title"] }, "id":1}
+```
