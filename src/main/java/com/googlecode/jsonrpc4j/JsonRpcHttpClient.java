@@ -240,13 +240,13 @@ public class JsonRpcHttpClient
 		}
 
 		// add headers
+		con.setRequestProperty("Content-Type", "application/json-rpc");
 		for (Entry<String, String> entry : headers.entrySet()) {
 			con.setRequestProperty(entry.getKey(), entry.getValue());
 		}
 		for (Entry<String, String> entry : extraHeaders.entrySet()) {
 			con.setRequestProperty(entry.getKey(), entry.getValue());
 		}
-		con.setRequestProperty("Content-Type", "application/json-rpc");
 
 		// return it
 		return con;
