@@ -3,6 +3,8 @@ package com.googlecode.jsonrpc4j;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -167,6 +169,7 @@ public class StreamServerTest {
 			}
 		});
 
+		Thread.sleep(1000);
 		assertEquals(1, streamServer.getNumberOfConnections());
 		Server server = streamServer.getServers().iterator().next();
 		assertNotNull(server);
@@ -179,6 +182,40 @@ public class StreamServerTest {
 
 		// make sure no exception was logged
 		assertEquals(0, server.getNumberOfErrors());
+
+		// stop it
+		streamServer.stop();
+	}
+
+	@Test
+	public void testMultipleClientCallsBeforeReadResponse()
+		throws Throwable {
+
+		// create and start the server
+		StreamServer streamServer = new StreamServer(jsonRpcServer, 5, serverSocket);
+		streamServer.start();
+
+		// create socket
+		Socket socket = new Socket(
+				serverSocket.getInetAddress(),
+				serverSocket.getLocalPort());
+
+		InputStream ips = socket.getInputStream();
+		OutputStream ops = socket.getOutputStream();
+
+		for (int i=0; i<10; i++) {
+			jsonRpcClient.invoke("inc", null, ops);
+		}
+		for (int i=0; i<10; i++) {
+			Integer value = jsonRpcClient.readResponse(Integer.class, ips);
+			assertEquals(i, value.intValue());
+		}
+
+		// for the client to invoke something
+		socket.close();
+		while (streamServer.getNumberOfConnections()>0) {
+			Thread.yield();
+		}
 
 		// stop it
 		streamServer.stop();

@@ -7,12 +7,14 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -31,6 +33,8 @@ public class JsonRpcClient {
 	private Random random;
 	private RequestListener requestListener;
 	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
+	private WeakHashMap<InputStream, MappingIterator<JsonNode>> iterators
+		= new WeakHashMap<InputStream, MappingIterator<JsonNode>>();
 
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
@@ -237,8 +241,18 @@ public class JsonRpcClient {
 	public Object readResponse(Type returnType, InputStream ips)
 		throws Throwable {
 
+
+		// get node iterator
+		MappingIterator<JsonNode> iter = iterators.get(ips);
+		if (iter==null) {
+			JsonParser parser = mapper.getJsonFactory()
+					.createJsonParser(new NoCloseInputStream(ips));
+			iter = mapper.readValues(parser, JsonNode.class);
+			iterators.put(ips, iter);
+		}
+
 		// read the response
-		JsonNode response = mapper.readTree(new NoCloseInputStream(ips));
+		JsonNode response = iter.nextValue();
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
 		}
