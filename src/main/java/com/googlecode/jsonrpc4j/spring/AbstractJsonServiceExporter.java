@@ -91,7 +91,7 @@ public abstract class AbstractJsonServiceExporter
 
 		// create the server
 		jsonRpcServer = new JsonRpcServer(
-			objectMapper, getService(), getServiceInterface());
+			objectMapper, getProxyForService(), getServiceInterface());
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsComaptible(backwardsComaptible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
