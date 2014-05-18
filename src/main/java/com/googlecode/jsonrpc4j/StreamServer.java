@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLException;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 /**
  * A multi-threaded streaming server that uses JSON-RPC
  * over sockets.
@@ -213,7 +215,8 @@ public class StreamServer {
 				try {
 					jsonRpcServer.handle(input, output);
 				} catch (Throwable t) {
-                    if (t.getMessage() != null && t.getMessage().startsWith("No content to map due to end-of-input")) {
+                    final String pattern = "No content to map due to end-of-input\n at [Source: com.googlecode.jsonrpc4j.NoCloseInputStream@";
+                    if (JsonMappingException.class.equals(t.getClass()) && t.getMessage() != null && t.getMessage().startsWith(pattern)) {
                         // Jackson JSON parser could not parse content because the stream has been closed
                         LOGGER.log(Level.FINE, "The client has closed the stream");
                         break;
