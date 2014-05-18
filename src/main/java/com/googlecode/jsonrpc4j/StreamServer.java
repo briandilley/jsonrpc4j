@@ -24,9 +24,9 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -245,10 +245,10 @@ public class StreamServer {
 
 			// handle the request
 			// get the streams
-			InputStream input;
+			BufferedInputStream input;
 			OutputStream output;
 			try {
-				input = clientSocket.getInputStream();
+				input = new BufferedInputStream(clientSocket.getInputStream());
 				output = clientSocket.getOutputStream();
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE, "Client socket failed", e);
@@ -259,19 +259,23 @@ public class StreamServer {
 			servers.add(this);
 			try {
 				while (StreamServer.this.keepRunning.get()) {
-	
+
 					// handle it
 					try {
-						jsonRpcServer.handle(input, output);
-					} catch (Throwable t) {
-						// client disconnected, don't count this error
-						if (clientSocket.isClosed()
-								|| availableQuietly(input)==0) {
+
+						// make sure it's open
+						input.mark(1);
+						if (input.read()==-1) {
 							LOGGER.log(Level.INFO, "Client disconnected: "
 									+clientSocket.getInetAddress().getHostAddress()
 									+":"+clientSocket.getPort());
 							break;
 						}
+						input.reset();
+
+						jsonRpcServer.handle(input, output);
+						
+					} catch (Throwable t) {
 						errors++;
 						lastException = t;
 						if (errors<maxClientErrors) {
@@ -289,23 +293,6 @@ public class StreamServer {
 				closeQuietly(output);
 			}
 		}
-	}
-
-	/**
-	 * Returns the number of available bytes quietly.
-	 * @param ips
-	 * @return
-	 */
-	private int availableQuietly(InputStream ips) {
-		int avail = 0;
-		if (ips!=null) {
-			try {
-				avail = ips.available();
-			} catch(Throwable t) {
-				LOGGER.log(Level.FINE, "Input threw exception", t);
-			}
-		}
-		return avail;
 	}
 
 	/**
