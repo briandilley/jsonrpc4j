@@ -7,6 +7,7 @@ import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.beans.BeansException;
@@ -47,6 +48,7 @@ public class AutoJsonRpcServiceExporter
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
+	private Level exceptionLogLevel = Level.WARNING;
 
 	public void postProcessBeanFactory(
 		ConfigurableListableBeanFactory beanFactory)
@@ -131,6 +133,7 @@ public class AutoJsonRpcServiceExporter
 		builder.addPropertyValue("rethrowExceptions", Boolean.valueOf(rethrowExceptions));
 		builder.addPropertyValue("allowExtraParams", Boolean.valueOf(allowExtraParams));
 		builder.addPropertyValue("allowLessParams", Boolean.valueOf(allowLessParams));
+		builder.addPropertyValue("exceptionLogLevel", exceptionLogLevel);
 		dlbf.registerBeanDefinition(servicePath, builder.getBeanDefinition());
 	}
 
@@ -208,6 +211,13 @@ public class AutoJsonRpcServiceExporter
 	 */
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
+	}
+
+	/**
+	 * @param exceptionLogLevel the exceptionLogLevel to set
+	 */
+	public void setExceptionLogLevel(Level exceptionLogLevel) {
+		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
 }

@@ -23,12 +23,14 @@ public class StreamServerTest {
 	private ServerSocket serverSocket;
 	private JsonRpcServer jsonRpcServer;
 	private JsonRpcClient jsonRpcClient;
+	private ServiceImpl service;
 
 	@Before
 	public void setUp()
 		throws Exception {
 		serverSocket = ServerSocketFactory.getDefault().createServerSocket(0, 0, InetAddress.getByName("127.0.0.1"));
-		jsonRpcServer = new JsonRpcServer(new ServiceImpl(), Service.class);
+		service = new ServiceImpl();
+		jsonRpcServer = new JsonRpcServer(service, Service.class);
 		jsonRpcClient = new JsonRpcClient();
 	}
 
@@ -128,8 +130,7 @@ public class StreamServerTest {
 		});
 		t.start();
 
-		// for the client to invoke something
-		while (service1.inc()<10) {
+		while (service.val<10) {
 			Thread.yield();
 		}
 
