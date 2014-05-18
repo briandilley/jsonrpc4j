@@ -2,6 +2,7 @@ package com.googlecode.jsonrpc4j;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,6 +13,8 @@ import javax.net.ServerSocketFactory;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.googlecode.jsonrpc4j.StreamServer.Server;
 
 public class StreamServerTest {
 
@@ -127,6 +130,55 @@ public class StreamServerTest {
 		while (service1.inc()<10) {
 			Thread.yield();
 		}
+
+		// stop it
+		streamServer.stop();
+	}
+
+	@Test
+	public void testClientDisconnectsCausingExceptionOnServer()
+		throws Exception {
+
+		// create and start the server
+		StreamServer streamServer = new StreamServer(jsonRpcServer, 5, serverSocket);
+		streamServer.start();
+
+		// create clients
+		final Socket socket = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
+
+		// create and connect with a client
+		final Service service1 = ProxyUtil.createClientProxy(
+			this.getClass().getClassLoader(), Service.class,
+			jsonRpcClient, socket);
+
+		// start a client
+		Thread t = new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					if (service1.inc()>5) {
+						try {
+							socket.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return;
+					}
+				}
+			}
+		});
+
+		assertEquals(1, streamServer.getNumberOfConnections());
+		Server server = streamServer.getServers().iterator().next();
+		assertNotNull(server);
+		t.start();
+
+		// for the client to invoke something
+		while (streamServer.getNumberOfConnections()>0) {
+			Thread.yield();
+		}
+
+		// make sure no exception was logged
+		assertEquals(0, server.getNumberOfErrors());
 
 		// stop it
 		streamServer.stop();

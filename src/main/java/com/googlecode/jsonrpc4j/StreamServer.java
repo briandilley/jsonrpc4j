@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,6 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +40,7 @@ public class StreamServer {
 
 	private AtomicBoolean isStarted 	= new AtomicBoolean(false);
 	private AtomicBoolean keepRunning 	= new AtomicBoolean(false);
+	private Set<Server> servers			= new HashSet<Server>();
 
 	/**
 	 * Creates a {@code StreamServer} with the given max number
@@ -61,6 +66,14 @@ public class StreamServer {
 
 		// we can't allow the server to re-throw exceptions
 		jsonRpcServer.setRethrowExceptions(false);
+	}
+
+	/**
+	 * Returns the current servers.
+	 * @return the servers
+	 */
+	public Set<Server> getServers() {
+		return Collections.unmodifiableSet(servers);
 	}
 
 	/**
@@ -150,13 +163,25 @@ public class StreamServer {
 	/**
 	 * Server thread.
 	 */
-	private class Server
+	public class Server
 		implements Runnable {
+
+		private int errors;
+		private Throwable lastException;
+
+		public int getNumberOfErrors() {
+			return errors;
+		}
+
+		public Throwable getLastException() {
+			return lastException;
+		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		public void run() {
+
 			// get the server socket
 			ServerSocket serverSocket = StreamServer.this.serverSocket;
 
@@ -169,8 +194,9 @@ public class StreamServer {
 					clientSocket = serverSocket.accept();
 
 					// log the connection
-					LOGGER.log(Level.INFO, 
-						"Connection from "+clientSocket.getInetAddress()+":"+clientSocket.getPort());
+					LOGGER.log(Level.INFO, "Client connected: "
+							+clientSocket.getInetAddress().getHostAddress()
+							+":"+clientSocket.getPort());
 
 					// spawn a new Server for the next connection
 					// and break out of the server loop
@@ -206,30 +232,77 @@ public class StreamServer {
 			}
 
 			// keep handling requests
-			int errors = 0;
-			while (StreamServer.this.keepRunning.get()) {
-
-				// handle it
-				try {
-					jsonRpcServer.handle(input, output);
-				} catch (Throwable t) {
-					errors++;
-					if (errors<maxClientErrors) {
-						LOGGER.log(Level.SEVERE, "Exception while handling request", t);
-					} else {
-						LOGGER.log(Level.SEVERE, "Closing client connection due to repeated errors", t);
-						break;
+			servers.add(this);
+			try {
+				while (StreamServer.this.keepRunning.get()) {
+	
+					// handle it
+					try {
+						jsonRpcServer.handle(input, output);
+					} catch (Throwable t) {
+						// client disconnected, don't count this error
+						if (clientSocket.isClosed()
+								|| availableQuietly(input)==0) {
+							LOGGER.log(Level.INFO, "Client disconnected: "
+									+clientSocket.getInetAddress().getHostAddress()
+									+":"+clientSocket.getPort());
+							break;
+						}
+						errors++;
+						lastException = t;
+						if (errors<maxClientErrors) {
+							LOGGER.log(Level.SEVERE, "Exception while handling request", t);
+						} else {
+							LOGGER.log(Level.SEVERE, "Closing client connection due to repeated errors", t);
+							break;
+						}
 					}
 				}
+			} finally {
+				servers.remove(this);
+				closeQuietly(clientSocket);
+				closeQuietly(input);
+				closeQuietly(output);
 			}
-
-			// clean up
-			try {
-				clientSocket.close();
-				input.close();
-				output.close();
-			} catch (IOException e) { /* no-op */ }
 		}
+	}
+
+	/**
+	 * Returns the number of available bytes quietly.
+	 * @param ips
+	 * @return
+	 */
+	private int availableQuietly(InputStream ips) {
+		int avail = 0;
+		if (ips!=null) {
+			try {
+				avail = ips.available();
+			} catch(Throwable t) {
+				LOGGER.log(Level.FINE, "Input threw exception", t);
+			}
+		}
+		return avail;
+	}
+
+	/**
+	 * Closes something quietly.
+	 * @param c
+	 */
+	private void closeQuietly(Closeable c) {
+		if (c!=null) {
+			try {
+				c.close();
+			} catch(Throwable t) {
+				LOGGER.log(Level.WARNING, "Error closing, ignoring", t);
+			}
+		}
+	}
+
+	/**
+	 * @return the number of connected clients
+	 */
+	public int getNumberOfConnections() {
+		return servers.size();
 	}
 
 	/**
