@@ -213,7 +213,12 @@ public class StreamServer {
 				try {
 					jsonRpcServer.handle(input, output);
 				} catch (Throwable t) {
-					errors++;
+                    if (t.getMessage() != null && t.getMessage().startsWith("No content to map due to end-of-input")) {
+                        // Jackson JSON parser could not parse content because the stream has been closed
+                        LOGGER.log(Level.FINE, "The client has closed the stream");
+                        break;
+                    }
+                    errors++;
 					if (errors<maxClientErrors) {
 						LOGGER.log(Level.SEVERE, "Exception while handling request", t);
 					} else {
