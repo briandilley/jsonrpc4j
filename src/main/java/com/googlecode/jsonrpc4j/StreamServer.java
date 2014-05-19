@@ -262,20 +262,14 @@ public class StreamServer {
 
 					// handle it
 					try {
-
-						// make sure it's open
-						input.mark(1);
-						if (input.read()==-1) {
+						jsonRpcServer.handle(input, output);
+					} catch (Throwable t) {
+						if (StreamEndedException.class.isInstance(t)) {
 							LOGGER.log(Level.INFO, "Client disconnected: "
 									+clientSocket.getInetAddress().getHostAddress()
 									+":"+clientSocket.getPort());
 							break;
 						}
-						input.reset();
-
-						jsonRpcServer.handle(input, output);
-						
-					} catch (Throwable t) {
 						errors++;
 						lastException = t;
 						if (errors<maxClientErrors) {

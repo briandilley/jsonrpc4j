@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,7 +57,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
@@ -91,9 +89,6 @@ public class JsonRpcServer {
 	private Object handler;
 	private Class<?> remoteInterface;
 	private Level exceptionLogLevel = Level.WARNING;
-
-	private WeakHashMap<InputStream, MappingIterator<JsonNode>>
-		iterators = new WeakHashMap<InputStream, MappingIterator<JsonNode>>();
 
 	static {
 		ClassLoader classLoader = JsonRpcServer.class.getClassLoader();
@@ -250,19 +245,13 @@ public class JsonRpcServer {
 		throws IOException {
 
 		// get node iterator
-		MappingIterator<JsonNode> iter = iterators.get(ips);
-		if (iter==null) {
-			JsonParser parser = mapper.getJsonFactory()
-					.createJsonParser(new NoCloseInputStream(ips));
-			iter = mapper.readValues(parser, JsonNode.class);
-			iterators.put(ips, iter);
-		}
+		ReadContext ctx = ReadContext.getReadContext(ips, mapper);
 
 		// prcess
 		JsonNode jsonNode = null;
 		try {
-			jsonNode = iter.nextValue();
-			//jsonNode = mapper.readValues(new NoCloseInputStream(ips), JsonNode.class);
+			ctx.assertReadable();
+			jsonNode = ctx.nextValue();
 		} catch (JsonParseException e) {
 			writeAndFlushValue(ops, createErrorResponse(
 				"jsonrpc", "null", -32700, "Parse error", null));
