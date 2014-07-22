@@ -33,10 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -441,8 +438,11 @@ public class JsonRpcServer {
 
 				// get cause of exception
 				Throwable e = thrown;
-				if (InvocationTargetException.class.isInstance(e)) {
+				while (InvocationTargetException.class.isInstance(e)) {
 					e = InvocationTargetException.class.cast(e).getTargetException();
+                    while(UndeclaredThrowableException.class.isInstance(e)){
+                        e = UndeclaredThrowableException.class.cast(e).getUndeclaredThrowable();
+                    }
 				}
 
 				// resolve error
