@@ -63,10 +63,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonRpcMultiServer extends JsonRpcServer {
 
+	public static final char DEFAULT_SEPARATOR = '.';
 	private static final Logger LOGGER = Logger.getLogger(JsonRpcMultiServer.class.getName());
 
 	private Map<String, Object> handlerMap;
 	private Map<String, Class<?>> interfaceMap;
+	private char separator = DEFAULT_SEPARATOR;
 
 	public JsonRpcMultiServer() {
 		this(new ObjectMapper());
@@ -88,6 +90,14 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 			interfaceMap.put(name, remoteInterface);
 		}
 		return this;
+	}
+
+	public char getSeparator() {
+		return this.separator;
+	}
+
+	public void setSeparator(char separator) {
+		this.separator = separator;
 	}
 
 	/**
@@ -137,7 +147,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	protected String getServiceName(JsonNode methodNode) {
 		String methodName = (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
 		if (methodName != null) {
-			int ndx = methodName.indexOf('.');
+			int ndx = methodName.indexOf(this.separator);
 			if (ndx > 0) {
 				return methodName.substring(0, ndx);
 			}
@@ -155,7 +165,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	protected String getMethodName(JsonNode methodNode) {
 		String methodName = (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
 		if (methodName != null) {
-			int ndx = methodName.indexOf('.');
+			int ndx = methodName.indexOf(this.separator);
 			if (ndx > 0) {
 				return methodName.substring(ndx + 1);
 			}
