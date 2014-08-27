@@ -26,6 +26,7 @@ package com.googlecode.jsonrpc4j.spring;
 
 import java.util.logging.Level;
 
+import com.googlecode.jsonrpc4j.ExceptionLogLevelProvider;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -56,7 +57,8 @@ public abstract class AbstractJsonServiceExporter
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
-	private Level exceptionLogLevel = Level.WARNING;
+    private ExceptionLogLevelProvider exceptionLogLevelProvider = null;
+    private Level exceptionLogLevel = Level.WARNING;
 
 	/**
 	 * Called when the service is ready to be exported.
@@ -92,11 +94,13 @@ public abstract class AbstractJsonServiceExporter
 		// create the server
 		jsonRpcServer = new JsonRpcServer(
 			objectMapper, getProxyForService(), getServiceInterface());
+
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsComaptible(backwardsComaptible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
+        jsonRpcServer.setExceptionLogLevelProvider(exceptionLogLevelProvider);
 		jsonRpcServer.setExceptionLogLevel(exceptionLogLevel);
 
 		// export
@@ -172,6 +176,13 @@ public abstract class AbstractJsonServiceExporter
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
 	}
+
+    /**
+     * @param exceptionLogLevelProvider the provider to set
+     */
+    public void setExceptionLogLevelProvider(ExceptionLogLevelProvider exceptionLogLevelProvider) {
+        this.exceptionLogLevelProvider = exceptionLogLevelProvider;
+    }
 
 	/**
 	 * @param exceptionLogLevel the exceptionLogLevel to set

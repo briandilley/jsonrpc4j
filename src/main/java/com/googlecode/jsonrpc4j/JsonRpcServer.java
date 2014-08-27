@@ -88,6 +88,7 @@ public class JsonRpcServer {
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
+    private ExceptionLogLevelProvider exceptionLogLevelProvider = null;
 	private Level exceptionLogLevel = Level.WARNING;
 
 	static {
@@ -445,7 +446,7 @@ public class JsonRpcServer {
 				}
 			}
 
-			// the resoponse object
+			// the response object
 			ObjectNode response = null;
 
 			// build error
@@ -464,8 +465,27 @@ public class JsonRpcServer {
 
 		// log and potentially re-throw errors
 		if (thrown!=null) {
-			if (LOGGER.isLoggable(exceptionLogLevel)) {
-				LOGGER.log(exceptionLogLevel, "Error in JSON-RPC Service", thrown);
+            Level level=null;
+
+            if(exceptionLogLevelProvider!=null) {
+                Throwable e = thrown;
+
+                if (InvocationTargetException.class.isInstance(e)) {
+                    e = InvocationTargetException.class.cast(e).getTargetException();
+                }
+
+                level = exceptionLogLevelProvider.logLevel(
+                        e,
+                        methodArgs.method,
+                        methodArgs.arguments);
+            }
+
+            if(level==null) {
+                level = exceptionLogLevel;
+            }
+
+			if (LOGGER.isLoggable(level)) {
+				LOGGER.log(level, "Error in JSON-RPC Service", thrown);
 			}
 			if (rethrowExceptions) {
 				throw new RuntimeException(thrown);
@@ -510,8 +530,6 @@ public class JsonRpcServer {
 	 * the given params (after converting them to beans\objects)
 	 * to it.
 	 *
-	 * @param an optional service name used to locate the target object
-	 *  to invoke the Method on
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
 	 * @return the return value (or null if no return)
@@ -1047,10 +1065,26 @@ public class JsonRpcServer {
 		this.errorResolver = errorResolver;
 	}
 
+    /**
+     * This method allows the exception log level provider to be set.  If
+     * this is not configured then the {@link #exceptionLogLevel} will be
+     * used.
+     * @param exceptionLogLevelProvider the provider to set
+     */
+    public void setExceptionLogLevelProvider(ExceptionLogLevelProvider exceptionLogLevelProvider) {
+        this.exceptionLogLevelProvider = exceptionLogLevelProvider;
+    }
+
 	/**
-	 * @param exceptionLogLevel the exceptionLogLevel to set
+     * This configures the default logging level for exceptions.  If the
+     * {@link com.googlecode.jsonrpc4j.ExceptionLogLevelProvider} is
+     * configured then that will be checked first.
+	 * @param exceptionLogLevel the exceptionLogLevel to set.
 	 */
 	public void setExceptionLogLevel(Level exceptionLogLevel) {
+        if(exceptionLogLevel == null) {
+            throw new IllegalStateException("it is not possible to configure the exception log level to null");
+        }
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
