@@ -28,28 +28,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
- * Implementations of this interface may be able to provide a log level for
- * an exception which has occurred as a result of handling a method invocation.
- * Implementations can be configured on the
- * {@link com.googlecode.jsonrpc4j.JsonRpcServer} class.
+ * Implementations of this interface are able to log that an exception has happened.
  */
 
-public interface ExceptionLogLevelProvider {
+public interface ExceptionLoggingHandler {
 
     /**
-     * Implementations of this method should return a log level that indicates
-     * the logging level of the thrown throwable.  If the method has no opinion
-     * about the logging level of the throwable then it should return null.
+     * Implementations of this method should log the throwable as necessary.
      *
      * @param t the {@link Throwable}
      * @param method the {@link Method} that threw the {@link Throwable}
      * @param arguments the {@code arguments} that were passed to the {@link Method}
-     * @return the {@link Level} or null if there is no opinion about the level
      */
 
-    Level logLevel(Throwable t, Method method, List<JsonNode> arguments);
+    void log(Throwable t, Method method, List<JsonNode> arguments);
 
 }

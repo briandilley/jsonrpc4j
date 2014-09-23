@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.googlecode.jsonrpc4j.ExceptionLogLevelProvider;
+import com.googlecode.jsonrpc4j.ExceptionLoggingHandler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -74,7 +74,7 @@ public class AutoJsonRpcServiceExporter
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
-    private ExceptionLogLevelProvider exceptionLogLevelProvider = null;
+    private ExceptionLoggingHandler exceptionLoggingHandler = null;
     private Level exceptionLogLevel = Level.WARNING;
 
 	public void postProcessBeanFactory(
@@ -157,8 +157,8 @@ public class AutoJsonRpcServiceExporter
 			builder.addPropertyValue("errorResolver", errorResolver);
 		}
 
-        if (exceptionLogLevelProvider != null) {
-            builder.addPropertyValue("exceptionLogLevelProvider", exceptionLogLevelProvider);
+        if (exceptionLoggingHandler != null) {
+            builder.addPropertyValue("exceptionLoggingHandler", exceptionLoggingHandler);
         }
 
         if(registerTraceInterceptor != null) {
@@ -251,10 +251,10 @@ public class AutoJsonRpcServiceExporter
 	}
 
     /**
-     * @param exceptionLogLevelProvider the provider to set
+     * @param exceptionLoggingHandler the provider to set
      */
-    public void setExceptionLogLevelProvider(ExceptionLogLevelProvider exceptionLogLevelProvider) {
-        this.exceptionLogLevelProvider = exceptionLogLevelProvider;
+    public void setExceptionLoggingHandler(ExceptionLoggingHandler exceptionLoggingHandler) {
+        this.exceptionLoggingHandler = exceptionLoggingHandler;
     }
 
 	/**

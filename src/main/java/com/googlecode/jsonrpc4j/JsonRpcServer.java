@@ -88,7 +88,7 @@ public class JsonRpcServer {
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
-    private ExceptionLogLevelProvider exceptionLogLevelProvider = null;
+    private ExceptionLoggingHandler exceptionLoggingHandler = null;
 	private Level exceptionLogLevel = Level.WARNING;
 
 	static {
@@ -465,31 +465,19 @@ public class JsonRpcServer {
 
 		// log and potentially re-throw errors
 		if (thrown!=null) {
-            Level level=null;
 
-            if(exceptionLogLevelProvider!=null) {
-                Throwable e = thrown;
-
-                if (InvocationTargetException.class.isInstance(e)) {
-                    e = InvocationTargetException.class.cast(e).getTargetException();
+            if(exceptionLoggingHandler != null) {
+                exceptionLoggingHandler.log(thrown, methodArgs.method, methodArgs.arguments);
+            }
+            else {
+                if (LOGGER.isLoggable(exceptionLogLevel)) {
+                    LOGGER.log(exceptionLogLevel, "Error in JSON-RPC Service", thrown);
                 }
-
-                level = exceptionLogLevelProvider.logLevel(
-                        e,
-                        methodArgs.method,
-                        methodArgs.arguments);
+                if (rethrowExceptions) {
+                    throw new RuntimeException(thrown);
+                }
             }
 
-            if(level==null) {
-                level = exceptionLogLevel;
-            }
-
-			if (LOGGER.isLoggable(level)) {
-				LOGGER.log(level, "Error in JSON-RPC Service", thrown);
-			}
-			if (rethrowExceptions) {
-				throw new RuntimeException(thrown);
-			}
 		}
 	}
 
@@ -1069,15 +1057,15 @@ public class JsonRpcServer {
      * This method allows the exception log level provider to be set.  If
      * this is not configured then the {@link #exceptionLogLevel} will be
      * used.
-     * @param exceptionLogLevelProvider the provider to set
+     * @param exceptionLoggingHandler the provider to set
      */
-    public void setExceptionLogLevelProvider(ExceptionLogLevelProvider exceptionLogLevelProvider) {
-        this.exceptionLogLevelProvider = exceptionLogLevelProvider;
+    public void setExceptionLoggingHandler(ExceptionLoggingHandler exceptionLoggingHandler) {
+        this.exceptionLoggingHandler = exceptionLoggingHandler;
     }
 
 	/**
      * This configures the default logging level for exceptions.  If the
-     * {@link com.googlecode.jsonrpc4j.ExceptionLogLevelProvider} is
+     * {@link ExceptionLoggingHandler} is
      * configured then that will be checked first.
 	 * @param exceptionLogLevel the exceptionLogLevel to set.
 	 */
