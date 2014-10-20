@@ -43,9 +43,9 @@ In `<dependencies>`:
 ```
 
 ## JSON-RPC specification
-There doesn't seem to be an official source for the JSON-RPC specification.
-With that said, the guys over at [json-rpc google group](http://groups.google.com/group/json-rpc)
-seem to be fairly active so the specification that they've outlined is what was used.
+The official source for the [JSON-RPC 2.0 specification](http://www.jsonrpc.org/specification).
+The guys over at [json-rpc google group](http://groups.google.com/group/json-rpc)
+seem to be fairly active, so you can ask clarifying questions there.
 
 ## Streaming server and client
 Jsonrpc4j comes with a streaming server and client to support applications of all types
