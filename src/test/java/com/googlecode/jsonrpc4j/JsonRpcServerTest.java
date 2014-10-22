@@ -1,15 +1,20 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
+import org.hamcrest.Matchers;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.Sequence;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for JsonRpcServer
@@ -438,6 +443,100 @@ public class JsonRpcServerTest {
         assertEquals("custom2", json.get("result").textValue());
     }
 
+    /**
+     * The {@link com.googlecode.jsonrpc4j.JsonRpcServer} is able to have an instance of
+     * {@link com.googlecode.jsonrpc4j.InvocationListener} configured for it.  Prior to a
+     * method being invoked, the lister is notified and after the method is invoked, the
+     * listener is notified.  This test checks that these two events are hit correctly in
+     * the case that an exception is raised when the method is invoked.
+     */
+
+    @Test
+    public void callMethodThrowingWithInvocationListener() throws Exception {
+
+        Mockery mockCtx = new Mockery();
+        final Sequence sequence = mockCtx.sequence("listener");
+        final InvocationListener invocationListener = mockCtx.mock(InvocationListener.class);
+
+        mockCtx.checking(new Expectations() {{
+
+           oneOf(invocationListener).willInvoke(
+                   with(equal(ServiceInterface.class.getMethod("throwsMethod", String.class))),
+                   with(any(List.class))
+           ); inSequence(sequence);
+
+            oneOf(invocationListener).didInvoke(
+                    with(equal(ServiceInterface.class.getMethod("throwsMethod", String.class))),
+                    with(any(List.class)),
+                    with(aNull(Object.class)),
+                    with(aNonNull(Throwable.class)),
+                    with(Matchers.greaterThanOrEqualTo(0l))
+            ); inSequence(sequence);
+
+        }});
+
+        jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
+        jsonRpcServer.setInvocationListener(invocationListener);
+        jsonRpcServer.handle(new ClassPathResource("jsonRpcServerMethodThrowingWithInvocationListener.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+
+        JsonNode json = mapper.readTree(response);
+
+        assertNull(json.get("result"));
+        assertNotNull(json.get("error"));
+
+        //mockCtx.assertIsSatisfied();
+
+    }
+
+    /**
+     * The {@link com.googlecode.jsonrpc4j.JsonRpcServer} is able to have an instance of
+     * {@link com.googlecode.jsonrpc4j.InvocationListener} configured for it.  Prior to a
+     * method being invoked, the lister is notified and after the method is invoked, the
+     * listener is notified.  This test checks that these two events are hit correctly
+     * when a method is invoked.
+     */
+
+    @Test
+    public void callMethodWithInvocationListener() throws Exception {
+
+        Mockery mockCtx = new Mockery();
+        final Sequence sequence = mockCtx.sequence("listener");
+        final InvocationListener invocationListener = mockCtx.mock(InvocationListener.class);
+
+        mockCtx.checking(new Expectations() {{
+
+            oneOf(invocationListener).willInvoke(
+                    with(equal(ServiceInterface.class.getMethod("testMethod", String.class))),
+                    with(any(List.class))
+            ); inSequence(sequence);
+
+            oneOf(invocationListener).didInvoke(
+                    with(equal(ServiceInterface.class.getMethod("testMethod", String.class))),
+                    with(any(List.class)),
+                    with(equal(new TextNode("success"))),
+                    with(aNull(Throwable.class)),
+                    with(Matchers.greaterThanOrEqualTo(0l))
+            ); inSequence(sequence);
+
+        }});
+
+        jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
+        jsonRpcServer.setInvocationListener(invocationListener);
+        jsonRpcServer.handle(new ClassPathResource("jsonRpcServerMethodWithInvocationListener.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+
+        JsonNode json = mapper.readTree(response);
+
+        assertNotNull(json.get("result"));
+        assertNull(json.get("error"));
+
+        mockCtx.assertIsSatisfied();
+
+    }
+
 	// Service and service interfaces used in test
 	
 	private interface ServiceInterface {        
@@ -447,6 +546,7 @@ public class JsonRpcServerTest {
 		public String overloadedMethod(String stringParam1, String stringParam2);
 		public String overloadedMethod(int intParam1);
 		public String overloadedMethod(int intParam1, int intParam2);
+        public String throwsMethod(String param1) throws TestException;
 	}
 	
 	private interface ServiceInterfaceWithParamNameAnnotation {
@@ -500,7 +600,11 @@ public class JsonRpcServerTest {
 		public String methodWithoutRequiredParam(String stringParam1, String stringParam2) {
 			return stringParam1+", "+stringParam2;
 		}
-		
-	}
-	
+
+        public String throwsMethod(String param1) throws TestException {
+            throw new TestException("throwsMethod");
+        }
+
+    }
+
 }
