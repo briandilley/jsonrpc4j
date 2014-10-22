@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.googlecode.jsonrpc4j.InvocationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -73,6 +74,7 @@ public class AutoJsonRpcServiceExporter
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
 	private Level exceptionLogLevel = Level.WARNING;
+    private InvocationListener invocationListener = null;
 
 	public void postProcessBeanFactory(
 		ConfigurableListableBeanFactory beanFactory)
@@ -153,6 +155,11 @@ public class AutoJsonRpcServiceExporter
 		if (errorResolver != null) {
 			builder.addPropertyValue("errorResolver", errorResolver);
 		}
+
+        if (invocationListener != null) {
+            builder.addPropertyValue("invocationListener", invocationListener);
+        }
+
 		builder.addPropertyValue("backwardsComaptible", Boolean.valueOf(backwardsComaptible));
 		builder.addPropertyValue("rethrowExceptions", Boolean.valueOf(rethrowExceptions));
 		builder.addPropertyValue("allowExtraParams", Boolean.valueOf(allowExtraParams));
@@ -244,4 +251,10 @@ public class AutoJsonRpcServiceExporter
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
+    /**
+     * @param invocationListener the invocationListener to set
+     */
+    public void setInvocationListener(InvocationListener invocationListener) {
+        this.invocationListener = invocationListener;
+    }
 }
