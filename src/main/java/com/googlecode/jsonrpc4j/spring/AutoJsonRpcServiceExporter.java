@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.googlecode.jsonrpc4j.ExceptionLoggingHandler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -68,11 +69,13 @@ public class AutoJsonRpcServiceExporter
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
+    private Boolean registerTraceInterceptor;
 	private boolean backwardsComaptible = true;
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
-	private Level exceptionLogLevel = Level.WARNING;
+    private ExceptionLoggingHandler exceptionLoggingHandler = null;
+    private Level exceptionLogLevel = Level.WARNING;
 
 	public void postProcessBeanFactory(
 		ConfigurableListableBeanFactory beanFactory)
@@ -153,11 +156,21 @@ public class AutoJsonRpcServiceExporter
 		if (errorResolver != null) {
 			builder.addPropertyValue("errorResolver", errorResolver);
 		}
+
+        if (exceptionLoggingHandler != null) {
+            builder.addPropertyValue("exceptionLoggingHandler", exceptionLoggingHandler);
+        }
+
+        if(registerTraceInterceptor != null) {
+            builder.addPropertyValue("registerTraceInterceptor", registerTraceInterceptor);
+        }
+
 		builder.addPropertyValue("backwardsComaptible", Boolean.valueOf(backwardsComaptible));
 		builder.addPropertyValue("rethrowExceptions", Boolean.valueOf(rethrowExceptions));
 		builder.addPropertyValue("allowExtraParams", Boolean.valueOf(allowExtraParams));
 		builder.addPropertyValue("allowLessParams", Boolean.valueOf(allowLessParams));
 		builder.addPropertyValue("exceptionLogLevel", exceptionLogLevel);
+
 		dlbf.registerBeanDefinition(servicePath, builder.getBeanDefinition());
 	}
 
@@ -237,11 +250,26 @@ public class AutoJsonRpcServiceExporter
 		this.allowLessParams = allowLessParams;
 	}
 
+    /**
+     * @param exceptionLoggingHandler the provider to set
+     */
+    public void setExceptionLoggingHandler(ExceptionLoggingHandler exceptionLoggingHandler) {
+        this.exceptionLoggingHandler = exceptionLoggingHandler;
+    }
+
 	/**
 	 * @param exceptionLogLevel the exceptionLogLevel to set
 	 */
 	public void setExceptionLogLevel(Level exceptionLogLevel) {
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
+
+    /**
+     * See {@link org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
+     * @param registerTraceInterceptor the registerTraceInterceptor value to set
+     */
+    public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
+        this.registerTraceInterceptor = registerTraceInterceptor;
+    }
 
 }
