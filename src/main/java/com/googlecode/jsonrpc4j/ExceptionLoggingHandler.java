@@ -43,6 +43,6 @@ public interface ExceptionLoggingHandler {
      * @param arguments the {@code arguments} that were passed to the {@link Method}
      */
 
-    void log(Throwable t, Method method, List<JsonNode> arguments);
+    void log(Method method, List<JsonNode> arguments, Throwable t);
 
 }

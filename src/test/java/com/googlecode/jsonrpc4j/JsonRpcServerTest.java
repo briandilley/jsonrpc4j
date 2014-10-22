@@ -1,15 +1,20 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for JsonRpcServer
@@ -438,7 +443,69 @@ public class JsonRpcServerTest {
         assertEquals("custom2", json.get("result").textValue());
     }
 
-	// Service and service interfaces used in test
+    /**
+     * <p>The {@link com.googlecode.jsonrpc4j.JsonRpcServer} is able to have an instance of
+     * {@link com.googlecode.jsonrpc4j.ExceptionLoggingHandler} configured for it.  If this
+     * is configured then, in the event that an exception is thrown on a JSON-RPC invoked
+     * service, the handler should be called to log the exception.</p>
+     */
+
+    @Test
+    public void callMethodThrowingWithExceptionLoggingHandler() throws Exception {
+
+        Mockery mockCtx = new Mockery();
+        final ExceptionLoggingHandler exceptionLoggingHandler = mockCtx.mock(ExceptionLoggingHandler.class);
+
+        mockCtx.checking(new Expectations() {{
+           oneOf(exceptionLoggingHandler).log(
+                   with(any(Method.class)),
+                   with(any(List.class)),
+                   with(new BaseMatcher<Throwable>() {
+
+                            private TestException deriveCausedTestException(Object o) {
+                                if (null != o && Throwable.class.isAssignableFrom(o.getClass())) {
+                                    Throwable t = (Throwable) o;
+
+                                    if(TestException.class.isAssignableFrom(t.getClass())) {
+                                        return (TestException) t;
+                                    }
+
+                                    return deriveCausedTestException(t.getCause());
+                                }
+
+                                return null;
+                            }
+
+                            public boolean matches(Object o) {
+                                TestException te = deriveCausedTestException(o);
+                                return null != te && te.getMessage().equals("throwsMethod");
+                            }
+
+                            public void describeTo(Description description) {
+                               description.appendText("expected the throwable to be caused by an instance of " + TestException.class.getSimpleName() + " and for the exception to have the correct message");
+                            }
+                        }
+                   )
+           );
+        }});
+
+        jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
+        jsonRpcServer.setExceptionLoggingHandler(exceptionLoggingHandler);
+        jsonRpcServer.handle(new ClassPathResource("jsonRpcServerMethodThrowingWithExceptionLoggingHandler.json").getInputStream(), baos);
+
+        String response = baos.toString(JSON_ENCODING);
+
+        JsonNode json = mapper.readTree(response);
+
+        assertNull(json.get("result"));
+        assertNotNull(json.get("error"));
+
+        mockCtx.assertIsSatisfied();
+
+    }
+
+
+    // Service and service interfaces used in test
 	
 	private interface ServiceInterface {        
 		public String testMethod(String param1);
@@ -447,6 +514,7 @@ public class JsonRpcServerTest {
 		public String overloadedMethod(String stringParam1, String stringParam2);
 		public String overloadedMethod(int intParam1);
 		public String overloadedMethod(int intParam1, int intParam2);
+        public String throwsMethod(String param1) throws TestException;
 	}
 	
 	private interface ServiceInterfaceWithParamNameAnnotation {
@@ -500,7 +568,11 @@ public class JsonRpcServerTest {
 		public String methodWithoutRequiredParam(String stringParam1, String stringParam2) {
 			return stringParam1+", "+stringParam2;
 		}
-		
-	}
-	
+
+        public String throwsMethod(String param1) throws TestException {
+            throw new TestException("throwsMethod");
+        }
+
+    }
+
 }

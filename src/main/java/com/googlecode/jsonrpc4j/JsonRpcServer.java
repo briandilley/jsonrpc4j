@@ -467,7 +467,7 @@ public class JsonRpcServer {
 		if (thrown!=null) {
 
             if(exceptionLoggingHandler != null) {
-                exceptionLoggingHandler.log(thrown, methodArgs.method, methodArgs.arguments);
+                exceptionLoggingHandler.log(methodArgs.method, methodArgs.arguments, thrown);
             }
             else {
                 if (LOGGER.isLoggable(exceptionLogLevel)) {
