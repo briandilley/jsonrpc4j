@@ -1,0 +1,6 @@
+{
+    "jsonrpc": "2.0",
+    "id": "3A63A8C8-D5F1-4EBE-AE3D-830EB867E8FC",
+    "method": "testMethod",
+    "params": [ "param1" ]
+}
