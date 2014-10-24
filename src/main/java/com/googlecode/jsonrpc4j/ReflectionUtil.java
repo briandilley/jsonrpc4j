@@ -238,7 +238,7 @@ public abstract class ReflectionUtil {
 			}
 			return namedParams;
 		} else {
-			return arguments;
+			return arguments != null ? arguments : new Object[] { null };
 		}
 	}
 
