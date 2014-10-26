@@ -69,6 +69,7 @@ public class AutoJsonRpcServiceExporter
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
+	private Boolean registerTraceInterceptor;
 	private boolean backwardsComaptible = true;
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
@@ -160,6 +161,10 @@ public class AutoJsonRpcServiceExporter
             builder.addPropertyValue("invocationListener", invocationListener);
         }
 
+		if(registerTraceInterceptor != null) {
+			builder.addPropertyValue("registerTraceInterceptor", registerTraceInterceptor);
+		}
+
 		builder.addPropertyValue("backwardsComaptible", Boolean.valueOf(backwardsComaptible));
 		builder.addPropertyValue("rethrowExceptions", Boolean.valueOf(rethrowExceptions));
 		builder.addPropertyValue("allowExtraParams", Boolean.valueOf(allowExtraParams));
@@ -249,6 +254,14 @@ public class AutoJsonRpcServiceExporter
 	 */
 	public void setExceptionLogLevel(Level exceptionLogLevel) {
 		this.exceptionLogLevel = exceptionLogLevel;
+	}
+
+	/**
+	 * See {@link org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
+	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
+	 */
+	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
+		this.registerTraceInterceptor = registerTraceInterceptor;
 	}
 
     /**
