@@ -85,6 +85,7 @@ public class JsonRpcServer {
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
+    private InvocationListener invocationListener = null;
 	private Level exceptionLogLevel = Level.WARNING;
 
 	static {
@@ -407,11 +408,26 @@ public class JsonRpcServer {
 		// invoke the method
 		JsonNode result = null;
 		Throwable thrown = null;
+        long beforeMs = System.currentTimeMillis();
+
+        if (invocationListener!=null) {
+            invocationListener.willInvoke(methodArgs.method, methodArgs.arguments);
+        }
+
 		try {
 			result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
 		} catch (Throwable e) {
 			thrown = e;
 		}
+
+        if (invocationListener!=null) {
+           invocationListener.didInvoke(
+                   methodArgs.method,
+                   methodArgs.arguments,
+                   result,
+                   thrown,
+                   System.currentTimeMillis()-beforeMs);
+        }
 
 		// respond if it's not a notification request
 		if (id!=null) {
@@ -1054,4 +1070,14 @@ public class JsonRpcServer {
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
+    /**
+     * Sets the {@link InvocationListener} instance that can be
+     * used to provide feedback for capturing method-invocation
+     * statistics.
+     * @param invocationListener is the listener to set
+     */
+
+    public void setInvocationListener(InvocationListener invocationListener) {
+        this.invocationListener = invocationListener;
+    }
 }

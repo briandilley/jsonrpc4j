@@ -26,6 +26,7 @@ package com.googlecode.jsonrpc4j.spring;
 
 import java.util.logging.Level;
 
+import com.googlecode.jsonrpc4j.InvocationListener;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +58,7 @@ public abstract class AbstractJsonServiceExporter
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
 	private Level exceptionLogLevel = Level.WARNING;
+    private InvocationListener invocationListener = null;
 
 	/**
 	 * Called when the service is ready to be exported.
@@ -98,6 +100,7 @@ public abstract class AbstractJsonServiceExporter
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
 		jsonRpcServer.setExceptionLogLevel(exceptionLogLevel);
+        jsonRpcServer.setInvocationListener(invocationListener);
 
 		// export
 		exportService();
@@ -179,5 +182,12 @@ public abstract class AbstractJsonServiceExporter
 	public void setExceptionLogLevel(Level exceptionLogLevel) {
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
+
+    /**
+     * @param invocationListener the invocationListener to set
+     */
+    public void setInvocationListener(InvocationListener invocationListener) {
+        this.invocationListener = invocationListener;
+    }
 
 }
