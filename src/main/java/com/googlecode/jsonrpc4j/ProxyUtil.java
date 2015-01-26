@@ -182,8 +182,15 @@ public abstract class ProxyUtil {
 						return proxyObjectMethods(method, proxy, args);
 					}
 					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
+
+					String methodName=method.getName();
+					JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
+		            if (methodAnnotation!=null && methodAnnotation.value()!=null) {
+		            	methodName=methodAnnotation.value();
+		            }
+
 					return client.invokeAndReadResponse(
-						method.getName(), arguments, method.getGenericReturnType(), ops, ips);
+						methodName, arguments, method.getGenericReturnType(), ops, ips);
 				}
 			});
 	}
