@@ -235,7 +235,7 @@ public class JsonRpcClient {
 	}
 
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -250,7 +250,7 @@ public class JsonRpcClient {
 	}
 
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -268,7 +268,7 @@ public class JsonRpcClient {
 		ctx.assertReadable();
 		JsonNode response = ctx.nextValue();
 		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
+			LOGGER.log(Level.FINE, "JSON-RPC Response: "+response.toString());
 		}
 
 		// bail on invalid response
@@ -435,7 +435,7 @@ public class JsonRpcClient {
 			this.requestListener.onBeforeRequestSent(this, request);
 		}
 		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Request: "+request.toString());
+			LOGGER.log(Level.FINE, "JSON-RPC Request: "+request.toString());
 		}
 
 		// post the json data;
