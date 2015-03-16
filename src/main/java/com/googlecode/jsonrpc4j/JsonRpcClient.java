@@ -151,7 +151,7 @@ public class JsonRpcClient {
 		invoke(methodName, argument, ops, id);
 
 		// read it
-		return readResponse(returnType, ips);
+		return readResponse(returnType, ips, id);
 	}
 
 	/**
@@ -261,6 +261,23 @@ public class JsonRpcClient {
 	public Object readResponse(Type returnType, InputStream ips)
 		throws Throwable {
 
+		return readResponse(returnType, ips, null);
+	}
+
+	/**
+	 * Reads a JSON-RPC response from the server.  This blocks until
+	 * a response is received. If an id is given, responses that do
+	 * not correspond, are disregarded.
+	 *
+	 * @param returnType the expected return type
+	 * @param ips the {@link InputStream} to read from
+	 * @param id The id used to compare the response with.
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	public Object readResponse(Type returnType, InputStream ips, String id)
+		throws Throwable {
+
 		// get node iterator
 		ReadContext ctx = ReadContext.getReadContext(ips, mapper);
 
@@ -276,6 +293,19 @@ public class JsonRpcClient {
 			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
 		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
+
+		if(id != null) {
+			while(!jsonObject.has("id") ||
+				jsonObject.get("id") == null ||
+				!jsonObject.get("id").asText().equals(id)) {
+				response = ctx.nextValue();
+
+				if (!response.isObject()) {
+					throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
+				}
+				jsonObject = ObjectNode.class.cast(response);
+			}
+		}
 
 		// show to listener
 		if (this.requestListener!=null) {
