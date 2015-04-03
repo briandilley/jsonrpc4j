@@ -133,8 +133,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object getObject()
-		throws Exception {
+	public Object getObject() {
 		return proxyObject;
 	}
 
