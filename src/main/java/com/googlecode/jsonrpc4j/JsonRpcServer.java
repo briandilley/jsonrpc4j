@@ -577,7 +577,7 @@ public class JsonRpcServer {
 		error.put("code", code);
 		error.put("message", message);
 		if (data!=null) {
-			error.put("data",  mapper.valueToTree(data));
+			error.set("data",  mapper.valueToTree(data));
 		}
 		response.put("jsonrpc", jsonRpc);
 		if (Integer.class.isInstance(id)) {
@@ -593,7 +593,7 @@ public class JsonRpcServer {
 		} else {
 			response.put("id", String.class.cast(id));
 		}
-		response.put("error", error);
+		response.set("error", error);
 		return response;
 	}
 
@@ -620,7 +620,7 @@ public class JsonRpcServer {
 		} else {
 			response.put("id", String.class.cast(id));
 		}
-		response.put("result", result);
+		response.set("result", result);
 		return response;
 	}
 
