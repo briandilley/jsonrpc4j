@@ -967,7 +967,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Writes and flushes a value to the given {@link OutputStream}
-	 * and prevents Jackson from closing it.
+	 * and prevents Jackson from closing it. Also writes newline.
 	 * @param ops the {@link OutputStream}
 	 * @param value the value to write
 	 * @throws IOException on error
@@ -975,6 +975,7 @@ public class JsonRpcServer {
 	private void writeAndFlushValue(OutputStream ops, Object value)
 		throws IOException {
 		mapper.writeValue(new NoCloseOutputStream(ops), value);
+		ops.write('\n');
 		ops.flush();
 	}
 
