@@ -33,10 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -137,7 +134,7 @@ public class JsonRpcServer {
 	 * @param remoteInterface the interface
 	 */
 	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
-		this(new ObjectMapper(), handler, null);
+		this(new ObjectMapper(), handler, remoteInterface);
 	}
 
 	/**
@@ -441,8 +438,11 @@ public class JsonRpcServer {
 
 				// get cause of exception
 				Throwable e = thrown;
-				if (InvocationTargetException.class.isInstance(e)) {
+				while (InvocationTargetException.class.isInstance(e)) {
 					e = InvocationTargetException.class.cast(e).getTargetException();
+                    while(UndeclaredThrowableException.class.isInstance(e)){
+                        e = UndeclaredThrowableException.class.cast(e).getUndeclaredThrowable();
+                    }
 				}
 
 				// resolve error
@@ -526,7 +526,7 @@ public class JsonRpcServer {
 	 * the given params (after converting them to beans\objects)
 	 * to it.
 	 *
-	 * @param an optional service name used to locate the target object
+	 * @param target optional service name used to locate the target object
 	 *  to invoke the Method on
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
@@ -577,7 +577,7 @@ public class JsonRpcServer {
 		error.put("code", code);
 		error.put("message", message);
 		if (data!=null) {
-			error.put("data",  mapper.valueToTree(data));
+			error.set("data",  mapper.valueToTree(data));
 		}
 		response.put("jsonrpc", jsonRpc);
 		if (Integer.class.isInstance(id)) {
@@ -593,7 +593,7 @@ public class JsonRpcServer {
 		} else {
 			response.put("id", String.class.cast(id));
 		}
-		response.put("error", error);
+		response.set("error", error);
 		return response;
 	}
 
@@ -620,7 +620,7 @@ public class JsonRpcServer {
 		} else {
 			response.put("id", String.class.cast(id));
 		}
-		response.put("result", result);
+		response.set("result", result);
 		return response;
 	}
 
@@ -967,7 +967,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Writes and flushes a value to the given {@link OutputStream}
-	 * and prevents Jackson from closing it.
+	 * and prevents Jackson from closing it. Also writes newline.
 	 * @param ops the {@link OutputStream}
 	 * @param value the value to write
 	 * @throws IOException on error
@@ -975,6 +975,7 @@ public class JsonRpcServer {
 	private void writeAndFlushValue(OutputStream ops, Object value)
 		throws IOException {
 		mapper.writeValue(new NoCloseOutputStream(ops), value);
+		ops.write('\n');
 		ops.flush();
 	}
 

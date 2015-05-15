@@ -151,7 +151,7 @@ public class JsonRpcClient {
 		invoke(methodName, argument, ops, id);
 
 		// read it
-		return readResponse(returnType, ips);
+		return readResponse(returnType, ips, id);
 	}
 
 	/**
@@ -235,7 +235,7 @@ public class JsonRpcClient {
 	}
 
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -250,7 +250,7 @@ public class JsonRpcClient {
 	}
 
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -261,6 +261,23 @@ public class JsonRpcClient {
 	public Object readResponse(Type returnType, InputStream ips)
 		throws Throwable {
 
+		return readResponse(returnType, ips, null);
+	}
+
+	/**
+	 * Reads a JSON-RPC response from the server.  This blocks until
+	 * a response is received. If an id is given, responses that do
+	 * not correspond, are disregarded.
+	 *
+	 * @param returnType the expected return type
+	 * @param ips the {@link InputStream} to read from
+	 * @param id The id used to compare the response with.
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	public Object readResponse(Type returnType, InputStream ips, String id)
+		throws Throwable {
+
 		// get node iterator
 		ReadContext ctx = ReadContext.getReadContext(ips, mapper);
 
@@ -268,7 +285,7 @@ public class JsonRpcClient {
 		ctx.assertReadable();
 		JsonNode response = ctx.nextValue();
 		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
+			LOGGER.log(Level.FINE, "JSON-RPC Response: "+response.toString());
 		}
 
 		// bail on invalid response
@@ -276,6 +293,19 @@ public class JsonRpcClient {
 			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
 		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
+
+		if(id != null) {
+			while(!jsonObject.has("id") ||
+				jsonObject.get("id") == null ||
+				!jsonObject.get("id").asText().equals(id)) {
+				response = ctx.nextValue();
+
+				if (!response.isObject()) {
+					throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
+				}
+				jsonObject = ObjectNode.class.cast(response);
+			}
+		}
 
 		// show to listener
 		if (this.requestListener!=null) {
@@ -402,7 +432,7 @@ public class JsonRpcClient {
 					JsonNode argNode = mapper.valueToTree(arg);
 					paramsNode.add(argNode);
 				}
-				request.put("params", paramsNode);
+				request.set("params", paramsNode);
 			}
 		
 		// collection args
@@ -416,18 +446,18 @@ public class JsonRpcClient {
 					JsonNode argNode = mapper.valueToTree(arg);
 					paramsNode.add(argNode);
 				}
-				request.put("params", paramsNode);
+				request.set("params", paramsNode);
 			}
 			
 		// map args
 		} else if (arguments!=null && Map.class.isInstance(arguments)) {
 			if (!Map.class.cast(arguments).isEmpty()) {
-				request.put("params", mapper.valueToTree(arguments));
+				request.set("params", mapper.valueToTree(arguments));
 			}
 
 		// other args
 		} else if (arguments!=null) {
-			request.put("params", mapper.valueToTree(arguments));
+			request.set("params", mapper.valueToTree(arguments));
 		}
 
 		// show to listener
@@ -435,7 +465,7 @@ public class JsonRpcClient {
 			this.requestListener.onBeforeRequestSent(this, request);
 		}
 		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Request: "+request.toString());
+			LOGGER.log(Level.FINE, "JSON-RPC Request: "+request.toString());
 		}
 
 		// post the json data;
