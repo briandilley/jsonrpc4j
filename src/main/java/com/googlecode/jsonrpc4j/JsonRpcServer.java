@@ -137,7 +137,7 @@ public class JsonRpcServer {
 	 * @param remoteInterface the interface
 	 */
 	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
-		this(new ObjectMapper(), handler, null);
+		this(new ObjectMapper(), handler, remoteInterface);
 	}
 
 	/**
@@ -526,7 +526,7 @@ public class JsonRpcServer {
 	 * the given params (after converting them to beans\objects)
 	 * to it.
 	 *
-	 * @param an optional service name used to locate the target object
+	 * @param target optional service name used to locate the target object
 	 *  to invoke the Method on
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
