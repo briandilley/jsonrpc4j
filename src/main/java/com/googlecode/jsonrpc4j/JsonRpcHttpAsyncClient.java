@@ -401,25 +401,25 @@ public class JsonRpcHttpAsyncClient {
 		if (arguments != null && arguments.getClass().isArray()) {
 			Object[] args = Object[].class.cast(arguments);
 			if (args.length > 0) {
-				request.put("params",
+				request.set("params",
 						mapper.valueToTree(Object[].class.cast(arguments)));
 			}
 
 			// collection args
 		} else if (arguments != null && Collection.class.isInstance(arguments)) {
 			if (!Collection.class.cast(arguments).isEmpty()) {
-				request.put("params", mapper.valueToTree(arguments));
+				request.set("params", mapper.valueToTree(arguments));
 			}
 
 			// map args
 		} else if (arguments != null && Map.class.isInstance(arguments)) {
 			if (!Map.class.cast(arguments).isEmpty()) {
-				request.put("params", mapper.valueToTree(arguments));
+				request.set("params", mapper.valueToTree(arguments));
 			}
 
 			// other args
 		} else if (arguments != null) {
-			request.put("params", mapper.valueToTree(arguments));
+			request.set("params", mapper.valueToTree(arguments));
 		}
 
 		if (LOGGER.isLoggable(Level.FINE)) {

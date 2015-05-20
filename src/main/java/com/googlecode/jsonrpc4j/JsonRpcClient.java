@@ -402,7 +402,7 @@ public class JsonRpcClient {
 					JsonNode argNode = mapper.valueToTree(arg);
 					paramsNode.add(argNode);
 				}
-				request.put("params", paramsNode);
+				request.set("params", paramsNode);
 			}
 		
 		// collection args
@@ -416,18 +416,18 @@ public class JsonRpcClient {
 					JsonNode argNode = mapper.valueToTree(arg);
 					paramsNode.add(argNode);
 				}
-				request.put("params", paramsNode);
+				request.set("params", paramsNode);
 			}
 			
 		// map args
 		} else if (arguments!=null && Map.class.isInstance(arguments)) {
 			if (!Map.class.cast(arguments).isEmpty()) {
-				request.put("params", mapper.valueToTree(arguments));
+				request.set("params", mapper.valueToTree(arguments));
 			}
 
 		// other args
 		} else if (arguments!=null) {
-			request.put("params", mapper.valueToTree(arguments));
+			request.set("params", mapper.valueToTree(arguments));
 		}
 
 		// show to listener
