@@ -151,7 +151,7 @@ public class JsonRpcClient {
 		invoke(methodName, argument, ops, id);
 
 		// read it
-		return readResponse(returnType, ips);
+		return readResponse(returnType, ips, id);
 	}
 
 	/**
@@ -251,6 +251,23 @@ public class JsonRpcClient {
 
 	/**
 	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received. If an id is given, responses that do
+	 * not correspond, are disregarded.
+	 *
+	 * @param returnType the expected return type
+	 * @param ips the {@link InputStream} to read from
+	 * @param id The id used to compare the response with.
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T readResponse(Class<T> clazz, InputStream ips, String id)
+		throws Throwable {
+		return (T)readResponse((Type)clazz, ips, id);
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -259,6 +276,23 @@ public class JsonRpcClient {
 	 * @throws Throwable on error
 	 */
 	public Object readResponse(Type returnType, InputStream ips)
+		throws Throwable {
+
+		return readResponse(returnType, ips, null);
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received. If an id is given, responses that do
+	 * not correspond, are disregarded.
+	 *
+	 * @param returnType the expected return type
+	 * @param ips the {@link InputStream} to read from
+	 * @param id The id used to compare the response with.
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	public Object readResponse(Type returnType, InputStream ips, String id)
 		throws Throwable {
 
 		// get node iterator
@@ -276,6 +310,19 @@ public class JsonRpcClient {
 			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
 		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
+
+		if(id != null) {
+			while(!jsonObject.has("id") ||
+				jsonObject.get("id") == null ||
+				!jsonObject.get("id").asText().equals(id)) {
+				response = ctx.nextValue();
+
+				if (!response.isObject()) {
+					throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
+				}
+				jsonObject = ObjectNode.class.cast(response);
+			}
+		}
 
 		// show to listener
 		if (this.requestListener!=null) {
