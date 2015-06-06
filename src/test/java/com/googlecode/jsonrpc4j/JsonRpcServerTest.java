@@ -29,19 +29,19 @@ public class JsonRpcServerTest {
 	private ObjectMapper mapper;
 	private ByteArrayOutputStream baos;
 
-	private JsonRpcServer jsonRpcServer;
+	private JsonRpcBasicServer jsonRpcServer;
 
-	private JsonRpcServer jsonRpcServerAnnotatedParam;
+	private JsonRpcBasicServer jsonRpcServerAnnotatedParam;
 
-    private JsonRpcServer jsonRpcServerAnnotatedMethod;
+    private JsonRpcBasicServer jsonRpcServerAnnotatedMethod;
 
 	@Before
 	public void setup() {
 		mapper = new ObjectMapper();
 		baos = new ByteArrayOutputStream();
-		jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
-		jsonRpcServerAnnotatedParam = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithParamNameAnnotation.class);
-        jsonRpcServerAnnotatedMethod = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithCustomMethodNameAnnotation.class);
+		jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterface.class);
+		jsonRpcServerAnnotatedParam = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithParamNameAnnotation.class);
+        jsonRpcServerAnnotatedMethod = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithCustomMethodNameAnnotation.class);
 	}
 
     @Test
@@ -444,7 +444,7 @@ public class JsonRpcServerTest {
     }
 
     /**
-     * The {@link com.googlecode.jsonrpc4j.JsonRpcServer} is able to have an instance of
+     * The {@link com.googlecode.jsonrpc4j.JsonRpcBasicServer} is able to have an instance of
      * {@link com.googlecode.jsonrpc4j.InvocationListener} configured for it.  Prior to a
      * method being invoked, the lister is notified and after the method is invoked, the
      * listener is notified.  This test checks that these two events are hit correctly in
@@ -475,7 +475,7 @@ public class JsonRpcServerTest {
 
         }});
 
-        jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
+        jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterface.class);
         jsonRpcServer.setInvocationListener(invocationListener);
         jsonRpcServer.handle(new ClassPathResource("jsonRpcServerMethodThrowingWithInvocationListener.json").getInputStream(), baos);
 
@@ -491,7 +491,7 @@ public class JsonRpcServerTest {
     }
 
     /**
-     * The {@link com.googlecode.jsonrpc4j.JsonRpcServer} is able to have an instance of
+     * The {@link com.googlecode.jsonrpc4j.JsonRpcBasicServer} is able to have an instance of
      * {@link com.googlecode.jsonrpc4j.InvocationListener} configured for it.  Prior to a
      * method being invoked, the lister is notified and after the method is invoked, the
      * listener is notified.  This test checks that these two events are hit correctly
@@ -522,7 +522,7 @@ public class JsonRpcServerTest {
 
         }});
 
-        jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterface.class);
+        jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterface.class);
         jsonRpcServer.setInvocationListener(invocationListener);
         jsonRpcServer.handle(new ClassPathResource("jsonRpcServerMethodWithInvocationListener.json").getInputStream(), baos);
 

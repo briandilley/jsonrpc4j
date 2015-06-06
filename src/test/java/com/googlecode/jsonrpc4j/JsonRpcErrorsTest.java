@@ -38,7 +38,7 @@ public class JsonRpcErrorsTest {
 
 	@Test
 	public void exceptionWithoutAnnotatedServiceInterface() throws Exception {
-		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
+		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
 		String response = baos.toString(JSON_ENCODING);
@@ -51,7 +51,7 @@ public class JsonRpcErrorsTest {
 
 	@Test
 	public void exceptionWithAnnotatedServiceInterface() throws Exception {
-		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
+		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
 		String response = baos.toString(JSON_ENCODING);
@@ -69,7 +69,7 @@ public class JsonRpcErrorsTest {
 
 	@Test
 	public void exceptionWithAnnotatedServiceInterfaceMessageAndData() throws Exception {
-		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithAnnotationMessageAndData.class);
+		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotationMessageAndData.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
 		String response = baos.toString(JSON_ENCODING);
@@ -87,7 +87,7 @@ public class JsonRpcErrorsTest {
 	
 	@Test
 	public void exceptionWithMsgInException() throws Exception {
-		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new ServiceWithExceptionMsg(), ServiceInterfaceWithAnnotation.class);
+		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new ServiceWithExceptionMsg(), ServiceInterfaceWithAnnotation.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
 		String response = baos.toString(JSON_ENCODING);

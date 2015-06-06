@@ -27,7 +27,7 @@ public class ServerClientTest {
 	private static Service serviceMock = mockCtx.mock(Service.class);
 
 	private ClassLoader cl;
-	private JsonRpcServer jsonRpcServer;
+	private JsonRpcBasicServer jsonRpcServer;
 	private JsonRpcClient jsonRpcClient;
 	
 	private ServerThread serverThread;
@@ -44,9 +44,9 @@ public class ServerClientTest {
 		ConsoleHandler handler = new ConsoleHandler();
 		handler.setLevel(Level.ALL);
 		Logger.getLogger("").addHandler(handler);
-		Logger.getLogger(JsonRpcServer.class.getName()).setLevel(Level.ALL);
+		Logger.getLogger(JsonRpcBasicServer.class.getName()).setLevel(Level.ALL);
 		Logger.getLogger(JsonRpcClient.class.getName()).setLevel(Level.ALL);
-		jsonRpcServer = new JsonRpcServer(serviceMock, Service.class);
+		jsonRpcServer = new JsonRpcBasicServer(serviceMock, Service.class);
 		jsonRpcClient = new JsonRpcClient();
 
 		// create streams
@@ -227,9 +227,9 @@ public class ServerClientTest {
 		private Object startLock = new Object();
 		private InputStream ips;
 		private OutputStream ops;
-		private JsonRpcServer jsonRpcServer;
+		private JsonRpcBasicServer jsonRpcServer;
 		private AtomicBoolean keepRunning = new AtomicBoolean(false);
-		public ServerThread(InputStream ips, OutputStream ops, JsonRpcServer jsonRpcServer) {
+		public ServerThread(InputStream ips, OutputStream ops, JsonRpcBasicServer jsonRpcServer) {
 			this.ips = ips;
 			this.ops = ops;
 			this.jsonRpcServer = jsonRpcServer;
