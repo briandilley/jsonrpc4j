@@ -59,7 +59,7 @@ public class StreamServer {
 
 	private ThreadPoolExecutor executor;
 	private ServerSocket serverSocket;
-	private JsonRpcServer jsonRpcServer;
+	private JsonRpcBasicServer jsonRpcServer;
 	private int maxClientErrors = 5;
 
 	private AtomicBoolean isStarted 	= new AtomicBoolean(false);
@@ -71,12 +71,12 @@ public class StreamServer {
 	 * of threads using the given {@link ServerSocket} to listen
 	 * for client connections.
 	 * 
-	 * @param jsonRpcServer the {@link JsonRpcServer} that will handle requests
+	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handle requests
 	 * @param maxThreads the mac number of threads the server will spawn
 	 * @param serverSocket the {@link ServerSocket} used for accepting client connections
 	 */
 	public StreamServer(
-		JsonRpcServer jsonRpcServer, int maxThreads, ServerSocket serverSocket) {
+		JsonRpcBasicServer jsonRpcServer, int maxThreads, ServerSocket serverSocket) {
 
 		// initialize values
 		this.jsonRpcServer		= jsonRpcServer;
@@ -106,7 +106,7 @@ public class StreamServer {
 	 * default {@link ServerSocketFactory} that listes on the
 	 * given {@code port} and {@link InetAddress}.
 	 * 
-	 * @param jsonRpcServer the {@link JsonRpcServer} that will handle requests
+	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handle requests
 	 * @param maxThreads the mac number of threads the server will spawn
 	 * @param port the port to listen on
 	 * @param backlog the {@link ServerSocket} backlog
@@ -114,7 +114,7 @@ public class StreamServer {
 	 * @throws IOException on error
 	 */
 	public StreamServer(
-		JsonRpcServer jsonRpcServer, int maxThreads,
+		JsonRpcBasicServer jsonRpcServer, int maxThreads,
 		int port, int backlog, InetAddress bindAddress)
 		throws IOException {
 		this(jsonRpcServer, maxThreads,

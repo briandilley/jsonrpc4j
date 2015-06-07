@@ -21,7 +21,7 @@ import com.googlecode.jsonrpc4j.StreamServer.Server;
 public class StreamServerTest {
 
 	private ServerSocket serverSocket;
-	private JsonRpcServer jsonRpcServer;
+	private JsonRpcBasicServer jsonRpcServer;
 	private JsonRpcClient jsonRpcClient;
 	private ServiceImpl service;
 
@@ -30,7 +30,7 @@ public class StreamServerTest {
 		throws Exception {
 		serverSocket = ServerSocketFactory.getDefault().createServerSocket(0, 0, InetAddress.getByName("127.0.0.1"));
 		service = new ServiceImpl();
-		jsonRpcServer = new JsonRpcServer(service, Service.class);
+		jsonRpcServer = new JsonRpcBasicServer(service, Service.class);
 		jsonRpcClient = new JsonRpcClient();
 	}
 
