@@ -1,26 +1,3 @@
-/*
- * The MIT License
- *
- * Copyright (c) 2014 jsonrpc4j
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 package com.googlecode.jsonrpc4j.spring.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,54 +22,49 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 public class JsonRpcRestClient
-    extends JsonRpcClient
-    implements IJsonRpcClient {
-    
+	extends JsonRpcClient
+	implements IJsonRpcClient {
+
 	private URL serviceUrl;
-    private RestTemplate restTemplate;
-    
-	private final Map<String, String> headers	= new HashMap<String, String>();
+	private RestTemplate restTemplate;
 
-    private  SslClientHttpRequestFactory requestFactory=null;
-    
-    
-    public JsonRpcRestClient(URL serviceUrl)
-    {
-        this(serviceUrl, new ObjectMapper());
-    }
-    
-    public JsonRpcRestClient(URL serviceUrl, Map<String, String> headers)
-    {
-        this(serviceUrl, new ObjectMapper(), headers);
-    }
-    
-    public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, Map<String, String> headers)
-    {
-        this(serviceUrl, mapper, null, headers);
-    }
+	private final Map<String, String> headers = new HashMap<String, String>();
 
-    public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper)
-    {
-        this(serviceUrl, mapper, null, new HashMap<String, String>());
-    }
-    
-    public JsonRpcRestClient(URL serviceUrl, RestTemplate restTemplate)
-    {
-        this(serviceUrl, new ObjectMapper(), restTemplate, null);
-    }
-    
-    public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, RestTemplate restTemplate, Map<String, String> headers) {
-        super(mapper);
-        this.restTemplate = restTemplate !=null ? restTemplate : new RestTemplate();
-        this.serviceUrl = serviceUrl;
-        
-        if (headers!=null)
-            this.headers.putAll(headers);
+	private SslClientHttpRequestFactory requestFactory = null;
 
-        // Now check RestTemplate containts required converters
-        this.initRestTemplate();
-        
-    }
+	public JsonRpcRestClient(URL serviceUrl) {
+		this(serviceUrl, new ObjectMapper());
+	}
+
+	public JsonRpcRestClient(URL serviceUrl, Map<String, String> headers) {
+		this(serviceUrl, new ObjectMapper(), headers);
+	}
+
+	public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, Map<String, String> headers) {
+		this(serviceUrl, mapper, null, headers);
+	}
+
+	public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper) {
+		this(serviceUrl, mapper, null, new HashMap<String, String>());
+	}
+
+	public JsonRpcRestClient(URL serviceUrl, RestTemplate restTemplate) {
+		this(serviceUrl, new ObjectMapper(), restTemplate, null);
+	}
+
+	public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, RestTemplate restTemplate, Map<String, String> headers) {
+		super(mapper);
+		this.restTemplate = restTemplate != null ? restTemplate : new RestTemplate();
+		this.serviceUrl = serviceUrl;
+
+		if (headers != null) {
+			this.headers.putAll(headers);
+		}
+
+		// Now check RestTemplate containts required converters
+		this.initRestTemplate();
+
+	}
 
 	/**
 	 * @param connectionProxy the connectionProxy to set
@@ -108,7 +80,6 @@ public class JsonRpcRestClient
 		this.getRequestFactory().setConnectTimeout(connectionTimeoutMillis);
 	}
 
-
 	/**
 	 * @param readTimeoutMillis the readTimeoutMillis to set
 	 */
@@ -116,12 +87,13 @@ public class JsonRpcRestClient
 		this.getRequestFactory().setReadTimeout(readTimeoutMillis);
 	}
 
-    private SslClientHttpRequestFactory getRequestFactory() {
-        if (this.requestFactory==null)
-            this.requestFactory = new SslClientHttpRequestFactory();
-        return requestFactory;
-    }
-    
+	private SslClientHttpRequestFactory getRequestFactory() {
+		if (this.requestFactory == null) {
+			this.requestFactory = new SslClientHttpRequestFactory();
+		}
+		return requestFactory;
+	}
+
 	/**
 	 * @return the headers
 	 */
@@ -141,43 +113,33 @@ public class JsonRpcRestClient
 	 * @param sslContext the sslContext to set
 	 */
 	public void setSslContext(SSLContext sslContext) {
-		this.getRequestFactory().setSslContext(sslContext);
+		if (sslContext != null) {
+			this.getRequestFactory().setSslContext(sslContext);
+		}
 	}
 
 	/**
 	 * @param hostNameVerifier the hostNameVerifier to set
 	 */
 	public void setHostNameVerifier(HostnameVerifier hostNameVerifier) {
-		this.getRequestFactory().setHostNameVerifier(hostNameVerifier);
+		if (hostNameVerifier != null) {
+			this.getRequestFactory().setHostNameVerifier(hostNameVerifier);
+		}
 	}
-    
-    
+
 	/**
-	 * Invokes the given method with the given argument.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object) 
 	 */
-    @Override
+	@Override
 	public void invoke(String methodName, Object argument)
 		throws Throwable {
 		invoke(methodName, argument, null, new HashMap<String, String>());
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type) 
 	 */
-    @Override
+	@Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType)
 		throws Throwable {
@@ -185,114 +147,88 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class) 
 	 */
 	@SuppressWarnings("unchecked")
-    @Override
+	@Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz)
 		throws Throwable {
-		return (T)invoke(methodName, argument, Type.class.cast(clazz));
+		return (T) invoke(methodName, argument, Type.class.cast(clazz));
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @param returnType the return type
-	 * @param extraHeaders extra headers to add to the request
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class, java.util.Map) 
 	 */
 	@SuppressWarnings("unchecked")
-    @Override
+	@Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz,
 		Map<String, String> extraHeaders)
 		throws Throwable {
-		return (T)invoke(methodName, argument, Type.class.cast(clazz), extraHeaders);
+		return (T) invoke(methodName, argument, Type.class.cast(clazz), extraHeaders);
 	}
-    
-    
+
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @param returnType the return type
-	 * @param extraHeaders extra headers to add to the request
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type, java.util.Map)
 	 */
-    @Override
+	@Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType,
 		Map<String, String> extraHeaders)
 		throws Throwable {
 
-        final ObjectNode request = super.createRequest(methodName, argument);
-        MultiValueMap<String, String> httpHeaders = new LinkedMultiValueMap<String, String>();
-        
-        for (Map.Entry<String, String> entry : this.headers.entrySet())
-            httpHeaders.add(entry.getKey(), entry.getValue());
-        
-        if (extraHeaders!=null)
-        {
-            for (Map.Entry<String, String> entry : extraHeaders.entrySet())
-                httpHeaders.add(entry.getKey(), entry.getValue());
-        }
-        
-        // NB: Too bad code. May be it is better to always use external requestFactory?
-        if (this.requestFactory!=null && restTemplate.getRequestFactory()!=this.requestFactory)
-            this.restTemplate.setRequestFactory(this.requestFactory);
-        
-        final HttpEntity<?> requestHttpEntity  = new HttpEntity(request, httpHeaders);
-        final ResponseEntity<ObjectNode> responseEntity = this.restTemplate.postForEntity(this.serviceUrl.toURI(), requestHttpEntity, ObjectNode.class);
-        final Object response = this.readResponse(returnType, responseEntity.getBody());
-        
-        return response;
-	}
-    
+		final ObjectNode request = super.createRequest(methodName, argument);
+		MultiValueMap<String, String> httpHeaders = new LinkedMultiValueMap<String, String>();
 
-    /** 
-     * Check RestTemplate containts required converters
-     */
-    private void initRestTemplate()   {
-    
-        boolean isContaintsConverter = false;
-        for (HttpMessageConverter<?> httpMessageConverter : this.restTemplate.getMessageConverters()) {
-            if (MappingJacksonRPC2HttpMessageConverter.class.isAssignableFrom(httpMessageConverter.getClass())) {
-                isContaintsConverter = true;
-                break;
-            }
-        }
-        
-        if (!isContaintsConverter) {
-            
-            final MappingJacksonRPC2HttpMessageConverter messageConverter = new MappingJacksonRPC2HttpMessageConverter();
-            messageConverter.setObjectMapper(this.getObjectMapper());
-            
-            final List<HttpMessageConverter<?>>  restMessageConverters = new ArrayList();
-            restMessageConverters.addAll(this.restTemplate.getMessageConverters());
-            // Place RPC converter on the first place!
-            restMessageConverters.add(0, messageConverter);
-        
-            this.restTemplate.setMessageConverters(restMessageConverters);
-        }
-    
-    }
-    
+		for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+			httpHeaders.add(entry.getKey(), entry.getValue());
+		}
+
+		if (extraHeaders != null) {
+			for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+				httpHeaders.add(entry.getKey(), entry.getValue());
+			}
+		}
+
+		// NB: Too bad code. May be it is better to always use external requestFactory?
+		if (this.requestFactory != null && restTemplate.getRequestFactory() != this.requestFactory) {
+			this.restTemplate.setRequestFactory(this.requestFactory);
+		}
+
+		final HttpEntity<?> requestHttpEntity = new HttpEntity(request, httpHeaders);
+		final ResponseEntity<ObjectNode> responseEntity = this.restTemplate.postForEntity(this.serviceUrl.toURI(), requestHttpEntity, ObjectNode.class);
+		final Object response = this.readResponse(returnType, responseEntity.getBody());
+
+		return response;
+	}
+
+	/**
+	 * Check RestTemplate containts required converters
+	 */
+	private void initRestTemplate() {
+
+		boolean isContaintsConverter = false;
+		for (HttpMessageConverter<?> httpMessageConverter : this.restTemplate.getMessageConverters()) {
+			if (MappingJacksonRPC2HttpMessageConverter.class.isAssignableFrom(httpMessageConverter.getClass())) {
+				isContaintsConverter = true;
+				break;
+			}
+		}
+
+		if (!isContaintsConverter) {
+
+			final MappingJacksonRPC2HttpMessageConverter messageConverter = new MappingJacksonRPC2HttpMessageConverter();
+			messageConverter.setObjectMapper(this.getObjectMapper());
+
+			final List<HttpMessageConverter<?>> restMessageConverters = new ArrayList();
+			restMessageConverters.addAll(this.restTemplate.getMessageConverters());
+			// Place RPC converter on the first place!
+			restMessageConverters.add(0, messageConverter);
+
+			this.restTemplate.setMessageConverters(restMessageConverters);
+		}
+
+	}
+
 }

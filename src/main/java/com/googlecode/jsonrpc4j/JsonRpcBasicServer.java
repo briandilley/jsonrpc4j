@@ -24,18 +24,28 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParamName;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
+import net.iharder.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -47,16 +57,9 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an
@@ -155,7 +158,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handle(InputStream ips, OutputStream ops)
+	public int handle(InputStream ips, OutputStream ops)
 		throws IOException {
 
 		// get node iterator
@@ -169,9 +172,9 @@ public class JsonRpcBasicServer {
 		} catch (JsonParseException e) {
 			writeAndFlushValue(ops, createErrorResponse(
 				"jsonrpc", "null", -32700, "Parse error", null));
-			return;
+			return -32700;
 		}
-		handleNode(jsonNode, ops);
+		return handleNode(jsonNode, ops);
 	}
 
 	/**
@@ -229,22 +232,23 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleNode(JsonNode node, OutputStream ops)
+	public int handleNode(JsonNode node, OutputStream ops)
 		throws IOException {
 
 		// handle objects
 		if (node.isObject()) {
-			handleObject(ObjectNode.class.cast(node), ops);
+			return handleObject(ObjectNode.class.cast(node), ops);
 
 		// handle arrays
 		} else if (node.isArray()) {
-			handleArray(ArrayNode.class.cast(node), ops);
+			return handleArray(ArrayNode.class.cast(node), ops);
 
 		// bail on bad data
 		} else {
 			this.writeAndFlushValue(
 				ops, this.createErrorResponse(
 				"2.0", "null", -32600, "Invalid Request", null));
+			return -32600;
 		}
 	}
 
@@ -256,7 +260,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleArray(ArrayNode node, OutputStream ops)
+	public int handleArray(ArrayNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Handing "+node.size()+" requests");
@@ -265,10 +269,14 @@ public class JsonRpcBasicServer {
 		// loop through each array element
 		ops.write('[');
 		for (int i=0; i<node.size(); i++) {
-			handleNode(node.get(i), ops);
+			int result = handleNode(node.get(i), ops);
+			if(result != 0){
+				return result;
+			}
 			if (i != node.size() - 1) ops.write(','); 
 		}
 		ops.write(']');
+		return 0;
 	}
 
 	/**
@@ -279,7 +287,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleObject(ObjectNode node, OutputStream ops)
+	public int handleObject(ObjectNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Request: "+node.toString());
@@ -289,9 +297,10 @@ public class JsonRpcBasicServer {
 		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
 			writeAndFlushValue(ops, createErrorResponse(
 				"2.0", "null", -32600, "Invalid Request", null));
-			return;
+			return -32600;
 		}
 
+		int returnCode = 0;
 		// get nodes
 		JsonNode jsonPrcNode	= node.get("jsonrpc");
 		JsonNode methodNode		= node.get("method");
@@ -310,7 +319,7 @@ public class JsonRpcBasicServer {
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
-			return;
+			return -32601;
 		}
 
 		// choose a method
@@ -318,7 +327,7 @@ public class JsonRpcBasicServer {
 		if (methodArgs==null) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32602, "Invalid method parameters", null));
-			return;
+			return -32602;
 		}
 
 		// invoke the method
@@ -384,6 +393,7 @@ public class JsonRpcBasicServer {
 			if (error!=null) {
 				response = createErrorResponse(
 					jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
+				returnCode = error.getCode();
 
 			// build success
 			} else {
@@ -403,6 +413,8 @@ public class JsonRpcBasicServer {
 				throw new RuntimeException(thrown);
 			}
 		}
+		
+		return returnCode;
 	}
 
 	/**
@@ -707,31 +719,13 @@ public class JsonRpcBasicServer {
 			// list of params
 			List<JsonRpcParam> annotations = new ArrayList<JsonRpcParam>();
 
-			// try the deprecated parameter first
-			List<List<JsonRpcParamName>> depMethodAnnotations = getParameterAnnotations(method, JsonRpcParamName.class);
-			for (List<JsonRpcParamName> annots : depMethodAnnotations) {
-				if (annots.size()>0) {
-					final JsonRpcParamName annotation = annots.get(0);
-					annotations.add(new JsonRpcParam() {
-						public Class<? extends Annotation> annotationType() {
-							return JsonRpcParam.class;
-						}
-						public String value() {
-							return annotation.value();
-						}
-					});
-				} else {
-					annots.add(null);
-				}
-			}
-
 			@SuppressWarnings("unchecked")
 			List<List<Annotation>> jaxwsAnnotations = WEBPARAM_ANNOTATION_CLASS != null
 				? getParameterAnnotations(method, (Class<Annotation>) WEBPARAM_ANNOTATION_CLASS)
 				: new ArrayList<List<Annotation>>();
-			for (List<Annotation> annots : jaxwsAnnotations) {
-				if (annots.size()>0) {
-					final Annotation annotation = annots.get(0);
+			for (List<Annotation> annotationList : jaxwsAnnotations) {
+				if (annotationList.size()>0) {
+					final Annotation annotation = annotationList.get(0);
 					annotations.add(new JsonRpcParam() {
 						public Class<? extends Annotation> annotationType() {
 							return JsonRpcParam.class;
@@ -745,7 +739,7 @@ public class JsonRpcBasicServer {
 						}
 					});
 				} else {
-					annots.add(null);
+					annotationList.add(null);
 				}
 			}
 
@@ -892,7 +886,7 @@ public class JsonRpcBasicServer {
 		throws IOException {
 		mapper.writeValue(new NoCloseOutputStream(ops), value);
 		ops.write('\n');
-		ops.flush();
+//		ops.flush();
 	}
 
 	/**

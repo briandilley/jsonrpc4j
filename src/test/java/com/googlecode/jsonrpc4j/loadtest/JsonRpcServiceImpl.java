@@ -6,34 +6,38 @@ import java.util.logging.Logger;
 /**
  * @author Eduard Szente
  */
-public class JsonRpcServiceImpl implements JsonRpcService {
-    
-    private static final Logger LOG=Logger.getLogger(JsonRpcServiceImpl.class.getName());
+public class JsonRpcServiceImpl
+	implements JsonRpcService {
+
+	private static final Logger LOG = Logger.getLogger(JsonRpcServiceImpl.class.getName());
+
+	@Override
 	public void doSomething() {
 		LOG.info("doSomething()");
 	}
 
-    public int returnSomeSimple(int arg)
-    {
-        return arg;
-    }
+	@Override
+	public int returnSomeSimple(int arg) {
+		return arg;
+	}
 
-    public ComplexType returnSomeComplex(int arg1, String arg2)
-    {
-        ComplexType complexType = new ComplexType();
-        complexType.setInteger(arg1);
-        complexType.setString(arg2);
-        complexType.setList(new ArrayList<String>());
-        
-        complexType.getList().add(String.valueOf(arg1));
-        complexType.getList().add(arg2);
-        
-        return complexType;
-    }
+	@Override
+	public ComplexType returnSomeComplex(int arg1, String arg2) {
+		ComplexType complexType = new ComplexType();
+		complexType.setInteger(arg1);
+		complexType.setString(arg2);
+		complexType.setList(new ArrayList<String>());
 
-    public void throwSomeException(String message)
-        throws Exception   {
-        
-        throw new UnsupportedOperationException(message); 
-    }
+		complexType.getList().add(String.valueOf(arg1));
+		complexType.getList().add(arg2);
+
+		return complexType;
+	}
+
+	@Override
+	public void throwSomeException(String message)
+		throws Exception {
+
+		throw new UnsupportedOperationException(message);
+	}
 }

@@ -50,16 +50,16 @@ import org.springframework.web.client.RestTemplate;
  *
  * @author toha
  */
-public class JsonRestProxyFactoryBean
+public class JsonRestProxyFactoryBean<T>
 	extends UrlBasedRemoteAccessor
 	implements MethodInterceptor,
 	InitializingBean,
-	FactoryBean<Object>,
+	FactoryBean<T>,
 	ApplicationContextAware {
 
     
 	private boolean				useNamedParams		= false;
-	private Object				proxyObject			= null;
+	private T				    proxyObject			= null;
 	private RequestListener		requestListener		= null;
 	private ObjectMapper		objectMapper		= null;
 	private RestTemplate		restTemplate		= null;
@@ -80,7 +80,7 @@ public class JsonRestProxyFactoryBean
 		super.afterPropertiesSet();
 
 		// create proxy
-		proxyObject = ProxyFactory.getProxy(getServiceInterface(), this);
+		proxyObject = ProxyFactory.getProxy(getObjectType(), this);
 
 		// find the ObjectMapper
 		if (objectMapper == null
@@ -103,6 +103,7 @@ public class JsonRestProxyFactoryBean
             jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap());
 			jsonRpcRestClient.setRequestListener(requestListener);
             jsonRpcRestClient.setSslContext(sslContext);
+            jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
 		} catch (MalformedURLException mue) {
 			throw new RuntimeException(mue);
 		}
@@ -111,6 +112,7 @@ public class JsonRestProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
 	public Object invoke(MethodInvocation invocation)
 		throws Throwable {
 
@@ -139,20 +141,23 @@ public class JsonRestProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object getObject() {
+    @Override
+	public T getObject() {
 		return proxyObject;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public Class<?> getObjectType() {
+    @Override
+	public Class<T> getObjectType() {
 		return getServiceInterface();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -160,6 +165,7 @@ public class JsonRestProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
