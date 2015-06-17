@@ -103,6 +103,7 @@ public class JsonRestProxyFactoryBean
             jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap());
 			jsonRpcRestClient.setRequestListener(requestListener);
             jsonRpcRestClient.setSslContext(sslContext);
+            jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
 		} catch (MalformedURLException mue) {
 			throw new RuntimeException(mue);
 		}

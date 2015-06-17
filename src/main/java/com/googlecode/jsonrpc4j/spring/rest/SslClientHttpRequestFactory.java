@@ -43,7 +43,8 @@ public class SslClientHttpRequestFactory
 
         if (connection instanceof HttpsURLConnection) {
             final HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
-            httpsConnection.setHostnameVerifier(hostNameVerifier);
+            if (hostNameVerifier!=null)
+                httpsConnection.setHostnameVerifier(hostNameVerifier);
             if (sslContext!=null)
                 httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
         }
