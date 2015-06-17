@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
+import com.googlecode.jsonrpc4j.annotations.JsonRpcMethod;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

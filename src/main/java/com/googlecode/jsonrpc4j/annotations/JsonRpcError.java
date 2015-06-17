@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

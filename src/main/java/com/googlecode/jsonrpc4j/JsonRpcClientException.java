@@ -34,8 +34,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class JsonRpcClientException
 	extends RuntimeException {
 
-	private int code;
-	private JsonNode data;
+	private final int code;
+	private final JsonNode data;
 
 	/**
 	 * Creates the exception.

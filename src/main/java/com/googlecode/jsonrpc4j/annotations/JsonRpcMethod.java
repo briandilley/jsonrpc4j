@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
 
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,16 +30,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for annotating service parameters as
- * JsonRpc params by name.
+ * Annotation for annotating service methods as
+ * JsonRpc method by name.
  *
  */
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JsonRpcParam {
+public @interface JsonRpcMethod {
 
 	/**
-	 * The parameter's name.
+	 * The method's name.
 	 */
 	String value();
 

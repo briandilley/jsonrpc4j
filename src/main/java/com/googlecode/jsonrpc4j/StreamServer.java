@@ -62,9 +62,9 @@ public class StreamServer {
 	private JsonRpcBasicServer jsonRpcServer;
 	private int maxClientErrors = 5;
 
-	private AtomicBoolean isStarted 	= new AtomicBoolean(false);
-	private AtomicBoolean keepRunning 	= new AtomicBoolean(false);
-	private Set<Server> servers			= new HashSet<Server>();
+	private final AtomicBoolean isStarted 	= new AtomicBoolean(false);
+	private final AtomicBoolean keepRunning 	= new AtomicBoolean(false);
+	private final Set<Server> servers			= new HashSet<Server>();
 
 	/**
 	 * Creates a {@code StreamServer} with the given max number

@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
+import com.googlecode.jsonrpc4j.annotations.JsonRpcErrors;
+import com.googlecode.jsonrpc4j.annotations.JsonRpcError;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

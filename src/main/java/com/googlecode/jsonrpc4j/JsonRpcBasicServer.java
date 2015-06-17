@@ -24,6 +24,8 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
+import com.googlecode.jsonrpc4j.annotations.JsonRpcParamName;
+import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;

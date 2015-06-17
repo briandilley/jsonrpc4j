@@ -160,6 +160,7 @@ public class JsonRpcRestClient
 	 * @param arguments the arguments to the method
 	 * @throws Throwable on error
 	 */
+    @Override
 	public void invoke(String methodName, Object argument)
 		throws Throwable {
 		invoke(methodName, argument, null, new HashMap<String, String>());
@@ -176,6 +177,7 @@ public class JsonRpcRestClient
 	 * @return the return value
 	 * @throws Throwable on error
 	 */
+    @Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType)
 		throws Throwable {
@@ -194,6 +196,7 @@ public class JsonRpcRestClient
 	 * @throws Throwable on error
 	 */
 	@SuppressWarnings("unchecked")
+    @Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz)
 		throws Throwable {
@@ -213,6 +216,7 @@ public class JsonRpcRestClient
 	 * @throws Throwable on error
 	 */
 	@SuppressWarnings("unchecked")
+    @Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz,
 		Map<String, String> extraHeaders)
@@ -233,6 +237,7 @@ public class JsonRpcRestClient
 	 * @return the return value
 	 * @throws Throwable on error
 	 */
+    @Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType,
 		Map<String, String> extraHeaders)

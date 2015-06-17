@@ -24,6 +24,8 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
+import com.googlecode.jsonrpc4j.annotations.JsonRpcMethod;
+import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
