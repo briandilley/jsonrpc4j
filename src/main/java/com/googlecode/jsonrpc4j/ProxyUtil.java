@@ -101,7 +101,7 @@ public abstract class ProxyUtil {
 			for (Object o : services) {
 				if (clazz.isInstance(o)) {
 					if (LOGGER.isLoggable(Level.FINE)) {
-						LOGGER.fine("Using "+o.getClass().getName()+" for "+clazz.getName());
+						LOGGER.log(Level.FINE, "Using {0} for {1}", new Object[]{o.getClass().getName(), clazz.getName()});
 					}
 					serviceMap.put(clazz, o);
 					break;
@@ -189,6 +189,7 @@ public abstract class ProxyUtil {
 		            	methodName=methodAnnotation.value();
 		            }
 
+                    
 					return client.invokeAndReadResponse(
 						methodName, arguments, method.getGenericReturnType(), ops, ips);
 				}
@@ -197,7 +198,7 @@ public abstract class ProxyUtil {
 
 	/**
 	 * Creates a {@link Proxy} of the given {@link proxyInterface}
-	 * that uses the given {@link JsonRpcHttpClient}.
+	 * that uses the given {@link IJsonRpcClient}.
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
@@ -210,7 +211,7 @@ public abstract class ProxyUtil {
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
 		final boolean useNamedParams,
-		final JsonRpcHttpClient client,
+		final IJsonRpcClient client,
 		final Map<String, String> extraHeaders) {
 
 		// create and return the proxy
@@ -249,7 +250,7 @@ public abstract class ProxyUtil {
 	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
-		final JsonRpcHttpClient client) {
+		final IJsonRpcClient client) {
 		return createClientProxy(classLoader, proxyInterface, false, client, new HashMap<String, String>());
 	}
 

@@ -133,13 +133,13 @@ public class DefaultExceptionResolver
 		try {
 			clazz = Class.forName(typeName);
 		} catch(Exception e) {
-			LOGGER.warning("Unable to load Throwable class "+typeName);
+			LOGGER.log(Level.WARNING, "Unable to load Throwable class {0}", typeName);
 			return null;
 		}
 
 		// get Throwable clazz
 		if (!Throwable.class.isAssignableFrom(clazz)) {
-			LOGGER.warning("Type does not inherit from Throwable"+clazz.getName());
+			LOGGER.log(Level.WARNING, "Type does not inherit from Throwable {0}", clazz.getName());
 			return null;
 		}
 		@SuppressWarnings("unchecked")
@@ -161,19 +161,19 @@ public class DefaultExceptionResolver
 		if (message!=null && messageCtr!=null) {
 			return messageCtr.newInstance(message);
 		} else if (message!=null && defaultCtr!=null) {
-			LOGGER.warning("Unable to invoke message constructor for "+clazz.getName());
+			LOGGER.log(Level.WARNING, "Unable to invoke message constructor for {0}", clazz.getName());
 			return defaultCtr.newInstance();
 
 		// defaultCtr
 		} else if (message==null && defaultCtr!=null) {
 			return defaultCtr.newInstance();
 		} else if (message==null && messageCtr!=null) {
-			LOGGER.warning("Passing null message to message constructor for "+clazz.getName());
+			LOGGER.log(Level.WARNING, "Passing null message to message constructor for {0}", clazz.getName());
 			return messageCtr.newInstance((String)null);
 
 		// can't find a constructor
 		} else {
-			LOGGER.warning("Unable to find a suitable constructor for "+clazz.getName());
+			LOGGER.log(Level.WARNING, "Unable to find a suitable constructor for {0}", clazz.getName());
 			return null;
 		}
 

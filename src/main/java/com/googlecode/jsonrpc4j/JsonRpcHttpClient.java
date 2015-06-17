@@ -50,16 +50,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 public class JsonRpcHttpClient
-	extends JsonRpcClient {
+	extends JsonRpcClient
+    implements IJsonRpcClient {
 
+    public static final String JSONRPC_CONTENT_TYPE="application/json-rpc";
+    
 	private URL serviceUrl;
 
 	private Proxy connectionProxy 				= Proxy.NO_PROXY;
-	private int connectionTimeoutMillis		= 60 * 1000;
+	private int connectionTimeoutMillis         = 60 * 1000;
 	private int readTimeoutMillis				= 60 * 1000 * 2;
 	private SSLContext sslContext 				= null;
 	private HostnameVerifier hostNameVerifier 	= null;
-	private Map<String, String> headers			= new HashMap<String, String>();
+	private final Map<String, String> headers	= new HashMap<String, String>();
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -264,7 +267,7 @@ public class JsonRpcHttpClient
 		}
 
 		// add headers
-		con.setRequestProperty("Content-Type", "application/json-rpc");
+		con.setRequestProperty("Content-Type", JSONRPC_CONTENT_TYPE);
 		for (Entry<String, String> entry : headers.entrySet()) {
 			con.setRequestProperty(entry.getKey(), entry.getValue());
 		}

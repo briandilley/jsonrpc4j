@@ -33,17 +33,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ReadContext {
 
-	private InputStream input;
-	private ObjectMapper mapper;
+	private final InputStream input;
+	private final ObjectMapper mapper;
 
-	private static final WeakHashMap<InputStream, ReadContext>
-		contexts = new WeakHashMap<InputStream, ReadContext>();
+	// private static final WeakHashMap<InputStream, ReadContext> contexts = new WeakHashMap<InputStream, ReadContext>();
 
 	public synchronized static ReadContext getReadContext(
 			InputStream ips, ObjectMapper mapper)
 			throws JsonParseException,
 			IOException {
-		ReadContext ret = contexts.get(ips);
+		ReadContext ret =  null; // contexts.get(ips);
 		if (ret==null) {
 			ret = new ReadContext(ips, mapper);
 		}

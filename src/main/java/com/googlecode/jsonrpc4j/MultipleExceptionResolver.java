@@ -39,7 +39,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class MultipleExceptionResolver
 	implements ExceptionResolver {
 
-	private List<ExceptionResolver> resolvers;
+	private final List<ExceptionResolver> resolvers;
 
 	/**
 	 * Creates with the given {@link ExceptionResolver}s,
