@@ -321,6 +321,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 			<version>1.0.0.RELEASE</version>
+            <scope>test</scope>
 		</dependency>
 	</dependencies>
 
