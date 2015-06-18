@@ -141,14 +141,16 @@ public class JsonRpcRestClient
 	 * @param sslContext the sslContext to set
 	 */
 	public void setSslContext(SSLContext sslContext) {
-		this.getRequestFactory().setSslContext(sslContext);
+        if (sslContext!=null)
+            this.getRequestFactory().setSslContext(sslContext);
 	}
 
 	/**
 	 * @param hostNameVerifier the hostNameVerifier to set
 	 */
 	public void setHostNameVerifier(HostnameVerifier hostNameVerifier) {
-		this.getRequestFactory().setHostNameVerifier(hostNameVerifier);
+        if (hostNameVerifier!=null)
+            this.getRequestFactory().setHostNameVerifier(hostNameVerifier);
 	}
     
     
