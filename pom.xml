@@ -18,7 +18,7 @@
 	<properties>
 		<spring.version>3.1.2.RELEASE</spring.version>
 		<jackson.version>2.5.2</jackson.version>
-		<jdk.version>1.5</jdk.version>
+		<jdk.version>1.6</jdk.version>
 	</properties>
 
 	<!--
