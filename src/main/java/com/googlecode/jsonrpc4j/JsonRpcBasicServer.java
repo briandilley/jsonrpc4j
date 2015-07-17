@@ -153,7 +153,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handle(InputStream ips, OutputStream ops)
+	public int handle(InputStream ips, OutputStream ops)
 		throws IOException {
 
 		// get node iterator
@@ -167,9 +167,9 @@ public class JsonRpcBasicServer {
 		} catch (JsonParseException e) {
 			writeAndFlushValue(ops, createErrorResponse(
 				"jsonrpc", "null", -32700, "Parse error", null));
-			return;
+			return -32700;
 		}
-		handleNode(jsonNode, ops);
+		return handleNode(jsonNode, ops);
 	}
 
 	/**
@@ -227,22 +227,23 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleNode(JsonNode node, OutputStream ops)
+	public int handleNode(JsonNode node, OutputStream ops)
 		throws IOException {
 
 		// handle objects
 		if (node.isObject()) {
-			handleObject(ObjectNode.class.cast(node), ops);
+			return handleObject(ObjectNode.class.cast(node), ops);
 
 		// handle arrays
 		} else if (node.isArray()) {
-			handleArray(ArrayNode.class.cast(node), ops);
+			return handleArray(ArrayNode.class.cast(node), ops);
 
 		// bail on bad data
 		} else {
 			this.writeAndFlushValue(
 				ops, this.createErrorResponse(
 				"2.0", "null", -32600, "Invalid Request", null));
+			return -32600;
 		}
 	}
 
@@ -254,7 +255,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleArray(ArrayNode node, OutputStream ops)
+	public int handleArray(ArrayNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Handing "+node.size()+" requests");
@@ -263,10 +264,14 @@ public class JsonRpcBasicServer {
 		// loop through each array element
 		ops.write('[');
 		for (int i=0; i<node.size(); i++) {
-			handleNode(node.get(i), ops);
+			int result = handleNode(node.get(i), ops);
+			if(result != 0){
+				return result;
+			}
 			if (i != node.size() - 1) ops.write(','); 
 		}
 		ops.write(']');
+		return 0;
 	}
 
 	/**
@@ -277,7 +282,7 @@ public class JsonRpcBasicServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	public void handleObject(ObjectNode node, OutputStream ops)
+	public int handleObject(ObjectNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Request: "+node.toString());
@@ -287,9 +292,10 @@ public class JsonRpcBasicServer {
 		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
 			writeAndFlushValue(ops, createErrorResponse(
 				"2.0", "null", -32600, "Invalid Request", null));
-			return;
+			return -32600;
 		}
 
+		int returnCode = 0;
 		// get nodes
 		JsonNode jsonPrcNode	= node.get("jsonrpc");
 		JsonNode methodNode		= node.get("method");
@@ -308,7 +314,7 @@ public class JsonRpcBasicServer {
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
-			return;
+			return -32601;
 		}
 
 		// choose a method
@@ -316,7 +322,7 @@ public class JsonRpcBasicServer {
 		if (methodArgs==null) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32602, "Invalid method parameters", null));
-			return;
+			return -32602;
 		}
 
 		// invoke the method
@@ -382,6 +388,7 @@ public class JsonRpcBasicServer {
 			if (error!=null) {
 				response = createErrorResponse(
 					jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
+				returnCode = error.getCode();
 
 			// build success
 			} else {
@@ -401,6 +408,8 @@ public class JsonRpcBasicServer {
 				throw new RuntimeException(thrown);
 			}
 		}
+		
+		return returnCode;
 	}
 
 	/**
@@ -890,7 +899,7 @@ public class JsonRpcBasicServer {
 		throws IOException {
 		mapper.writeValue(new NoCloseOutputStream(ops), value);
 		ops.write('\n');
-		ops.flush();
+//		ops.flush();
 	}
 
 	/**
