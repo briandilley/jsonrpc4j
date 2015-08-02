@@ -132,6 +132,8 @@ public class JsonRpcServer extends JsonRpcBasicServer
 
 		// service the request
 		handle(input, output);
+		//fix to not flush within handle() but outside so http status code can be set
+		output.flush();
 	}
 
 	/**
@@ -172,6 +174,19 @@ public class JsonRpcServer extends JsonRpcBasicServer
 		}
 
 		// service the request
-		handle(input, output);
+		//fix to set HTTP status correctly
+		int result = handle(input, output);
+		if(result != 0){
+			if (result == -32700 || result == -32602 || result == -32603
+					|| (result <= -32000 && result >= -32099)) {
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			} else if (result == -32600) {
+				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			} else if (result == -32601) {
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			}
+		}
+		//fix to not flush within handle() but outside so http status code can be set
+		output.flush();
 	}
 }
