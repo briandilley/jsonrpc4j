@@ -1,7 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
 import com.googlecode.jsonrpc4j.annotations.JsonRpcMethod;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParamName;
 import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
