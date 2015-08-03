@@ -31,11 +31,10 @@ import java.util.Map;
  * @author toha
  */
 public interface IJsonRpcClient {
-    
+
 	/**
 	 * Invokes the given method with the given argument.
 	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @throws Throwable on error
@@ -47,7 +46,6 @@ public interface IJsonRpcClient {
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
 	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param argument the arguments to the method
 	 * @param returnType the return type
@@ -61,7 +59,6 @@ public interface IJsonRpcClient {
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
 	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @param returnType the return type
@@ -71,12 +68,11 @@ public interface IJsonRpcClient {
 	 */
 	public Object invoke(String methodName, Object argument, Type returnType, Map<String, String> extraHeaders)
 		throws Throwable;
-    
+
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
 	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param argument the arguments to the method
 	 * @param returnType the return type
@@ -90,7 +86,6 @@ public interface IJsonRpcClient {
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
 	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @param returnType the return type

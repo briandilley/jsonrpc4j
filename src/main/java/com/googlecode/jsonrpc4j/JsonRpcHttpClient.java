@@ -51,17 +51,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonRpcHttpClient
 	extends JsonRpcClient
-    implements IJsonRpcClient {
+	implements IJsonRpcClient {
 
-    public static final String JSONRPC_CONTENT_TYPE="application/json-rpc";
-    
+	public static final String JSONRPC_CONTENT_TYPE="application/json-rpc";
+
 	private URL serviceUrl;
 
 	private Proxy connectionProxy 				= Proxy.NO_PROXY;
-	private int connectionTimeoutMillis         = 60 * 1000;
+	private int connectionTimeoutMillis			= 60 * 1000;
 	private int readTimeoutMillis				= 60 * 1000 * 2;
-	private SSLContext sslContext 				= null;
-	private HostnameVerifier hostNameVerifier 	= null;
+	private SSLContext sslContext				= null;
+	private HostnameVerifier hostNameVerifier	= null;
 	private final Map<String, String> headers	= new HashMap<String, String>();
 
 	/**
@@ -103,31 +103,18 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * Invokes the given method with the given argument.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object) 
 	 */
-    @Override
+	@Override
 	public void invoke(String methodName, Object argument)
 		throws Throwable {
 		invoke(methodName, argument, null, new HashMap<String, String>());
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type) 
 	 */
-    @Override
+	@Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType)
 		throws Throwable {
@@ -135,18 +122,10 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class) 
 	 */
 	@SuppressWarnings("unchecked")
-    @Override
+	@Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz)
 		throws Throwable {
@@ -154,18 +133,9 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @param returnType the return type
-	 * @param extraHeaders extra headers to add to the request
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type, java.util.Map) 
 	 */
-    @Override
+	@Override
 	public Object invoke(
 		String methodName, Object argument, Type returnType,
 		Map<String, String> extraHeaders)
@@ -219,19 +189,10 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * Invokes the given method with the given arguments and returns
-	 * an object of the given type, or null if void.
-	 *
-	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
-	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @param returnType the return type
-	 * @param extraHeaders extra headers to add to the request
-	 * @return the return value
-	 * @throws Throwable on error
+	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class, java.util.Map) 
 	 */
 	@SuppressWarnings("unchecked")
-    @Override
+	@Override
 	public <T> T invoke(
 		String methodName, Object argument, Class<T> clazz,
 		Map<String, String> extraHeaders)
