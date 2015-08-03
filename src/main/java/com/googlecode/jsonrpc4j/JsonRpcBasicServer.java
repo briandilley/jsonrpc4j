@@ -24,29 +24,6 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParamName;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
-import java.math.BigDecimal;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
@@ -58,6 +35,32 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import net.iharder.Base64;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
+import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an
@@ -717,31 +720,13 @@ public class JsonRpcBasicServer {
 			// list of params
 			List<JsonRpcParam> annotations = new ArrayList<JsonRpcParam>();
 
-			// try the deprecated parameter first
-			List<List<JsonRpcParamName>> depMethodAnnotations = getParameterAnnotations(method, JsonRpcParamName.class);
-			for (List<JsonRpcParamName> annots : depMethodAnnotations) {
-				if (annots.size()>0) {
-					final JsonRpcParamName annotation = annots.get(0);
-					annotations.add(new JsonRpcParam() {
-						public Class<? extends Annotation> annotationType() {
-							return JsonRpcParam.class;
-						}
-						public String value() {
-							return annotation.value();
-						}
-					});
-				} else {
-					annots.add(null);
-				}
-			}
-
 			@SuppressWarnings("unchecked")
 			List<List<Annotation>> jaxwsAnnotations = WEBPARAM_ANNOTATION_CLASS != null
 				? getParameterAnnotations(method, (Class<Annotation>) WEBPARAM_ANNOTATION_CLASS)
 				: new ArrayList<List<Annotation>>();
-			for (List<Annotation> annots : jaxwsAnnotations) {
-				if (annots.size()>0) {
-					final Annotation annotation = annots.get(0);
+			for (List<Annotation> annotationList : jaxwsAnnotations) {
+				if (annotationList.size()>0) {
+					final Annotation annotation = annotationList.get(0);
 					annotations.add(new JsonRpcParam() {
 						public Class<? extends Annotation> annotationType() {
 							return JsonRpcParam.class;
@@ -755,7 +740,7 @@ public class JsonRpcBasicServer {
 						}
 					});
 				} else {
-					annots.add(null);
+					annotationList.add(null);
 				}
 			}
 
