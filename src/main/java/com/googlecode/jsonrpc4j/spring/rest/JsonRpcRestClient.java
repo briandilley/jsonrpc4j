@@ -128,7 +128,7 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object) 
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void invoke(String methodName, Object argument)
@@ -137,7 +137,7 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type) 
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Object invoke(
@@ -147,7 +147,7 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class) 
+	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -158,7 +158,7 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class, java.util.Map) 
+	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -170,7 +170,7 @@ public class JsonRpcRestClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type, java.util.Map)
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Object invoke(
@@ -192,6 +192,7 @@ public class JsonRpcRestClient
 		}
 
 		// NB: Too bad code. May be it is better to always use external requestFactory?
+        // im-scooter: It seems to be good idea to delegate all comminicartions to RestTemplate....
 		if (this.requestFactory != null && restTemplate.getRequestFactory() != this.requestFactory) {
 			this.restTemplate.setRequestFactory(this.requestFactory);
 		}
@@ -223,7 +224,7 @@ public class JsonRpcRestClient
 
 			final List<HttpMessageConverter<?>> restMessageConverters = new ArrayList();
 			restMessageConverters.addAll(this.restTemplate.getMessageConverters());
-			// Place RPC converter on the first place!
+			// Place JSON-RPC converter on the first place!
 			restMessageConverters.add(0, messageConverter);
 
 			this.restTemplate.setMessageConverters(restMessageConverters);

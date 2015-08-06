@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j;
 
-import com.googlecode.jsonrpc4j.annotations.JsonRpcParam;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;

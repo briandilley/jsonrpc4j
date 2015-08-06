@@ -103,7 +103,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object) 
+	 * {@inheritDoc}
 	 */
 	@Override
 	public void invoke(String methodName, Object argument)
@@ -112,7 +112,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type) 
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Object invoke(
@@ -122,7 +122,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class) 
+	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -133,7 +133,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.reflect.Type, java.util.Map) 
+	 * {@inheritDoc}
 	 */
 	@Override
 	public Object invoke(
@@ -189,7 +189,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see IJsonRpcClient#invoke(java.lang.String, java.lang.Object, java.lang.Class, java.util.Map) 
+	 * @see {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override

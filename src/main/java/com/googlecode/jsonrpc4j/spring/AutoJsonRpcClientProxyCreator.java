@@ -25,7 +25,7 @@ THE SOFTWARE.
 package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcService;
+import com.googlecode.jsonrpc4j.JsonRpcService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -64,6 +64,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 
     private ObjectMapper objectMapper;
 
+    @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SimpleMetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory(applicationContext);
         DefaultListableBeanFactory dlbf = (DefaultListableBeanFactory) beanFactory;

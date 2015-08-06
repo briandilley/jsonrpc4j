@@ -45,7 +45,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcService;
+import com.googlecode.jsonrpc4j.JsonRpcService;
 
 /**
  * Auto exports {@link JsonRpcService} annotated beans as JSON-RPC services.

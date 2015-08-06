@@ -24,8 +24,6 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j;
 
-import com.googlecode.jsonrpc4j.annotations.JsonRpcErrors;
-import com.googlecode.jsonrpc4j.annotations.JsonRpcError;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -43,6 +41,7 @@ public class AnnotationsErrorResolver
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
 	public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
 
 		// use annotations to map errors
