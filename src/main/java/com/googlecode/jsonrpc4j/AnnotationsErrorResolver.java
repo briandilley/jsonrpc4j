@@ -41,6 +41,7 @@ public class AnnotationsErrorResolver
 	/**
 	 * {@inheritDoc}
 	 */
+    @Override
 	public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
 
 		// use annotations to map errors

@@ -18,7 +18,7 @@
 	<properties>
 		<spring.version>3.1.2.RELEASE</spring.version>
 		<jackson.version>2.5.2</jackson.version>
-		<jdk.version>1.5</jdk.version>
+		<jdk.version>1.6</jdk.version>
 	</properties>
 
 	<!--
@@ -240,6 +240,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<version>${spring.version}</version>
 			<scope>test</scope>
@@ -321,6 +327,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 			<version>1.0.0.RELEASE</version>
+            <scope>test</scope>
 		</dependency>
 	</dependencies>
 

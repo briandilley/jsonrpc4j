@@ -64,6 +64,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 
     private ObjectMapper objectMapper;
 
+    @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         SimpleMetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory(applicationContext);
         DefaultListableBeanFactory dlbf = (DefaultListableBeanFactory) beanFactory;

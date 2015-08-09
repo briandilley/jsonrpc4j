@@ -17,6 +17,7 @@ public class LoadTestServlet
 
 	private JsonRpcServer jsonRpcServer;
 
+    @Override
 	public void init() {
 		jsonRpcServer = new JsonRpcServer(new JsonRpcServiceImpl());
 	}
