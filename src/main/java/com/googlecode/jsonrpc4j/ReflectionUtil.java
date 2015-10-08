@@ -33,23 +33,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utilities for reflection.
  */
 public abstract class ReflectionUtil {
 
-	private static Map<String, Set<Method>> methodCache
-		= new HashMap<String, Set<Method>>();
+	private static final Map<String, Set<Method>> methodCache
+		= new ConcurrentHashMap<String, Set<Method>>();
 
-	private static Map<Method, List<Class<?>>> parameterTypeCache
-		= new HashMap<Method, List<Class<?>>>();
+	private static final Map<Method, List<Class<?>>> parameterTypeCache
+		= new ConcurrentHashMap<Method, List<Class<?>>>();
 
-	private static Map<Method, List<Annotation>> methodAnnotationCache
-		= new HashMap<Method, List<Annotation>>();
+	private static final Map<Method, List<Annotation>> methodAnnotationCache
+		= new ConcurrentHashMap<Method, List<Annotation>>();
 
-	private static Map<Method, List<List<Annotation>>> methodParamAnnotationCache
-		= new HashMap<Method, List<List<Annotation>>>();
+	private static final Map<Method, List<List<Annotation>>> methodParamAnnotationCache
+		= new ConcurrentHashMap<Method, List<List<Annotation>>>();
 
 	/**
 	 * Finds methods with the given name on the given class.
