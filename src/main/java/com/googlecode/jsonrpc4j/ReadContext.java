@@ -25,7 +25,6 @@ package com.googlecode.jsonrpc4j;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.WeakHashMap;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;

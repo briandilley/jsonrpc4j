@@ -75,7 +75,6 @@ public class JsonRestProxyFactoryBean<T>
 	 * {@inheritDoc}
 	 */
 	@Override
-	@SuppressWarnings("unchecked")
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 
@@ -90,7 +89,7 @@ public class JsonRestProxyFactoryBean<T>
 		}
 		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = (ObjectMapper)BeanFactoryUtils
+				objectMapper = BeanFactoryUtils
 					.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
 			} catch (Exception e) { /* no-op */ }
 		}
@@ -100,7 +99,7 @@ public class JsonRestProxyFactoryBean<T>
 
 		// create JsonRpcHttpClient
 		try {
-            jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap());
+            jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap<String, String>());
 			jsonRpcRestClient.setRequestListener(requestListener);
             jsonRpcRestClient.setSslContext(sslContext);
             jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
@@ -149,6 +148,7 @@ public class JsonRestProxyFactoryBean<T>
 	/**
 	 * {@inheritDoc}
 	 */
+    @SuppressWarnings("unchecked")
     @Override
 	public Class<T> getObjectType() {
 		return getServiceInterface();
