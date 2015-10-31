@@ -80,7 +80,10 @@ public abstract class ReflectionUtil {
 	}
 
     /**
-     * Checks for the annotation {@link JsonRpcMethod} on {@param method} to see if its value matches {@param name}
+     * Checks for the annotation {@link JsonRpcMethod} on {@code method} to see if its value matches {@code name}
+     * @param method the method to check
+     * @param name the expected method name
+     * @return true if {@code method} is named {@code name}
      */
     public static boolean annotationMatches(Method method, String name) {
         if (method.isAnnotationPresent(JsonRpcMethod.class)) {

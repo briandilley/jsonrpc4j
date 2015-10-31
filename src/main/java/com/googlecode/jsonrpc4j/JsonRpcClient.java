@@ -115,6 +115,7 @@ public class JsonRpcClient {
 	 * @param clazz the expected return type
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
+	 * @param <T> the expected return type
 	 * @return the returned Object
 	 * @throws Throwable on error
 	 */
@@ -165,6 +166,7 @@ public class JsonRpcClient {
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
 	 * @param id id to send with the JSON-RPC request
+	 * @param <T> the expected return type
 	 * @return the returned Object
 	 * @throws Throwable if there is an error
 	 * 	while reading the response
@@ -238,8 +240,9 @@ public class JsonRpcClient {
 	 * Reads a JSON-PRC response from the server.  This blocks until
 	 * a response is received.
 	 *
-	 * @param returnType the expected return type
+	 * @param clazz the expected return type
 	 * @param ips the {@link InputStream} to read from
+	 * @param <T> the expected return type
 	 * @return the object returned by the JSON-RPC response
 	 * @throws Throwable on error
 	 */
@@ -254,9 +257,10 @@ public class JsonRpcClient {
 	 * a response is received. If an id is given, responses that do
 	 * not correspond, are disregarded.
 	 *
-	 * @param returnType the expected return type
+	 * @param clazz the expected return type
 	 * @param ips the {@link InputStream} to read from
-	 * @param id The id used to compare the response with.
+	 * @param id The id used to compare the response with
+	 * @param <T> the expected return type
 	 * @return the object returned by the JSON-RPC response
 	 * @throws Throwable on error
 	 */
@@ -383,7 +387,7 @@ public class JsonRpcClient {
 	 * }
 	 * </pre>
 	 * The same would be true of a {@link Map} containing the keys
-	 * {@code firstName} and {@link lastName}.  If the argument passed
+	 * {@code firstName} and {@code lastName}.  If the argument passed
 	 * in implements the {@link Collection} interface or is an array
 	 * then the values are used as indexed parameters in the order that
 	 * they appear in the {@link Collection} or array.

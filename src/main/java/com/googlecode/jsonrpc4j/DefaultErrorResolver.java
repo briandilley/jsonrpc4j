@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * An {@link ErrorResolver} that puts type information into the
  * data portion of the error.  This {@link ErrorResolver} always
- * returns a {@link JsonError}.
+ * returns a {@link com.googlecode.jsonrpc4j.ErrorResolver.JsonError JsonError}.
  *
  */
 public class DefaultErrorResolver

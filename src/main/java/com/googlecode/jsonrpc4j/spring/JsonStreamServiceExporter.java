@@ -34,8 +34,9 @@ import org.springframework.beans.factory.DisposableBean;
 import com.googlecode.jsonrpc4j.StreamServer;
 
 /**
- * {@link RemoteExporter} that exports services using Json
- * according to the JSON-RPC proposal specified at:
+ * {@link org.springframework.remoting.support.RemoteExporter RemoteExporter}
+ * that exports services using Json according to the JSON-RPC proposal specified
+ * at:
  * <a href="http://groups.google.com/group/json-rpc">
  * http://groups.google.com/group/json-rpc</a>.
  *
