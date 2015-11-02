@@ -112,6 +112,37 @@
 				</executions>
 			</plugin>
 
+			<!--
+			 | OSGi metadata
+			 +-->
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<configuration>
+					<instructions>
+						<!-- javax.servlet 3.0 has its packages  exported both as 2.6 and 3.0, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=360245-->
+						<Import-Package>javax.servlet*;version=[2.6,4),*</Import-Package>
+					</instructions>
+				</configuration>
+				<executions>
+					<execution>
+						<id>bundle-manifest</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+
 		</plugins>
 
 	</build>
@@ -146,14 +177,6 @@
 						</executions>
 					</plugin>
 					<plugin>
-						<artifactId>maven-jar-plugin</artifactId>
-						<configuration>
-							<archive>
-								<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-							</archive>
-						</configuration>
-					</plugin>
-					<plugin>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>maven-bundle-plugin</artifactId>
 						<extensions>true</extensions>
@@ -162,7 +185,7 @@
 								<id>bundle-manifest</id>
 								<phase>process-classes</phase>
 								<goals>
-									<goal>bundle</goal>
+									<goal>manifest</goal>
 								</goals>
 								<configuration>
 									<unpackBundle>true</unpackBundle>
