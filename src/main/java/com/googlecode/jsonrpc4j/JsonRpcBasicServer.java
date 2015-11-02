@@ -698,7 +698,6 @@ public class JsonRpcBasicServer {
 	 * @param paramNodes the parameters for matching types
 	 * @return the {@link MethodAndArgs}
 	 */
-	@SuppressWarnings("deprecation")
 	private MethodAndArgs findBestMethodUsingParamNames(
 		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes) {
 

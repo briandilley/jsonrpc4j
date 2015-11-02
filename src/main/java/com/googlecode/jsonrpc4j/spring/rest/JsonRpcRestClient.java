@@ -197,7 +197,7 @@ public class JsonRpcRestClient
 			this.restTemplate.setRequestFactory(this.requestFactory);
 		}
 
-		final HttpEntity<?> requestHttpEntity = new HttpEntity(request, httpHeaders);
+		final HttpEntity<ObjectNode> requestHttpEntity = new HttpEntity<ObjectNode>(request, httpHeaders);
 		final ResponseEntity<ObjectNode> responseEntity = this.restTemplate.postForEntity(this.serviceUrl.toURI(), requestHttpEntity, ObjectNode.class);
 		final Object response = this.readResponse(returnType, responseEntity.getBody());
 
@@ -222,7 +222,7 @@ public class JsonRpcRestClient
 			final MappingJacksonRPC2HttpMessageConverter messageConverter = new MappingJacksonRPC2HttpMessageConverter();
 			messageConverter.setObjectMapper(this.getObjectMapper());
 
-			final List<HttpMessageConverter<?>> restMessageConverters = new ArrayList();
+			final List<HttpMessageConverter<?>> restMessageConverters = new ArrayList<HttpMessageConverter<?>>();
 			restMessageConverters.addAll(this.restTemplate.getMessageConverters());
 			// Place JSON-RPC converter on the first place!
 			restMessageConverters.add(0, messageConverter);
