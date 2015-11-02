@@ -36,7 +36,7 @@ public interface IJsonRpcClient {
 	 * Invokes the given method with the given argument.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
+	 * @param argument the argument to the method
 	 * @throws Throwable on error
 	 */
 	public void invoke(String methodName, Object argument)
@@ -47,7 +47,7 @@ public interface IJsonRpcClient {
 	 * an object of the given type, or null if void.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
+	 * @param argument the argument to the method
 	 * @param returnType the return type
 	 * @return the return value
 	 * @throws Throwable on error
@@ -60,7 +60,7 @@ public interface IJsonRpcClient {
 	 * an object of the given type, or null if void.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
+	 * @param argument the argument to the method
 	 * @param returnType the return type
 	 * @param extraHeaders extra headers to add to the request
 	 * @return the return value
@@ -74,8 +74,9 @@ public interface IJsonRpcClient {
 	 * an object of the given type, or null if void.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
+	 * @param argument the argument to the method
+	 * @param clazz the return type
+	 * @param <T> the return type
 	 * @return the return value
 	 * @throws Throwable on error
 	 */
@@ -87,9 +88,10 @@ public interface IJsonRpcClient {
 	 * an object of the given type, or null if void.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param arguments the arguments to the method
-	 * @param returnType the return type
+	 * @param argument the argument to the method
+	 * @param clazz the return type
 	 * @param extraHeaders extra headers to add to the request
+	 * @param <T> the return type
 	 * @return the return value
 	 * @throws Throwable on error
 	 */

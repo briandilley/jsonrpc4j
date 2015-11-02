@@ -49,6 +49,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  *
  * @author toha
+ * @param <T> the bean type
  */
 public class JsonRestProxyFactoryBean<T>
 	extends UrlBasedRemoteAccessor

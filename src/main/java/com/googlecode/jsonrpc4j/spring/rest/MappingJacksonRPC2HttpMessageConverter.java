@@ -38,6 +38,8 @@ public class MappingJacksonRPC2HttpMessageConverter
 
 	/**
 	 * Construct a new {@code BindingJacksonHttpMessageConverter}.
+	 *
+	 * @param objectMapper the object mapper for this view
 	 */
 	public MappingJacksonRPC2HttpMessageConverter(ObjectMapper objectMapper) {
 		super(APPLICATION_JSON_RPC);
@@ -50,10 +52,12 @@ public class MappingJacksonRPC2HttpMessageConverter
 	 * {@link ObjectMapper#ObjectMapper() ObjectMapper} is used.
 	 * <p>
 	 * Setting a custom-configured {@code ObjectMapper} is one way to take further control of the JSON serialization
-	 * process. For example, an extended {@link org.codehaus.jackson.map.SerializerFactory} can be configured that
+	 * process. For example, an extended {@code org.codehaus.jackson.map.SerializerFactory} can be configured that
 	 * provides custom serializers for specific types. The other option for refining the serialization process is to use
 	 * Jackson's provided annotations on the types to be serialized, in which case a custom-configured ObjectMapper is
 	 * unnecessary.
+	 *
+	 * @param objectMapper the object mapper for this view
 	 */
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		Assert.notNull(objectMapper, "ObjectMapper must not be null");
@@ -62,6 +66,8 @@ public class MappingJacksonRPC2HttpMessageConverter
 
 	/**
 	 * Return the underlying {@code ObjectMapper} for this view.
+	 * 
+	 * @return the object mapper for this view
 	 */
 	public ObjectMapper getObjectMapper() {
 		return this.objectMapper;
@@ -73,6 +79,8 @@ public class MappingJacksonRPC2HttpMessageConverter
 	 * Prefixing the JSON string in this manner is used to help prevent JSON Hijacking. The prefix renders the string
 	 * syntactically invalid as a script so that it cannot be hijacked. This prefix does not affect the evaluation of
 	 * JSON, but if JSON validation is performed on the string, the prefix would need to be ignored.
+	 *
+	 * @param prefixJson whether the JSON should be prefixed 
 	 */
 	public void setPrefixJson(boolean prefixJson) {
 		this.prefixJson = prefixJson;

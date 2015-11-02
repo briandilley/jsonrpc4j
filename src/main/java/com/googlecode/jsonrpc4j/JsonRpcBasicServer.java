@@ -156,6 +156,7 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param ips the {@link InputStream}
 	 * @param ops the {@link OutputStream}
+	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
 	public int handle(InputStream ips, OutputStream ops)
@@ -230,6 +231,7 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
+	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
 	public int handleNode(JsonNode node, OutputStream ops)
@@ -258,6 +260,7 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
+	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
 	public int handleArray(ArrayNode node, OutputStream ops)
@@ -285,6 +288,7 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
+	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
 	public int handleObject(ObjectNode node, OutputStream ops)

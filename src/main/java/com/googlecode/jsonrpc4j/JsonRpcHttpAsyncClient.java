@@ -224,6 +224,8 @@ public class JsonRpcHttpAsyncClient {
 	 *            the arguments to the method
 	 * @param returnType
 	 *            the return type
+	 * @param <T>
+	 *            the return type
 	 * @return the response {@code Future<T>}
 	 */
 	public <T> Future<T> invoke(String methodName, Object argument,
@@ -240,12 +242,14 @@ public class JsonRpcHttpAsyncClient {
 	 * 
 	 * @param methodName
 	 *            the name of the method to invoke
-	 * @param arguments
-	 *            the arguments to the method
+	 * @param argument
+	 *            the argument to the method
 	 * @param returnType
 	 *            the return type
 	 * @param extraHeaders
 	 *            extra headers to add to the request
+	 * @param <T>
+	 *            the return type
 	 * @return the response {@code Future<T>}
 	 */
 	public <T> Future<T> invoke(String methodName, Object argument,
@@ -281,6 +285,8 @@ public class JsonRpcHttpAsyncClient {
 	 * @param argument
 	 *            the arguments to the method
 	 * @param returnType
+	 *            the return type
+	 * @param <T>
 	 *            the return type
 	 * @param callback
 	 *            the {@code JsonRpcCallback}

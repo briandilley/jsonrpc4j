@@ -189,7 +189,7 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * @see {@inheritDoc}
+	 * {@inheritDoc}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override

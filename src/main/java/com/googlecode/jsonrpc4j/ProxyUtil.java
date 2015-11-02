@@ -130,7 +130,7 @@ public abstract class ProxyUtil {
 	}
 
 	/**
-	 * Creates a {@link Proxy} of the given {@link proxyInterface}
+	 * Creates a {@link Proxy} of the given {@code proxyInterface}
 	 * that uses the given {@link JsonRpcClient}.
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
@@ -138,6 +138,11 @@ public abstract class ProxyUtil {
 	 * @param client the {@link JsonRpcClient}
 	 * @param socket the {@link Socket}
 	 * @return the proxied interface
+	 * @throws IOException
+	 *             if an I/O error occurs when creating the input stream,  the
+	 *             output stream, the socket is closed, the socket is not
+	 *             connected,  or the socket input has been shutdown using
+	 *             shutdownInput()
 	 */
 	public static <T> T createClientProxy(
 		ClassLoader classLoader,
@@ -152,11 +157,12 @@ public abstract class ProxyUtil {
 	}
 
 	/**
-	 * Creates a {@link Proxy} of the given {@link proxyInterface}
+	 * Creates a {@link Proxy} of the given {@code proxyInterface}
 	 * that uses the given {@link JsonRpcClient}.
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
+	 * @param useNamedParams whether or not to used named params
 	 * @param client the {@link JsonRpcClient}
 	 * @param ips the {@link InputStream}
 	 * @param ops the {@link OutputStream}
@@ -197,11 +203,12 @@ public abstract class ProxyUtil {
 	}
 
 	/**
-	 * Creates a {@link Proxy} of the given {@link proxyInterface}
+	 * Creates a {@link Proxy} of the given {@code proxyInterface}
 	 * that uses the given {@link IJsonRpcClient}.
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
+	 * @param useNamedParams whether or not to used named params
 	 * @param client the {@link JsonRpcHttpClient}
 	 * @param extraHeaders extra HTTP headers to be added to each response
 	 * @return the proxied interface
@@ -239,7 +246,7 @@ public abstract class ProxyUtil {
 	}
 
 	/**
-	 * Creates a {@link Proxy} of the given {@link proxyInterface}
+	 * Creates a {@link Proxy} of the given {@code proxyInterface}
 	 * that uses the given {@link JsonRpcHttpClient}.
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
