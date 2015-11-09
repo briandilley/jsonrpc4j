@@ -2,18 +2,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.briandilley.jsonrpc4j</groupId>
 	<artifactId>jsonrpc4j</artifactId>
-	<version>y</version>
+	<version>1.2.0-rc1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>JSON-RPC for java</name>
 	<description>Library for using JSON-RPC with Java</description>
 	<url>https://github.com/briandilley/jsonrpc4j</url>
-
-	<parent>
-		<groupId>org.sonatype.oss</groupId>
-		<artifactId>oss-parent</artifactId>
-		<version>7</version>
-	</parent>
 
 	<properties>
 		<spring.version>3.1.2.RELEASE</spring.version>
@@ -55,22 +49,16 @@
 	<!--
 	 | Distribution config
 	 +-->
-	<distributionManagement>
-		<repository>
-			<id>oss-sonatype-release</id>
-			<name>oss-sonatype-release</name>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-			<uniqueVersion>false</uniqueVersion>
-			<layout>default</layout>
-		</repository>
-		<snapshotRepository>
-			<id>oss-sonatype-snapshots</id>
-			<name>oss-sonatype-snapshots</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<uniqueVersion>false</uniqueVersion>
-			<layout>default</layout>
-		</snapshotRepository>
-	</distributionManagement>
+<distributionManagement>
+  <snapshotRepository>
+    <id>ossrh</id>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+  </snapshotRepository>
+  <repository>
+    <id>ossrh</id>
+    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+  </repository>
+</distributionManagement>
 
 	<build>
 
@@ -87,6 +75,18 @@
 		</testResources>
 
 		<plugins>
+		
+    <plugin>
+      <groupId>org.sonatype.plugins</groupId>
+      <artifactId>nexus-staging-maven-plugin</artifactId>
+      <version>1.6.3</version>
+      <extensions>true</extensions>
+      <configuration>
+        <serverId>ossrh</serverId>
+        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+      </configuration>
+    </plugin>
 			<!-- compiler plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
