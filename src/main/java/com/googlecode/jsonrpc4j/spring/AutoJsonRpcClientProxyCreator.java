@@ -26,8 +26,6 @@ package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -44,6 +42,7 @@ import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Logger;
 
 import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.convertClassNameToResourcePath;
@@ -54,7 +53,7 @@ import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
  */
 public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, ApplicationContextAware {
 
-    private static final Log LOG = LogFactory.getLog(AutoJsonRpcClientProxyCreator.class);
+    private static final Logger LOG = Logger.getLogger(AutoJsonRpcClientProxyCreator.class.getName());
 
     private ApplicationContext applicationContext;
 
@@ -69,7 +68,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
         SimpleMetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory(applicationContext);
         DefaultListableBeanFactory dlbf = (DefaultListableBeanFactory) beanFactory;
         String resolvedPath = resolvePackageToScan();
-        LOG.debug(format("Scanning '%s' for JSON-RPC service interfaces.", resolvedPath));
+        LOG.fine(format("Scanning '%s' for JSON-RPC service interfaces.", resolvedPath));
         try {
             for (Resource resource : applicationContext.getResources(resolvedPath)) {
                 if (resource.isReadable()) {
@@ -81,7 +80,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
                         String className = classMetadata.getClassName();
                         String path = (String) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("value");
                         boolean useNamedParams = (Boolean) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("useNamedParams");
-                        LOG.debug(format("Found JSON-RPC service to proxy [%s] on path '%s'.", className, path));
+                        LOG.fine(format("Found JSON-RPC service to proxy [%s] on path '%s'.", className, path));
                         registerJsonProxyBean(dlbf, className, path, useNamedParams);
                     }
                 }
