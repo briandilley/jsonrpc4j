@@ -37,7 +37,7 @@ In `<dependencies>`:
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.2</version>
+		<version>1.2.0</version>
 	</dependency>
 
 ```
