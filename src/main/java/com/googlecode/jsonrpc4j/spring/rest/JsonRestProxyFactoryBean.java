@@ -23,18 +23,20 @@
  */
 package com.googlecode.jsonrpc4j.spring.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.JsonRpcClient;
-import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
-import com.googlecode.jsonrpc4j.ReflectionUtil;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.JsonRpcClient;
+import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
+import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
@@ -59,7 +61,6 @@ public class JsonRestProxyFactoryBean<T>
 	ApplicationContextAware {
 
     
-	private boolean				useNamedParams		= false;
 	private T				    proxyObject			= null;
 	private RequestListener		requestListener		= null;
 	private ObjectMapper		objectMapper		= null;
@@ -129,7 +130,7 @@ public class JsonRestProxyFactoryBean<T>
 
 		// get arguments
 		Object arguments = ReflectionUtil.parseArguments(
-			invocation.getMethod(), invocation.getArguments(), useNamedParams);
+			invocation.getMethod(), invocation.getArguments());
 
 		// invoke it
 		return jsonRpcRestClient.invoke(
@@ -190,13 +191,6 @@ public class JsonRestProxyFactoryBean<T>
 	 */
 	public void setRequestListener(JsonRpcClient.RequestListener requestListener) {
 		this.requestListener = requestListener;
-	}
-
-	/**
-	 * @param useNamedParams the useNamedParams to set
-	 */
-	public void setUseNamedParams(boolean useNamedParams) {
-		this.useNamedParams = useNamedParams;
 	}
 
     /**

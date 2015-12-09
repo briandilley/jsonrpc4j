@@ -152,7 +152,7 @@ public abstract class ProxyUtil {
 
 		// create and return the proxy
 		return createClientProxy(
-			classLoader, proxyInterface, false, client,
+			classLoader, proxyInterface, client,
 			socket.getInputStream(), socket.getOutputStream());
 	}
 
@@ -162,7 +162,6 @@ public abstract class ProxyUtil {
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
-	 * @param useNamedParams whether or not to used named params
 	 * @param client the {@link JsonRpcClient}
 	 * @param ips the {@link InputStream}
 	 * @param ops the {@link OutputStream}
@@ -172,7 +171,6 @@ public abstract class ProxyUtil {
 	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
-		final boolean useNamedParams,
 		final JsonRpcClient client,
 		final InputStream ips,
 		final OutputStream ops) {
@@ -187,7 +185,7 @@ public abstract class ProxyUtil {
 					if (method.getDeclaringClass() == Object.class) {
 						return proxyObjectMethods(method, proxy, args);
 					}
-					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
+					Object arguments = ReflectionUtil.parseArguments(method, args);
 
 					String methodName=method.getName();
 					JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
@@ -208,7 +206,6 @@ public abstract class ProxyUtil {
 	 * @param <T> the proxy type
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
-	 * @param useNamedParams whether or not to used named params
 	 * @param client the {@link JsonRpcHttpClient}
 	 * @param extraHeaders extra HTTP headers to be added to each response
 	 * @return the proxied interface
@@ -217,7 +214,6 @@ public abstract class ProxyUtil {
 	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
-		final boolean useNamedParams,
 		final IJsonRpcClient client,
 		final Map<String, String> extraHeaders) {
 
@@ -231,7 +227,7 @@ public abstract class ProxyUtil {
 					if (method.getDeclaringClass() == Object.class) {
 						return proxyObjectMethods(method, proxy, args);
 					}
-					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
+					Object arguments = ReflectionUtil.parseArguments(method, args);
 
 					String methodName=method.getName();
 					JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
@@ -258,7 +254,7 @@ public abstract class ProxyUtil {
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
 		final IJsonRpcClient client) {
-		return createClientProxy(classLoader, proxyInterface, false, client, new HashMap<String, String>());
+		return createClientProxy(classLoader, proxyInterface, client, new HashMap<String, String>());
 	}
 
 	private static Object proxyObjectMethods(Method method, Object proxyObject, Object[] args) {

@@ -31,6 +31,13 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
+import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
@@ -40,13 +47,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
-import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
-import com.googlecode.jsonrpc4j.ReflectionUtil;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 
 /**
  * {@link FactoryBean} for creating a {@link UrlBasedRemoteAccessor}
@@ -60,17 +60,16 @@ public class JsonProxyFactoryBean
 	FactoryBean<Object>,
 	ApplicationContextAware {
 
-	private boolean				useNamedParams		= false;
 	private Object				proxyObject			= null;
 	private RequestListener		requestListener		= null;
 	private ObjectMapper		objectMapper		= null;
 	private JsonRpcHttpClient	jsonRpcHttpClient	= null;
 	private Map<String, String>	extraHttpHeaders	= new HashMap<String, String>();
-    
+
 	private SSLContext sslContext 				= null;
 	private HostnameVerifier hostNameVerifier 	= null;
-    
-    
+
+
 	private ApplicationContext	applicationContext;
 
 	/**
@@ -92,7 +91,7 @@ public class JsonProxyFactoryBean
 		}
 		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = (ObjectMapper)BeanFactoryUtils
+				objectMapper = BeanFactoryUtils
 					.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
 			} catch (Exception e) { /* no-op */ }
 		}
@@ -114,6 +113,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Object invoke(MethodInvocation invocation)
 		throws Throwable {
 
@@ -130,7 +130,7 @@ public class JsonProxyFactoryBean
 
 		// get arguments
 		Object arguments = ReflectionUtil.parseArguments(
-			invocation.getMethod(), invocation.getArguments(), useNamedParams);
+invocation.getMethod(), invocation.getArguments());
 
 		// invoke it
 		return jsonRpcHttpClient.invoke(
@@ -142,6 +142,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Object getObject() {
 		return proxyObject;
 	}
@@ -149,6 +150,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public Class<?> getObjectType() {
 		return getServiceInterface();
 	}
@@ -156,6 +158,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public boolean isSingleton() {
 		return true;
 	}
@@ -163,6 +166,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
@@ -188,13 +192,6 @@ public class JsonProxyFactoryBean
 		this.requestListener = requestListener;
 	}
 
-	/**
-	 * @param useNamedParams the useNamedParams to set
-	 */
-	public void setUseNamedParams(boolean useNamedParams) {
-		this.useNamedParams = useNamedParams;
-	}
-
     /**
      * @param sslContext SSL context to pass to JsonRpcClient
      */
@@ -208,5 +205,5 @@ public class JsonProxyFactoryBean
     public void setHostNameVerifier(HostnameVerifier hostNameVerifier)   {
         this.hostNameVerifier = hostNameVerifier;
     }
-    
+
 }

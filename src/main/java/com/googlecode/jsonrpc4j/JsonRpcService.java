@@ -42,11 +42,4 @@ public @interface JsonRpcService {
 	 * @return the service path
 	 */
 	String value();
-
-	/**
-	 * Whether or not to use named parameters.
-	 * @return true if named parameters are used
-	 */
-	boolean useNamedParams() default false;
-
 }
