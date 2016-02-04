@@ -2,7 +2,7 @@
 
 This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
-[Jackson](http://jackson.codehaus.org/) library to convert java
+[Jackson](https://github.com/FasterXML/jackson) library to convert java
 objects to and from json objects (and other things related to
 JSON-RPC).
 
