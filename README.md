@@ -2,7 +2,7 @@
 
 This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
-[Jackson](https://github.com/FasterXML/jackson) library to convert java
+[Jackson][Jackson page] library to convert java
 objects to and from json objects (and other things related to
 JSON-RPC).
 
@@ -20,11 +20,11 @@ JSON-RPC).
   * Composite services
 
 ## Maven
-This project is built with [Maven](http://maven.apache.org). Be
+This project is built with [Maven][Maven page]. Be
 sure to check the pom.xml for the dependencies if you're not using
 maven.  If you're already using spring you should have most (if not all)
 of the dependencies already - outside of maybe the
-[Jackson Library](http://jackson.codehaus.org/).  Jsonrpc4j is available
+[Jackson Library][Jackson page].  Jsonrpc4j is available
 from the maven central repo. Add the following to your pom.xml if you're
 using maven:
 
@@ -43,8 +43,8 @@ In `<dependencies>`:
 ```
 
 ## JSON-RPC specification
-The official source for the [JSON-RPC 2.0 specification](http://www.jsonrpc.org/specification).
-The guys over at [json-rpc google group](http://groups.google.com/group/json-rpc)
+The official source for the [JSON-RPC 2.0 specification][JSON RPC Spec].
+The guys over at [json-rpc google group][Google Group]
 seem to be fairly active, so you can ask clarifying questions there.
 
 ## Streaming server and client
@@ -430,3 +430,8 @@ public interface LibraryService {
 ```json
 {"jsonrpc":"2.0", "method": "VideoLibrary.GetTVShows", "params": { "properties": ["title"] }, "id":1}
 ```
+
+[Google Group]: http://groups.google.com/group/json-rpc
+[Jackson page]: https://github.com/FasterXML/jackson
+[JSON RPC Spec]: http://www.jsonrpc.org/specification
+[Maven page]: http://maven.apache.org
