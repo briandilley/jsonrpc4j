@@ -73,7 +73,7 @@ public class ServerClientTest {
 
 		// create client service
 		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, false, jsonRpcClient,
+			cl, Service.class, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 
@@ -103,7 +103,7 @@ public class ServerClientTest {
 
 		// create client service
 		Service clientService = ProxyUtil.createClientProxy(
-				cl, Service.class, false, jsonRpcClient,
+				cl, Service.class, jsonRpcClient,
 				clientInputStream,
 				clientOutputStream);
 
@@ -142,7 +142,7 @@ public class ServerClientTest {
 
 		// create client service
 		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, false, jsonRpcClient,
+			cl, Service.class, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 
@@ -185,7 +185,7 @@ public class ServerClientTest {
 
 		// create client service
 		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, false, jsonRpcClient,
+			cl, Service.class, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 

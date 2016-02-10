@@ -215,35 +215,46 @@ public abstract class ReflectionUtil {
 	 * turning them into named parameters.
 	 * @param method the method
 	 * @param arguments the arguments
-	 * @param useNamedParams whether or not to used named params
 	 * @return the parsed arguments
 	 */
-	public static Object parseArguments(Method method, Object[] arguments, boolean useNamedParams) {
-		if (useNamedParams) {
-			Map<String, Object> namedParams = new HashMap<String, Object>();
-			Annotation[][] paramAnnotations = method.getParameterAnnotations();
-			for (int i=0; i<paramAnnotations.length; i++) {
-				Annotation[] ann = paramAnnotations[i];
-				boolean jsonRpcParamAnnotPresent = false;
-				for (Annotation an : ann) {
-					if (JsonRpcParam.class.isInstance(an)) {
-						JsonRpcParam jAnn = (JsonRpcParam) an;
-						namedParams.put(jAnn.value(), arguments[i]);
-						jsonRpcParamAnnotPresent = true;
-						break;
-					}
-				}
-				if (!jsonRpcParamAnnotPresent) {
-					throw new RuntimeException(
-						"useNamedParams is enabled and a JsonRpcParam annotation "
-						+"was not found at parameter index "+i+" on method "
-						+method.getName());
-				}
-			}
+	public static Object parseArguments(Method method, Object[] arguments) {
+
+		Map<String, Object> namedParams = getNamedParameters(method, arguments);
+
+		if (namedParams.size() > 0) {
 			return namedParams;
 		} else {
-			return arguments != null ? arguments : new Object[] { };
+			return arguments != null ? arguments : new Object[] {};
 		}
 	}
 
+	/**
+	 * Checks method for @JsonRpcParam annotations and returns named parameters.
+	 * @param method the method
+	 * @param arguments the arguments
+	 * @return named parameters or empty if no annotations found
+	 * @throws RuntimeException if some parameters are annotated and others not
+	 */
+	private static Map<String, Object> getNamedParameters(Method method, Object[] arguments) {
+
+		Map<String, Object> namedParams = new HashMap<String, Object>();
+
+		Annotation[][] paramAnnotations = method.getParameterAnnotations();
+		for (int i = 0; i < paramAnnotations.length; i++) {
+			Annotation[] ann = paramAnnotations[i];
+			for (Annotation an : ann) {
+				if (JsonRpcParam.class.isInstance(an)) {
+					JsonRpcParam jAnn = (JsonRpcParam) an;
+					namedParams.put(jAnn.value(), arguments[i]);
+					break;
+				}
+			}
+		}
+
+		if (arguments != null && arguments.length > 0 && namedParams.size() > 0 && namedParams.size() != arguments.length) {
+			throw new RuntimeException("JsonRpcParam annotations were not found for all parameters on method " + method.getName());
+		}
+
+		return namedParams;
+	}
 }

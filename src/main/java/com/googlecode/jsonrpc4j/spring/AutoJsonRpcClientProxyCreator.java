@@ -24,6 +24,15 @@ THE SOFTWARE.
 
 package com.googlecode.jsonrpc4j.spring;
 
+import static java.lang.String.format;
+import static org.springframework.util.ClassUtils.convertClassNameToResourcePath;
+import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Logger;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcService;
 import org.springframework.beans.BeansException;
@@ -38,15 +47,6 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-import static org.springframework.util.ClassUtils.convertClassNameToResourcePath;
-import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
 
 /**
  * Auto-creates proxies for service interfaces annotated with {@link JsonRpcService}.
@@ -79,9 +79,8 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
                     if (annotationMetadata.isAnnotated(jsonRpcPathAnnotation)) {
                         String className = classMetadata.getClassName();
                         String path = (String) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("value");
-                        boolean useNamedParams = (Boolean) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("useNamedParams");
                         LOG.fine(format("Found JSON-RPC service to proxy [%s] on path '%s'.", className, path));
-                        registerJsonProxyBean(dlbf, className, path, useNamedParams);
+						registerJsonProxyBean(dlbf, className, path);
                     }
                 }
             }
@@ -100,12 +99,11 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
     /**
      * Registers a new proxy bean with the bean factory.
      */
-    private void registerJsonProxyBean(DefaultListableBeanFactory dlbf, String className, String path, boolean useNamedParams) {
+	private void registerJsonProxyBean(DefaultListableBeanFactory dlbf, String className, String path) {
         BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
                 .rootBeanDefinition(JsonProxyFactoryBean.class)
                 .addPropertyValue("serviceUrl", appendBasePath(path))
-                .addPropertyValue("serviceInterface", className)
-                .addPropertyValue("useNamedParams", useNamedParams);
+                .addPropertyValue("serviceInterface", className);
         if (objectMapper != null) {
             beanDefinitionBuilder.addPropertyValue("objectMapper", objectMapper);
         }
@@ -123,7 +121,8 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
         }
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    @Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
