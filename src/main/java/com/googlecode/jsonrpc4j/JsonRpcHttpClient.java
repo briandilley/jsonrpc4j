@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -156,8 +157,13 @@ public class JsonRpcHttpClient
 		// read and return value
 		try {
 			InputStream ips = con.getInputStream();
+			String contentEncoding = con.getHeaderField("Content-Encoding");
+			boolean useGzip = contentEncoding != null && contentEncoding.equalsIgnoreCase("gzip");
 			try {
 				// in case of http error try to read response body and return it in exception
+				if (useGzip) {
+					ips = new GZIPInputStream(ips);
+				}
 				return super.readResponse(returnType, ips);
 			} finally {
 				ips.close();
