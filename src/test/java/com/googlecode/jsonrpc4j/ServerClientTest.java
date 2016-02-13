@@ -1,265 +1,130 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.integration.junit4.JMock;
-import org.jmock.integration.junit4.JUnit4Mockery;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-@RunWith(JMock.class)
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
+
+import com.googlecode.jsonrpc4j.util.LocalThreadServer;
+
+@RunWith(EasyMockRunner.class)
 public class ServerClientTest {
 
-	private static Mockery mockCtx = new JUnit4Mockery();
-	private static Service serviceMock = mockCtx.mock(Service.class);
+	@Rule
+	public final ExpectedException expectedEx = ExpectedException.none();
 
-	private ClassLoader cl;
-	private JsonRpcBasicServer jsonRpcServer;
-	private JsonRpcClient jsonRpcClient;
-	
-	private ServerThread serverThread;
-	private PipedInputStream clientInputStream;
-	private PipedOutputStream clientOutputStream;
-	private PipedInputStream serverInputStream;
-	private PipedOutputStream serverOutputStream;
+	@Mock(type = MockType.NICE)
+	private Service mockService;
+
+	private Service client;
+	private LocalThreadServer<Service> server;
 
 	@Before
-	public void setUp()
-		throws Exception {
-		cl = ClassLoader.getSystemClassLoader();
-
-		ConsoleHandler handler = new ConsoleHandler();
-		handler.setLevel(Level.ALL);
-		Logger.getLogger("").addHandler(handler);
-		Logger.getLogger(JsonRpcBasicServer.class.getName()).setLevel(Level.ALL);
-		Logger.getLogger(JsonRpcClient.class.getName()).setLevel(Level.ALL);
-		jsonRpcServer = new JsonRpcBasicServer(serviceMock, Service.class);
-		jsonRpcClient = new JsonRpcClient();
-
-		// create streams
-		clientInputStream = new PipedInputStream();
-		serverOutputStream = new PipedOutputStream(clientInputStream);
-		serverInputStream = new PipedInputStream();
-		clientOutputStream = new PipedOutputStream(serverInputStream);
-
-		// start server
-		serverThread = new ServerThread(serverInputStream, serverOutputStream, jsonRpcServer);
-		serverThread.start();
-		serverThread.waitForStart();
+	public void setUp() throws Exception {
+		server = new LocalThreadServer<>(mockService, Service.class);
+		client = server.client(Service.class);
 	}
 
 	@After
-	public void tearDown()
-		throws Exception {
-		serverThread.stopServer();
+	public void tearDown() throws Exception {
+		server.close();
 	}
 
 	@Test
-	public void testAllMethods()
-		throws Throwable {
+	public void allMethods() throws Throwable {
+		testCommon(client);
+	}
 
-		// create client service
-		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, jsonRpcClient,
-			clientInputStream,
-			clientOutputStream);
+	private void testCommon(Service client) throws Throwable {
+		client.noOp();
+		final String defaultName = "world";
+		EasyMock.expect(mockService.hello()).andReturn(defaultName);
+		final String name = "uranus";
+		EasyMock.expect(mockService.hello(name)).andReturn(name);
 
-		mockCtx.checking(new Expectations() {{
-			one(serviceMock).noOp();
-			one(serviceMock).hello();
-			will(returnValue("world"));
-			one(serviceMock).hello(with("uranus"));
-			will(returnValue("uranus"));
-		}});
-
-		// call it
-		clientService.noOp();
-		assertEquals("world", clientService.hello());
-		assertEquals("uranus", clientService.hello("uranus"));
-
-		// call non-rpc methods
-		assertNotNull(clientService.toString());
-		assertTrue(clientService.equals(clientService));
-		assertFalse(clientService.equals(null));
-		clientService.hashCode();
+		EasyMock.replay(mockService);
+		client.noOp();
+		assertEquals(defaultName, client.hello());
+		assertEquals(name, client.hello(name));
+		assertNotNull(client.toString());
+		// noinspection ResultOfMethodCallIgnored
+		client.hashCode();
+		EasyMock.verify(mockService);
 	}
 
 	@Test
-	public void testAllMethodsViaCompositeProxy()
-			throws Throwable {
-
-		// create client service
-		Service clientService = ProxyUtil.createClientProxy(
-				cl, Service.class, jsonRpcClient,
-				clientInputStream,
-				clientOutputStream);
-
-		Object compositeService = ProxyUtil.createCompositeServiceProxy(
-				cl,
-				new Object[] { clientService },
-				new Class<?>[] { Service.class },
-				true);
-
-		clientService = (Service) compositeService;
-
-		mockCtx.checking(new Expectations() {{
-			one(serviceMock).noOp();
-			one(serviceMock).hello();
-			will(returnValue("world"));
-			one(serviceMock).hello(with("uranus"));
-			will(returnValue("uranus"));
-		}});
-
-		// call it
-		clientService.noOp();
-		assertEquals("world", clientService.hello());
-		assertEquals("uranus", clientService.hello("uranus"));
-
-		// call non-rpc methods
-		clientService.hashCode();
-		assertTrue(clientService.equals(clientService));
-		assertFalse(clientService.equals(null));
-		assertNotNull(clientService.toString());
-	}
-
-
-	@Test
-	public void testException()
-		throws Throwable {
-
-		// create client service
-		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, jsonRpcClient,
-			clientInputStream,
-			clientOutputStream);
-
-		mockCtx.checking(new Expectations() {{
-			one(serviceMock).noOp();
-			will(throwException(new TestException("testing")));
-			one(serviceMock).hello();
-			will(throwException(new TestException(null)));
-			one(serviceMock).hello(with("uranus"));
-			will(throwException(new TestException2()));
-		}});
-
-		try {
-			clientService.noOp();
-			fail("Expecting exception");
-		} catch(Throwable t) {
-			assertEquals("testing", t.getMessage());
-			assertTrue(TestException.class.isInstance(t));
-		}
-
-		try {
-			clientService.hello();
-			fail("Expecting exception");
-		} catch(Throwable t) {
-			assertNull(t.getMessage());
-			assertTrue(TestException.class.isInstance(t));
-		}
-
-		try {
-			clientService.hello("uranus");
-			fail("Expecting exception");
-		} catch(Throwable t) {
-			assertTrue(TestException2.class.isInstance(t));
-		}
+	public void testAllMethodsViaCompositeProxy() throws Throwable {
+		Object compositeService = ProxyUtil.createCompositeServiceProxy(ClassLoader.getSystemClassLoader(), new Object[] { client },
+				new Class<?>[] { Service.class }, true);
+		Service clientService = (Service) compositeService;
+		testCommon(clientService);
 	}
 
 	@Test
-	public void testUnknownException()
-		throws Throwable {
+	public void testNoArgFuncCallException() throws Throwable {
+		final String message = "testing";
+		EasyMock.expect(mockService.hello()).andThrow(new TestException(message));
+		EasyMock.replay(mockService);
+		expectedEx.expectMessage(message);
+		expectedEx.expect(TestException.class);
+		client.hello();
+		EasyMock.verify(mockService);
+	}
 
-		// create client service
-		Service clientService = ProxyUtil.createClientProxy(
-			cl, Service.class, jsonRpcClient,
-			clientInputStream,
-			clientOutputStream);
+	@Test
+	public void testOneArgFuncCallException() throws Throwable {
+		final String name = "uranus";
+		final String message = name + " testing";
+		EasyMock.expect(mockService.hello(name)).andThrow(new TestException(message));
+		EasyMock.replay(mockService);
+		expectedEx.expectMessage(message);
+		expectedEx.expect(TestException.class);
+		client.hello(name);
+		EasyMock.verify(mockService);
+	}
 
-		jsonRpcServer.setErrorResolver(AnnotationsErrorResolver.INSTANCE);
+	@Test
+	public void undeclaredException() {
+		final String message = "testing";
+		mockService.undeclaredExceptionThrown();
+		EasyMock.expectLastCall().andThrow(new IllegalArgumentException(message));
+		EasyMock.replay(mockService);
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage(message);
+		client.undeclaredExceptionThrown();
+	}
 
-		mockCtx.checking(new Expectations() {{
-			one(serviceMock).unresolvedExceptionThrown();
-			will(throwException(new IllegalArgumentException("testing")));
-			one(serviceMock).undelcaredExceptionThrown();
-			will(throwException(new IllegalArgumentException("testing")));
-		}});
-
-		try {
-			clientService.unresolvedExceptionThrown();
-			fail("Expecting exception");
-		} catch(Throwable t) {
-			assertTrue(JsonRpcClientException.class.isInstance(t));
-		}
-
-		try {
-			clientService.undelcaredExceptionThrown();
-			fail("Expecting exception");
-		} catch(Throwable t) {
-			assertTrue(JsonRpcClientException.class.isInstance(t));
-		}
-
+	@Test
+	public void unresolvedException() throws Throwable {
+		final String message = "testing";
+		mockService.unresolvedExceptionThrown();
+		EasyMock.expectLastCall().andThrow(new IllegalArgumentException(message));
+		EasyMock.replay(mockService);
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage(message);
+		client.unresolvedExceptionThrown();
 	}
 
 	public interface Service {
-		public void noOp() throws Throwable;
-		public String hello() throws Throwable;
-		public String hello(String world) throws Throwable;
-		public void unresolvedExceptionThrown() throws Throwable;
-		public void undelcaredExceptionThrown();
-	}
+		void noOp();
 
-	private static class ServerThread
-		extends Thread {
-		private Object startLock = new Object();
-		private InputStream ips;
-		private OutputStream ops;
-		private JsonRpcBasicServer jsonRpcServer;
-		private AtomicBoolean keepRunning = new AtomicBoolean(false);
-		public ServerThread(InputStream ips, OutputStream ops, JsonRpcBasicServer jsonRpcServer) {
-			this.ips = ips;
-			this.ops = ops;
-			this.jsonRpcServer = jsonRpcServer;
-		}
-		@Override
-		public void run() {
-			keepRunning.set(true);
-			while (keepRunning.get()) {
-				try {
-					if (ips.available()>0) {
-						jsonRpcServer.handle(ips, ops);
-					}
-				} catch(Exception e) {
-					e.printStackTrace();
-					return;
-				}
-				synchronized (startLock) {
-					startLock.notify();
-				}
-			}
-		}
-		public void stopServer() {
-			keepRunning.set(false);
-		}
-		public void waitForStart()
-			throws InterruptedException {
-			synchronized (startLock) {
-				startLock.wait();
-			}
-		}
+		String hello() throws Throwable;
+
+		String hello(String world) throws Throwable;
+
+		void unresolvedExceptionThrown() throws Throwable;
+
+		void undeclaredExceptionThrown();
 	}
 
 }

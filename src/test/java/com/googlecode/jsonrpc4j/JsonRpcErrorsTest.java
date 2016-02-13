@@ -1,50 +1,41 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
+import static com.googlecode.jsonrpc4j.util.Util.mapper;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.ByteArrayOutputStream;
-
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
+
+import com.googlecode.jsonrpc4j.util.CustomTestException;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * For testing the @JsonRpcErrors and @JsonRpcError annotations
- * 
- * @author Hans J??rgen Hoel (hansjorgen.hoel@nhst.no)
- *
  */
 public class JsonRpcErrorsTest {
 
-	private static final String JSON_ENCODING = "UTF-8";
-	private static final String JSON_FILE = "jsonRpcErrorTest.json";
-
-	private ObjectMapper mapper;
-	private ByteArrayOutputStream baos;
-	private TestException testException;
-	private TestException testExceptionWithMessage;
+	private ByteArrayOutputStream byteArrayOutputStream;
+	private CustomTestException testException;
+	private CustomTestException testExceptionWithMessage;
 
 	@Before
 	public void setup() {
-		mapper = new ObjectMapper();
-		baos = new ByteArrayOutputStream();
-		testException = new TestException();
-		testExceptionWithMessage = new TestException("exception message");
+		byteArrayOutputStream = new ByteArrayOutputStream();
+		testException = new CustomTestException();
+		testExceptionWithMessage = new CustomTestException("exception message");
 	}
 
 	@Test
 	public void exceptionWithoutAnnotatedServiceInterface() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
-		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
-
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		JsonNode error = json.get("error");
-
+		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
+		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 		assertNotNull(error);
 		assertEquals(0, error.get("code").intValue());
 	}
@@ -52,11 +43,9 @@ public class JsonRpcErrorsTest {
 	@Test
 	public void exceptionWithAnnotatedServiceInterface() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
-		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
+		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
 
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		JsonNode error = json.get("error");
+		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
 		assertNotNull(error);
 		assertEquals(1234, error.get("code").intValue());
@@ -64,17 +53,15 @@ public class JsonRpcErrorsTest {
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
 		assertEquals(null, data.get("message").textValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 
 	@Test
 	public void exceptionWithAnnotatedServiceInterfaceMessageAndData() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotationMessageAndData.class);
-		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
+		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
 
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		JsonNode error = json.get("error");
+		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
 		assertNotNull(error);
 		assertEquals(-5678, error.get("code").intValue());
@@ -82,17 +69,15 @@ public class JsonRpcErrorsTest {
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
 		assertEquals("The message", data.get("message").textValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
-	
+
 	@Test
 	public void exceptionWithMsgInException() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new ServiceWithExceptionMsg(), ServiceInterfaceWithAnnotation.class);
-		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
+		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
 
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		JsonNode error = json.get("error");
+		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
 		assertNotNull(error);
 		assertEquals(1234, error.get("code").intValue());
@@ -100,46 +85,36 @@ public class JsonRpcErrorsTest {
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
 		assertEquals(testExceptionWithMessage.getMessage(), data.get("message").textValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 
+	@SuppressWarnings("unused")
 	private interface ServiceInterfaceWithoutAnnotation {
-		public Object testMethod();
+		Object testMethod();
 	}
 
+	@SuppressWarnings("unused")
 	private interface ServiceInterfaceWithAnnotation {
-		@JsonRpcErrors({@JsonRpcError(exception=TestException.class, code=1234) })
-		public Object testMethod();
+		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = 1234) })
+		Object testMethod();
 	}
 
+	@SuppressWarnings("unused")
 	private interface ServiceInterfaceWithAnnotationMessageAndData {
-		@JsonRpcErrors({@JsonRpcError(exception=TestException.class, code=-5678,
-				message="The message", data="The data") })
-				public Object testMethod();
+		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = -5678, message = "The message", data = "The data") })
+		Object testMethod();
 	}
 
-	private class Service implements ServiceInterfaceWithoutAnnotation,
-	ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
+	private class Service implements ServiceInterfaceWithoutAnnotation, ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
 		public Object testMethod() {
-			throw testException;    
-		}
-	}
-	
-	private class ServiceWithExceptionMsg implements ServiceInterfaceWithoutAnnotation,
-	ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
-		public Object testMethod() {
-			throw testExceptionWithMessage;    
+			throw testException;
 		}
 	}
 
-	public class TestException extends RuntimeException {
-				
-		private static final long serialVersionUID = 1L;
-		
-		public TestException() {}
-		
-		public TestException(String msg) {
-			super(msg);
+	private class ServiceWithExceptionMsg implements ServiceInterfaceWithoutAnnotation, ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
+		public Object testMethod() {
+			throw testExceptionWithMessage;
 		}
 	}
+
 }

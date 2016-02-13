@@ -1,49 +1,36 @@
 package com.googlecode.jsonrpc4j;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
 
-import junit.framework.Assert;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import com.googlecode.jsonrpc4j.loadtest.ServletEngine;
-import com.googlecode.jsonrpc4j.loadtest.JsonRpcService;
+import org.springframework.web.client.HttpClientErrorException;
 
-/**
- * @author Alexander Makarov
- */
-public class HttpCodeTest {
+import com.googlecode.jsonrpc4j.util.BaseRestTest;
+import com.googlecode.jsonrpc4j.util.FakeServiceInterface;
+import com.googlecode.jsonrpc4j.util.FakeServiceInterfaceImpl;
 
-	private ServletEngine servletEngine;
+import java.net.MalformedURLException;
 
-	@Before
-	public void setup() throws Exception {
-		servletEngine = new ServletEngine();
-		servletEngine.startup();
+public class HttpCodeTest extends BaseRestTest {
+
+	@Test
+	public void http405OnInvalidUrl() throws MalformedURLException {
+		expectedEx.expectMessage(anyOf(equalTo("405 HTTP method POST is not supported by this URL"), equalTo("404 Not Found")));
+		expectedEx.expect(HttpClientErrorException.class);
+		FakeServiceInterface service = ProxyUtil.createClientProxy(FakeServiceInterface.class, getClient("error"));
+		service.doSomething();
 	}
 
 	@Test
-	public void http404() throws MalformedURLException {
-		JsonRpcHttpClient jsonRpcHttpClient = new JsonRpcHttpClient(new URL(
-				"http://127.0.0.1:" + ServletEngine.PORT + "/error"));
-		JsonRpcService service = ProxyUtil.createClientProxy(
-				JsonRpcService.class.getClassLoader(), JsonRpcService.class,
-				jsonRpcHttpClient);
-
-		try {
-			service.doSomething();
-			Assert.fail();
-		} catch (HttpException e) {
-			Assert.assertTrue(e.getMessage().contains("404 Not Found"));
-		}
+	public void http200() throws MalformedURLException {
+		FakeServiceInterface service = ProxyUtil.createClientProxy(FakeServiceInterface.class, getClient());
+		service.doSomething();
 	}
 
-	@After
-	public void teardown() throws Exception {
-		servletEngine.stop();
+	@Override
+	protected Class service() {
+		return FakeServiceInterfaceImpl.class;
 	}
-
 }

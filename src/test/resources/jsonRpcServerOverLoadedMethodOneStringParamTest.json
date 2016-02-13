@@ -1,5 +1,0 @@
-{"jsonrpc": "2.0",
- "method": "overloadedMethod",
- "params": [ "stringParam1" ],
- "id": 1
-}

@@ -278,7 +278,7 @@ class UserServiceServlet
     }
 
     public void init(ServletConfig config) {
-        this.userService = ...;
+        //this.userService = ...
         this.jsonRpcServer = new JsonRpcServer(this.userService, UserService.class);
     }
 
@@ -319,7 +319,7 @@ named `CompositeJsonServiceExporter`.
 
 ### Streaming (Socket) Server
 A streaming server that uses `Socket`s is available in the form of the
-`StreamServer` class.  It's use is very straitforward:
+`StreamServer` class.  It's use is very straightforward:
 
 ```java
 // create the jsonRpcServer
@@ -354,7 +354,7 @@ Of course, this is all possible in the Spring Framework as well:
         <property name="services">
         	<list>
 	        	<ref bean="userService" 	/>
-	        	<ref bean="contentServic" 	/>
+	        	<ref bean="contentService" 	/>
 	        	<ref bean="blackJackService" 	/>
         	</list>
         </property>
@@ -418,7 +418,7 @@ public void addFriend(UserObjectEx userObjectEx);
 
 The reason being that there is no efficient way for the server to
 determine the difference in the json between the `UserObject`
-and `UserObjectEx` pojos.
+and `UserObjectEx` Plain Old Java Objects.
 
 #### Custom method names
 

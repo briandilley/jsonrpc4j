@@ -1,12 +1,5 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -15,14 +8,23 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+
 /**
  * JSON-RPC Message converter for Spring RestTemplate
  */
-public class MappingJacksonRPC2HttpMessageConverter
-	extends AbstractHttpMessageConverter<Object> {
+@SuppressWarnings({ "WeakerAccess", "unused" })
+class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverter<Object> {
 
-	public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-	public static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
+	private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+	private static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
 
 	private ObjectMapper objectMapper;
 
@@ -48,6 +50,15 @@ public class MappingJacksonRPC2HttpMessageConverter
 	}
 
 	/**
+	 * Return the underlying {@code ObjectMapper} for this view.
+	 *
+	 * @return the object mapper for this view
+	 */
+	public ObjectMapper getObjectMapper() {
+		return this.objectMapper;
+	}
+
+	/**
 	 * Set the {@code ObjectMapper} for this view. If not set, a default
 	 * {@link ObjectMapper#ObjectMapper() ObjectMapper} is used.
 	 * <p>
@@ -62,15 +73,6 @@ public class MappingJacksonRPC2HttpMessageConverter
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		Assert.notNull(objectMapper, "ObjectMapper must not be null");
 		this.objectMapper = objectMapper;
-	}
-
-	/**
-	 * Return the underlying {@code ObjectMapper} for this view.
-	 * 
-	 * @return the object mapper for this view
-	 */
-	public ObjectMapper getObjectMapper() {
-		return this.objectMapper;
 	}
 
 	/**
@@ -89,19 +91,13 @@ public class MappingJacksonRPC2HttpMessageConverter
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
 
-		if (!ObjectNode.class.isAssignableFrom(clazz)) {
-			return false;
-		}
+		if (!ObjectNode.class.isAssignableFrom(clazz)) { return false; }
 
-		if (mediaType == null) {
-			return true;
-		}
+		if (mediaType == null) { return true; }
 
 		for (MediaType supportedMediaType : getSupportedMediaTypes()) {
 			// we can't read multipart
-			if (supportedMediaType.includes(mediaType)) {
-				return true;
-			}
+			if (supportedMediaType.includes(mediaType)) { return true; }
 		}
 		return false;
 
@@ -110,18 +106,12 @@ public class MappingJacksonRPC2HttpMessageConverter
 	@Override
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
 
-		if (!ObjectNode.class.isAssignableFrom(clazz)) {
-			return false;
-		}
+		if (!ObjectNode.class.isAssignableFrom(clazz)) { return false; }
 
-		if (mediaType == null || MediaType.ALL.equals(mediaType)) {
-			return true;
-		}
+		if (mediaType == null || MediaType.ALL.equals(mediaType)) { return true; }
 
 		for (MediaType supportedMediaType : getSupportedMediaTypes()) {
-			if (supportedMediaType.isCompatibleWith(mediaType)) {
-				return true;
-			}
+			if (supportedMediaType.isCompatibleWith(mediaType)) { return true; }
 		}
 
 		return false;
@@ -135,33 +125,47 @@ public class MappingJacksonRPC2HttpMessageConverter
 
 	@Override
 	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
-		throws IOException, HttpMessageNotReadableException {
+			throws IOException, HttpMessageNotReadableException {
 
 		JavaType javaType = getJavaType(clazz);
 		try {
 			return this.objectMapper.readValue(inputMessage.getBody(), javaType);
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			throw new HttpMessageNotReadableException("Could not read JSON: " + ex.getMessage(), ex);
 		}
 	}
 
 	@Override
 	protected void writeInternal(Object object, HttpOutputMessage outputMessage)
-		throws IOException, HttpMessageNotWritableException {
+			throws IOException, HttpMessageNotWritableException {
 
 		JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
-		JsonGenerator jsonGenerator
-			= this.objectMapper.getJsonFactory().createJsonGenerator(outputMessage.getBody(), encoding);
+
+		JsonGenerator jsonGenerator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
 		try {
 			if (this.prefixJson) {
 				jsonGenerator.writeRaw("{} && ");
 			}
 			this.objectMapper.writeValue(jsonGenerator, object);
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			throw new HttpMessageNotWritableException("Could not write JSON: " + ex.getMessage(), ex);
 		}
+	}
+
+	/**
+	 * Determine the JSON encoding to use for the given content type.
+	 *
+	 * @param contentType the media type as requested by the caller
+	 * @return the JSON encoding to use (never <code>null</code>)
+	 */
+	private JsonEncoding getJsonEncoding(MediaType contentType) {
+		if (contentType != null && contentType.getCharSet() != null) {
+			Charset charset = contentType.getCharSet();
+			for (JsonEncoding encoding : JsonEncoding.values()) {
+				if (charset.name().equals(encoding.getJavaName())) { return encoding; }
+			}
+		}
+		return JsonEncoding.UTF8;
 	}
 
 	/**
@@ -175,29 +179,11 @@ public class MappingJacksonRPC2HttpMessageConverter
 	 * super.getJavaType(clazz); } }
 	 * </pre>
 	 *
-	 * @param clazz the class to return the java type for
+	 * @param javaClass the class to return the java type for
 	 * @return the java type
 	 */
-	protected JavaType getJavaType(Class<?> clazz) {
-		return objectMapper.constructType(clazz);
-	}
-
-	/**
-	 * Determine the JSON encoding to use for the given content type.
-	 *
-	 * @param contentType the media type as requested by the caller
-	 * @return the JSON encoding to use (never <code>null</code>)
-	 */
-	protected JsonEncoding getJsonEncoding(MediaType contentType) {
-		if (contentType != null && contentType.getCharSet() != null) {
-			Charset charset = contentType.getCharSet();
-			for (JsonEncoding encoding : JsonEncoding.values()) {
-				if (charset.name().equals(encoding.getJavaName())) {
-					return encoding;
-				}
-			}
-		}
-		return JsonEncoding.UTF8;
+	private JavaType getJavaType(Class<?> javaClass) {
+		return objectMapper.constructType(javaClass);
 	}
 
 }

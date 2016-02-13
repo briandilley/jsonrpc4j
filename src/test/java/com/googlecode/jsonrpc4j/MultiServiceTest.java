@@ -1,73 +1,50 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParams;
+import static com.googlecode.jsonrpc4j.util.Util.param1;
+import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static org.junit.Assert.assertEquals;
-
-import java.io.ByteArrayOutputStream;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
+import org.junit.runner.RunWith;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
 
+import java.io.ByteArrayOutputStream;
+
+@RunWith(EasyMockRunner.class)
 public class MultiServiceTest {
 
-	private static final String JSON_ENCODING = "UTF-8";
-
+	private static final String serviceName = "Test";
+	@Mock(type = MockType.NICE)
+	private ServiceInterfaceWithParamNameAnnotation mockService;
 	private JsonRpcMultiServer multiServer;
-	private ByteArrayOutputStream baos;
+	private ByteArrayOutputStream byteArrayOutputStream;
 
 	@Before
 	public void setup() {
 		multiServer = new JsonRpcMultiServer();
-		multiServer.addService("Test", new Service(), ServiceInterfaceWithParamNameAnnotaion.class);
-		baos = new ByteArrayOutputStream();
+		multiServer.addService(serviceName, mockService, ServiceInterfaceWithParamNameAnnotation.class);
+		byteArrayOutputStream = new ByteArrayOutputStream();
 	}
 
 	@Test
-	public void callMethodExactNumberOfParametersNamed() throws Exception {		
-		multiServer.handle(new ClassPathResource("jsonRpcMultiServerExactParamsNamedTest.json").getInputStream(), baos);
+	public void callMethodExactNumberOfParametersNamed() throws Exception {
+		EasyMock.expect(mockService.testMethod(param2)).andReturn("success");
+		EasyMock.replay(mockService);
 
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = new ObjectMapper().readTree(response);
-		
-		assertEquals("success", json.get("result").textValue());
+		multiServer.handle(messageWithMapParams(serviceName + JsonRpcMultiServer.DEFAULT_SEPARATOR + "testMethod", param1, param2), byteArrayOutputStream);
+
+		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 
-	private interface ServiceInterfaceWithParamNameAnnotaion {        
-		public String testMethod(@JsonRpcParam("param1") String param1);    
-		public String overloadedMethod();
-		public String overloadedMethod(@JsonRpcParam("param1") String stringParam1);
-		public String overloadedMethod(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam("param2") String stringParam2);
-		public String overloadedMethod(@JsonRpcParam("param1") int intParam1);
-		public String overloadedMethod(@JsonRpcParam("param1") int intParam1, @JsonRpcParam("param2") int intParam2);
-		
-		public String methodWithoutRequiredParam(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam(value="param2") String stringParam2);
+	private interface ServiceInterfaceWithParamNameAnnotation {
+		String testMethod(@JsonRpcParam("param1") String param1);
 	}
 
-	private class Service implements ServiceInterfaceWithParamNameAnnotaion {
-		public String testMethod(String param1) {
-			return "success";
-		}
-		public String overloadedMethod() {
-			return "noParam";
-		}
-		public String overloadedMethod(String stringParam1) {
-			return stringParam1;
-		}
-		public String overloadedMethod(String stringParam1, String stringParam2) {
-			return stringParam1+", "+stringParam2;
-		}
-		public String overloadedMethod(int intParam1) {
-			return "intParam"+intParam1;
-		}
-		public String overloadedMethod(int intParam1, int intParam2) {
-			return "intParam"+intParam1+", intParam"+intParam2;
-		}
-
-		public String methodWithoutRequiredParam(String stringParam1, String stringParam2) {
-			return stringParam1+", "+stringParam2;
-		}
-	}
 }

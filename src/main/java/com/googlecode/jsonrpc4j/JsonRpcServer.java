@@ -1,51 +1,27 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import org.apache.logging.log4j.LogManager;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.portlet.ResourceRequest;
-import javax.portlet.ResourceResponse;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 
 /**
- * A JSON-RPC request server reads JSON-RPC requests from an
- * input stream and writes responses to an output stream.
- * Supports handlet and servlet requests.
+ * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
+ * Supports handler and servlet requests.
  */
-public class JsonRpcServer extends JsonRpcBasicServer
-{
-	private static final Logger LOGGER = Logger.getLogger(JsonRpcServer.class.getName());
-    
+@SuppressWarnings("unused")
+public class JsonRpcServer extends JsonRpcBasicServer {
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
@@ -55,8 +31,7 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	 * @param handler the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(
-		ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
+	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
 		super(mapper, handler, remoteInterface);
 	}
 
@@ -79,7 +54,7 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	 * @param handler the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
+	private JsonRpcServer(Object handler, Class<?> remoteInterface) {
 		super(new ObjectMapper(), handler, remoteInterface);
 	}
 
@@ -92,7 +67,7 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	public JsonRpcServer(Object handler) {
 		super(new ObjectMapper(), handler, null);
 	}
-        
+
 	/**
 	 * Handles a portlet request.
 	 *
@@ -100,40 +75,28 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	 * @param response the {@link ResourceResponse}
 	 * @throws IOException on error
 	 */
-	public void handle(ResourceRequest request, ResourceResponse response)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Handing ResourceRequest "+request.getMethod());
-		}
-
-		// set response type
-		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-
-		// setup streams
-		InputStream input 	= null;
-		OutputStream output	= response.getPortletOutputStream();
-
-		// POST
-		if (request.getMethod().equals("POST")) {
-			input = request.getPortletInputStream();
-
-		// GET
-		} else if (request.getMethod().equals("GET")) {
-			input = createInputStream(
-				request.getParameter("method"),
-				request.getParameter("id"),
-				request.getParameter("params"));
-
-		// invalid request
-		} else {
-			throw new IOException(
-				"Invalid request method, only POST and GET is supported");
-		}
-
-		// service the request
+	public void handle(ResourceRequest request, ResourceResponse response) throws IOException {
+		logger.debug("Handing ResourceRequest {}", request.getMethod());
+		response.setContentType(JSONRPC_CONTENT_TYPE);
+		OutputStream output = response.getPortletOutputStream();
+		InputStream input = getRequestStream(request);
 		handle(input, output);
-		//fix to not flush within handle() but outside so http status code can be set
+		// fix to not flush within handle() but outside so http status code can be set
 		output.flush();
+	}
+
+	private InputStream getRequestStream(ResourceRequest request) throws IOException {
+		if (request.getMethod().equals("POST")) {
+			return request.getPortletInputStream();
+		} else if (request.getMethod().equals("GET")) {
+			return createInputStream(request);
+		} else {
+			throw new IOException("Invalid request method, only POST and GET is supported");
+		}
+	}
+
+	private static InputStream createInputStream(ResourceRequest request) throws IOException {
+		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
 	}
 
 	/**
@@ -143,50 +106,42 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	 * @param response the {@link HttpServletResponse}
 	 * @throws IOException on error
 	 */
-	public void handle(HttpServletRequest request, HttpServletResponse response)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Handing HttpServletRequest "+request.getMethod());
-		}
-
-		// set response type
-		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-
-		// setup streams
-		InputStream input 	= null;
-		OutputStream output	= response.getOutputStream();
-
-		// POST
-		if (request.getMethod().equals("POST")) {
-			input = request.getInputStream();
-
-		// GET
-		} else if (request.getMethod().equals("GET")) {
-			input = createInputStream(
-				request.getParameter("method"),
-				request.getParameter("id"),
-				request.getParameter("params"));
-
-		// invalid request
-		} else {
-			throw new IOException(
-				"Invalid request method, only POST and GET is supported");
-		}
-
-		// service the request
-		//fix to set HTTP status correctly
+	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.debug("Handling HttpServletRequest {}", request);
+		response.setContentType(JSONRPC_CONTENT_TYPE);
+		OutputStream output = response.getOutputStream();
+		InputStream input = getRequestStream(request);
 		int result = handle(input, output);
-		if(result != 0){
-			if (result == -32700 || result == -32602 || result == -32603
-					|| (result <= -32000 && result >= -32099)) {
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} else if (result == -32600) {
-				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			} else if (result == -32601) {
-				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			}
-		}
-		//fix to not flush within handle() but outside so http status code can be set
+		response.setStatus(getHttpStatusCode(response, result));
 		output.flush();
 	}
+
+	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
+		InputStream input;
+		if (request.getMethod().equals("POST")) {
+			input = request.getInputStream();
+		} else if (request.getMethod().equals("GET")) {
+			input = createInputStream(request);
+		} else {
+			throw new IOException("Invalid request method, only POST and GET is supported");
+		}
+		return input;
+	}
+
+	private int getHttpStatusCode(HttpServletResponse response, int result) {
+		if (result == 0) return HttpServletResponse.SC_OK;
+
+		if (result == -32700 || result == -32602 || result == -32603 || (result <= -32000 && result >= -32099)) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} else if (result == -32600) {
+			return HttpServletResponse.SC_BAD_REQUEST;
+		} else if (result == -32601) { return HttpServletResponse.SC_NOT_FOUND; }
+
+		return HttpServletResponse.SC_OK;
+	}
+
+	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
+		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
+	}
+
 }

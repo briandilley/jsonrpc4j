@@ -1,5 +1,0 @@
-{"jsonrpc": "2.0",
- "method": "Test.custom2",
- "params": [ "stringParam1"],
- "id": 1
-}

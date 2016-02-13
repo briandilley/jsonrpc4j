@@ -1,28 +1,12 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import static com.googlecode.jsonrpc4j.ReflectionUtil.findCandidateMethods;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
+import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
+
+import org.apache.logging.log4j.LogManager;
+
+import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -33,8 +17,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
-import net.iharder.Base64;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -54,49 +36,58 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
+import net.iharder.Base64;
 
 /**
- * A JSON-RPC request server reads JSON-RPC requests from an
- * input stream and writes responses to an output stream.
+ * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
  * Can even run on Android system.
  */
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class JsonRpcBasicServer {
 
-	private static final Logger LOGGER = Logger.getLogger(JsonRpcBasicServer.class.getName());
+	public static final String JSONRPC_CONTENT_TYPE = "application/json-rpc";
 
-	public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
+	public static final String PARAMS = "params";
+	public static final String METHOD = "method";
+	public static final String JSONRPC = "jsonrpc";
+	public static final String ID = "id";
 
-	public static final ErrorResolver DEFAULT_ERRROR_RESOLVER
-		= new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
-
-	private static Class<?> WEBPARAM_ANNOTATION_CLASS;
-	private static Method WEBPARAM_NAME_METHOD;
-
-	private boolean backwardsComaptible		= true;
-	private boolean rethrowExceptions 		= false;
-	private boolean allowExtraParams 		= false;
-	private boolean allowLessParams			= false;
-	private ErrorResolver errorResolver	= null;
-	private ObjectMapper mapper;
-	private Object handler;
-	private Class<?> remoteInterface;
-    private InvocationListener invocationListener = null;
-	private Level exceptionLogLevel = Level.WARNING;
+	public static final String ERROR = "error";
+	public static final String ERROR_MESSAGE = "message";
+	public static final String ERROR_CODE = "code";
+	public static final String DATA = "data";
+	public static final String RESULT = "result";
+	public static final String VERSION = "2.0";
+	public static final int CODE_OK = 0;
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
+	private static Class<?> WEB_PARAM_ANNOTATION_CLASS;
+	private static Method WEB_PARAM_NAME_METHOD;
 
 	static {
-		ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
-		try {
-			WEBPARAM_ANNOTATION_CLASS = classLoader.loadClass("javax.jws.WebParam");
-			WEBPARAM_NAME_METHOD  = WEBPARAM_ANNOTATION_CLASS.getMethod("name");
-		} catch (Exception e) {
-			// Must be Java 1.5
-		}
+		loadAnnotationSupportEngine();
+	}
+
+	private final ObjectMapper mapper;
+	private final Class<?> remoteInterface;
+	private final Object handler;
+	private boolean backwardsCompatible = true;
+	private boolean rethrowExceptions = false;
+	private boolean allowExtraParams = false;
+	private boolean allowLessParams = false;
+	private ErrorResolver errorResolver = null;
+	private InvocationListener invocationListener = null;
+
+	/**
+	 * Creates the server with the given {@link ObjectMapper} delegating
+	 * all calls to the given {@code handler}.
+	 *
+	 * @param mapper  the {@link ObjectMapper}
+	 * @param handler the {@code handler}
+	 */
+	public JsonRpcBasicServer(final ObjectMapper mapper, final Object handler) {
+		this(mapper, handler, null);
 	}
 
 	/**
@@ -104,26 +95,15 @@ public class JsonRpcBasicServer {
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
-	 * @param mapper the {@link ObjectMapper}
-	 * @param handler the {@code handler}
+	 * @param mapper          the {@link ObjectMapper}
+	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcBasicServer(
-		ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
-		this.mapper				= mapper;
-		this.handler 			= handler;
-		this.remoteInterface	= remoteInterface;
-	}
-
-	/**
-	 * Creates the server with the given {@link ObjectMapper} delegating
-	 * all calls to the given {@code handler}.
-	 *
-	 * @param mapper the {@link ObjectMapper}
-	 * @param handler the {@code handler}
-	 */
-	public JsonRpcBasicServer(ObjectMapper mapper, Object handler) {
-		this(mapper, handler, null);
+	public JsonRpcBasicServer(final ObjectMapper mapper, final Object handler, final Class<?> remoteInterface) {
+		this.mapper = mapper;
+		this.handler = handler;
+		this.remoteInterface = remoteInterface;
+		if (handler != null) logger.debug("created server for interface {} with handler {}", remoteInterface, handler.getClass());
 	}
 
 	/**
@@ -131,10 +111,10 @@ public class JsonRpcBasicServer {
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
-	 * @param handler the {@code handler}
+	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcBasicServer(Object handler, Class<?> remoteInterface) {
+	public JsonRpcBasicServer(final Object handler, final Class<?> remoteInterface) {
 		this(new ObjectMapper(), handler, remoteInterface);
 	}
 
@@ -144,8 +124,33 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param handler the {@code handler}
 	 */
-	public JsonRpcBasicServer(Object handler) {
+	public JsonRpcBasicServer(final Object handler) {
 		this(new ObjectMapper(), handler, null);
+	}
+
+	private static void loadAnnotationSupportEngine() {
+		final ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
+		try {
+			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass("javax.jws.WebParam");
+			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod("name");
+		} catch (ClassNotFoundException | NoSuchMethodException e) {
+			logger.error(e);
+		}
+	}
+
+	/**
+	 * Returns parameters into an {@link InputStream} of JSON data.
+	 *
+	 * @param method the method
+	 * @param id     the id
+	 * @param params the base64 encoded params
+	 * @return the {@link InputStream}
+	 * @throws IOException on error
+	 */
+	static InputStream createInputStream(String method, String id, String params) throws IOException {
+		final String decodedParams = URLDecoder.decode(new String(Base64.decode(params)), "UTF-8");
+		final String request = String.format("{'id': %s, 'method': '%s', 'params': '%s'}", id, method, decodedParams);
+		return new ByteArrayInputStream(request.getBytes());
 	}
 
 	/**
@@ -154,292 +159,187 @@ public class JsonRpcBasicServer {
 	 * the stream and treated as a JSON-RPC request.  All responses
 	 * are written to the given {@link OutputStream}.
 	 *
-	 * @param ips the {@link InputStream}
-	 * @param ops the {@link OutputStream}
+	 * @param input  the {@link InputStream}
+	 * @param output the {@link OutputStream}
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	public int handle(InputStream ips, OutputStream ops)
-		throws IOException {
-
-		// get node iterator
-		ReadContext ctx = ReadContext.getReadContext(ips, mapper);
-
-		// prcess
-		JsonNode jsonNode = null;
+	public int handle(final InputStream input, final OutputStream output) throws IOException {
+		final ReadContext readContext = ReadContext.getReadContext(input, mapper);
 		try {
-			ctx.assertReadable();
-			jsonNode = ctx.nextValue();
+			readContext.assertReadable();
+			final JsonNode jsonNode = readContext.nextValue();
+			return handleNode(jsonNode, output);
 		} catch (JsonParseException e) {
-			writeAndFlushValue(ops, createErrorResponse(
-				"jsonrpc", "null", -32700, "Parse error", null));
-			return -32700;
+			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", -32700, "Json parse error", null));
 		}
-		return handleNode(jsonNode, ops);
 	}
 
 	/**
-	 * Returns parameters into an {@link InputStream} of JSON data.
-	 *
-	 * @param method the method
-	 * @param id the id
-	 * @param params the base64 encoded params
-	 * @return the {@link InputStream}
-	 * @throws IOException on error
-	 */
-	protected static InputStream createInputStream(String method, String id, String params)
-		throws IOException {
-
-		// decode parameters
-		String decodedParams = URLDecoder.decode(
-			new String(Base64.decode(params)), "UTF-8");
-
-		// create request
-		String request = new StringBuilder()
-			.append("{ ")
-			.append("\"id\": \"").append(id).append("\", ")
-			.append("\"method\": \"").append(method).append("\", ")
-			.append("\"params\": ").append(decodedParams).append(" ")
-			.append("}")
-			.toString();
-
-		// turn into InputStream
-		return new ByteArrayInputStream(request.getBytes());
-	}
-
-	/**
-	 * Returns the handler's class or interfaces.  The variable serviceName
-	 * is ignored in this class.
+	 * Returns the handler's class or interfaces.  The variable serviceName is ignored in this class.
 	 *
 	 * @param serviceName the optional name of a service
 	 * @return the class
 	 */
-	protected Class<?>[] getHandlerInterfaces(String serviceName) {
+	Class<?>[] getHandlerInterfaces(final String serviceName) {
 		if (remoteInterface != null) {
-			return new Class<?>[] {remoteInterface};
+			return new Class<?>[] { remoteInterface };
 		} else if (Proxy.isProxyClass(handler.getClass())) {
 			return handler.getClass().getInterfaces();
 		} else {
-			return new Class<?>[] {handler.getClass()};
+			return new Class<?>[] { handler.getClass() };
 		}
 	}
 
-	
 	/**
-	 * Handles the given {@link JsonNode} and writes the
-	 * responses to the given {@link OutputStream}.
+	 * Handles the given {@link JsonNode} and writes the responses to the given {@link OutputStream}.
 	 *
-	 * @param node the {@link JsonNode}
-	 * @param ops the {@link OutputStream}
+	 * @param node   the {@link JsonNode}
+	 * @param output the {@link OutputStream}
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	public int handleNode(JsonNode node, OutputStream ops)
-		throws IOException {
-
-		// handle objects
-		if (node.isObject()) {
-			return handleObject(ObjectNode.class.cast(node), ops);
-
-		// handle arrays
-		} else if (node.isArray()) {
-			return handleArray(ArrayNode.class.cast(node), ops);
-
-		// bail on bad data
-		} else {
-			this.writeAndFlushValue(
-				ops, this.createErrorResponse(
-				"2.0", "null", -32600, "Invalid Request", null));
-			return -32600;
-		}
+	private int handleNode(final JsonNode node, final OutputStream output) throws IOException {
+		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
+		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
+		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", -32600, "Invalid Request", null));
 	}
 
 	/**
 	 * Handles the given {@link ArrayNode} and writes the
 	 * responses to the given {@link OutputStream}.
 	 *
-	 * @param node the {@link JsonNode}
-	 * @param ops the {@link OutputStream}
+	 * @param node   the {@link JsonNode}
+	 * @param output the {@link OutputStream}
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	public int handleArray(ArrayNode node, OutputStream ops)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Handing "+node.size()+" requests");
-		}
+	private int handleArray(ArrayNode node, OutputStream output) throws IOException {
+		logger.debug("Handing {} requests", node.size());
 
 		// loop through each array element
-		ops.write('[');
-		for (int i=0; i<node.size(); i++) {
-			int result = handleNode(node.get(i), ops);
-			if(result != 0){
-				return result;
-			}
-			if (i != node.size() - 1) ops.write(','); 
+		output.write('[');
+		for (int i = 0; i < node.size(); i++) {
+			int result = handleNode(node.get(i), output);
+			if (isError(result)) return result;
+			if (i != node.size() - 1) output.write(',');
 		}
-		ops.write(']');
+		output.write(']');
 		return 0;
+	}
+
+	private boolean isError(int result) {
+		return result != 0;
 	}
 
 	/**
 	 * Handles the given {@link ObjectNode} and writes the
 	 * responses to the given {@link OutputStream}.
 	 *
-	 * @param node the {@link JsonNode}
-	 * @param ops the {@link OutputStream}
+	 * @param node   the {@link JsonNode}
+	 * @param output the {@link OutputStream}
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	public int handleObject(ObjectNode node, OutputStream ops)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Request: "+node.toString());
-		}
+	private int handleObject(final ObjectNode node, final OutputStream output) throws IOException {
+		logger.debug("Request: {}", node);
 
-		// validate request
-		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
-			writeAndFlushValue(ops, createErrorResponse(
-				"2.0", "null", -32600, "Invalid Request", null));
-			return -32600;
-		}
-
-		int returnCode = 0;
-		// get nodes
-		JsonNode jsonPrcNode	= node.get("jsonrpc");
-		JsonNode methodNode		= node.get("method");
-		JsonNode idNode 		= node.get("id");
-		JsonNode paramsNode		= node.get("params");
+		if (!isValidRequest(node))
+			return writeAndFlushValueError(output, createResponseError(VERSION, "null", -32600, "Invalid Request", null));
+		Object id = parseId(node.get(ID));
 
 		// get node values
-		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.asText() : "2.0";
-		String methodName	= getMethodName(methodNode);
-		String serviceName  = getServiceName(methodNode);
-		Object id			= parseId(idNode);
+		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get("jsonrpc").asText() : VERSION;
+		if (!hasNonNullData(node, "method"))
+			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32601, "Missing node", null));
 
-		// find methods
-		Set<Method> methods = new HashSet<Method>();
-		methods.addAll(findMethods(getHandlerInterfaces(serviceName), methodName));
-		if (methods.isEmpty()) {
-			writeAndFlushValue(ops, createErrorResponse(
-				jsonRpc, id, -32601, "Method not found", null));
-			return -32601;
-		}
+		final String fullMethodName = node.get(METHOD).asText();
+		final String partialMethodName = getMethodName(fullMethodName);
+		final String serviceName = getServiceName(fullMethodName);
 
-		// choose a method
-		MethodAndArgs methodArgs = findBestMethodByParamsNode(methods, paramsNode);
-		if (methodArgs==null) {
-			writeAndFlushValue(ops, createErrorResponse(
-				jsonRpc, id, -32602, "Invalid method parameters", null));
-			return -32602;
-		}
-
-		// invoke the method
-		JsonNode result = null;
-		Throwable thrown = null;
-        long beforeMs = System.currentTimeMillis();
-
-        if (invocationListener!=null) {
-            invocationListener.willInvoke(methodArgs.method, methodArgs.arguments);
-        }
-
-		try {
-			result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
-		} catch (Throwable e) {
-			thrown = e;
-		}
-
-        if (invocationListener!=null) {
-           invocationListener.didInvoke(
-                   methodArgs.method,
-                   methodArgs.arguments,
-                   result,
-                   thrown,
-                   System.currentTimeMillis()-beforeMs);
-        }
-
-		// respond if it's not a notification request
-		if (id!=null) {
-
-			// attempt to resolve the error
-			JsonError error = null;
-			if (thrown!=null) {
-
-				// get cause of exception
-				Throwable e = thrown;
-				while (InvocationTargetException.class.isInstance(e)) {
-					e = InvocationTargetException.class.cast(e).getTargetException();
-                    while(UndeclaredThrowableException.class.isInstance(e)){
-                        e = UndeclaredThrowableException.class.cast(e).getUndeclaredThrowable();
-                    }
+		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName);
+		if (methods.isEmpty())
+			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32601, "Method not found", null));
+		AMethodWithItsArgs methodArgs = findBestMethodByParamsNode(methods, node.get(PARAMS));
+		if (methodArgs == null) return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32602, "Invalid method parameters", null));
+		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
+			try {
+				handler.result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
+				if (!isNotificationRequest(id)) {
+					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
+					writeAndFlushValue(output, response);
 				}
-
-				// resolve error
-				if (errorResolver!=null) {
-					error = errorResolver.resolveError(
-						e, methodArgs.method, methodArgs.arguments);
-				} else {
-					error = DEFAULT_ERRROR_RESOLVER.resolveError(
-						e, methodArgs.method, methodArgs.arguments);
-				}
-
-				// make sure we have a JsonError
-				if (error==null) {
-					error = new JsonError(
-						0, e.getMessage(), e.getClass().getName());
-				}
-			}
-
-			// the resoponse object
-			ObjectNode response = null;
-
-			// build error
-			if (error!=null) {
-				response = createErrorResponse(
-					jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
-				returnCode = error.getCode();
-
-			// build success
-			} else {
-				response = createSuccessResponse(jsonRpc, id, result);
-			}
-
-			// write it
-			writeAndFlushValue(ops, response);
-		}
-
-		// log and potentially re-throw errors
-		if (thrown!=null) {
-			if (LOGGER.isLoggable(exceptionLogLevel)) {
-				LOGGER.log(exceptionLogLevel, "Error in JSON-RPC Service", thrown);
-			}
-			if (rethrowExceptions) {
-				throw new RuntimeException(thrown);
+				return CODE_OK;
+			} catch (Throwable e) {
+				handler.error = e;
+				return handleError(output, id, jsonRpc, methodArgs, e);
 			}
 		}
-		
-		return returnCode;
+	}
+
+	private int handleError(OutputStream output, Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) throws IOException {
+		Throwable unwrappedException = getException(e);
+		logger.warn("Error in JSON-RPC Service", unwrappedException);
+		JsonError error = resolveError(methodArgs, unwrappedException);
+		int responseCode = writeAndFlushValueError(output, createResponseError(jsonRpc, id, error.getCode(), error.getMessage(), error.getData()));
+		if (rethrowExceptions) { throw new RuntimeException(unwrappedException); }
+		return responseCode;
+	}
+
+	private Throwable getException(final Throwable thrown) {
+		Throwable e = thrown;
+		while (InvocationTargetException.class.isInstance(e)) {
+			// noinspection ThrowableResultOfMethodCallIgnored
+			e = InvocationTargetException.class.cast(e).getTargetException();
+			while (UndeclaredThrowableException.class.isInstance(e)) {
+				// noinspection ThrowableResultOfMethodCallIgnored
+				e = UndeclaredThrowableException.class.cast(e).getUndeclaredThrowable();
+			}
+		}
+		return e;
+	}
+
+	private JsonError resolveError(AMethodWithItsArgs methodArgs, Throwable e) {
+		JsonError error;
+		final ErrorResolver currentResolver = errorResolver == null ? DEFAULT_ERROR_RESOLVER : errorResolver;
+		error = currentResolver.resolveError(e, methodArgs.method, methodArgs.arguments);
+		if (error == null) {
+			error = new JsonError(0, e.getMessage(), e.getClass().getName());
+		}
+		return error;
+	}
+
+	private boolean isNotificationRequest(Object id) {
+		return id == null;
+	}
+
+	private boolean isValidRequest(ObjectNode node) {
+		return (!backwardsCompatible || hasMethodAndVersion(node));
+	}
+
+	private boolean hasMethodAndVersion(ObjectNode node) {
+		return node.has("jsonrpc") && node.has("method");
 	}
 
 	/**
 	 * Get the service name from the methodNode.  In this class, it is always
 	 * <code>null</code>.  Subclasses may parse the methodNode for service name.
 	 *
-	 * @param methodNode the JsonNode for the method
+	 * @param methodName the JsonNode for the method
 	 * @return the name of the service, or <code>null</code>
 	 */
-	protected String getServiceName(JsonNode methodNode) {
+	String getServiceName(final String methodName) {
 		return null;
 	}
 
 	/**
 	 * Get the method name from the methodNode.
 	 *
-	 * @param methodNode the JsonNode for the method
+	 * @param methodName the JsonNode for the method
 	 * @return the name of the method that should be invoked
 	 */
-	protected String getMethodName(JsonNode methodNode) {
-		return (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
+	String getMethodName(final String methodName) {
+		return methodName;
 	}
 
 	/**
@@ -449,7 +349,7 @@ public class JsonRpcBasicServer {
 	 * @param serviceName an optional service name
 	 * @return the handler to invoke the RPC call against
 	 */
-	protected Object getHandler(String serviceName) {
+	Object getHandler(String serviceName) {
 		return handler;
 	}
 
@@ -459,373 +359,252 @@ public class JsonRpcBasicServer {
 	 * to it.
 	 *
 	 * @param target optional service name used to locate the target object
-	 *  to invoke the Method on
-	 * @param m the method to invoke
+	 *               to invoke the Method on
+	 * @param method      the method to invoke
 	 * @param params the params to pass to the method
 	 * @return the return value (or null if no return)
-	 * @throws IOException on error
-	 * @throws IllegalAccessException on error
+	 * @throws IOException               on error
+	 * @throws IllegalAccessException    on error
 	 * @throws InvocationTargetException on error
 	 */
-	protected JsonNode invoke(Object target, Method m, List<JsonNode> params)
-		throws IOException,
-		IllegalAccessException,
-		InvocationTargetException {
+	private JsonNode invoke(Object target, Method method, List<JsonNode> params) throws IOException, IllegalAccessException, InvocationTargetException {
+		logger.debug("Invoking method: {} with args {}", method.getName(), params);
+		Object[] convertedParams = convertJsonToParameters(method, params);
+		Object result = method.invoke(target, convertedParams);
+		logger.debug("Invoked method: {}, result {}", method.getName(), result);
+		return hasReturnValue(method) ? mapper.valueToTree(result) : null;
+	}
 
-		// debug log
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Invoking method: "+m.getName());
-		}
+	private boolean hasReturnValue(Method m) {
+		return m.getGenericReturnType() != null;
+	}
 
-		// convert the parameters
+	private Object[] convertJsonToParameters(Method m, List<JsonNode> params) throws IOException {
 		Object[] convertedParams = new Object[params.size()];
 		Type[] parameterTypes = m.getGenericParameterTypes();
-		
-		for (int i=0; i<parameterTypes.length; i++) {
-		    JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
-		    JavaType paramJavaType = TypeFactory.defaultInstance().constructType(parameterTypes[i]);
+
+		for (int i = 0; i < parameterTypes.length; i++) {
+			JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
+			JavaType paramJavaType = TypeFactory.defaultInstance().constructType(parameterTypes[i]);
 			convertedParams[i] = mapper.readValue(paramJsonParser, paramJavaType);
 		}
-
-		// invoke the method
-		Object result = m.invoke(target, convertedParams);
-		return (m.getGenericReturnType()!=null) ? mapper.valueToTree(result) : null;
+		return convertedParams;
 	}
 
 	/**
 	 * Convenience method for creating an error response.
 	 *
 	 * @param jsonRpc the jsonrpc string
-	 * @param id the id
-	 * @param code the error code
+	 * @param id      the id
+	 * @param code    the error code
 	 * @param message the error message
-	 * @param data the error data (if any)
+	 * @param data    the error data (if any)
 	 * @return the error response
 	 */
-	protected ObjectNode createErrorResponse(
-		String jsonRpc, Object id, int code, String message, Object data) {
+	private ObjectNode createResponseError(String jsonRpc, Object id, int code, String message, Object data) {
 		ObjectNode response = mapper.createObjectNode();
 		ObjectNode error = mapper.createObjectNode();
-		error.put("code", code);
-		error.put("message", message);
-		if (data!=null) {
-			error.set("data",  mapper.valueToTree(data));
+		error.put(ERROR_CODE, code);
+		error.put(ERROR_MESSAGE, message);
+		if (data != null) {
+			error.set(DATA, mapper.valueToTree(data));
 		}
-		response.put("jsonrpc", jsonRpc);
+		response.put(JSONRPC, jsonRpc);
 		if (Integer.class.isInstance(id)) {
-			response.put("id", Integer.class.cast(id).intValue());
+			response.put(ID, Integer.class.cast(id).intValue());
 		} else if (Long.class.isInstance(id)) {
-			response.put("id", Long.class.cast(id).longValue());
+			response.put(ID, Long.class.cast(id).longValue());
 		} else if (Float.class.isInstance(id)) {
-			response.put("id", Float.class.cast(id).floatValue());
+			response.put(ID, Float.class.cast(id).floatValue());
 		} else if (Double.class.isInstance(id)) {
-			response.put("id", Double.class.cast(id).doubleValue());
+			response.put(ID, Double.class.cast(id).doubleValue());
 		} else if (BigDecimal.class.isInstance(id)) {
-			response.put("id", BigDecimal.class.cast(id));
+			response.put(ID, BigDecimal.class.cast(id));
 		} else {
-			response.put("id", String.class.cast(id));
+			response.put(ID, String.class.cast(id));
 		}
-		response.set("error", error);
+		response.set(ERROR, error);
 		return response;
 	}
 
 	/**
-	 * Creates a sucess response.
-	 * @param jsonRpc
-	 * @param id
-	 * @param result
-	 * @return
+	 * Creates a success response.
+	 *
+	 * @param jsonRpc the version string
+	 * @param id the id of the request
+	 * @param result the result object
+	 * @return the response object
 	 */
-	protected ObjectNode createSuccessResponse(String jsonRpc, Object id, JsonNode result) {
+	private ObjectNode createResponseSuccess(String jsonRpc, Object id, JsonNode result) {
 		ObjectNode response = mapper.createObjectNode();
-		response.put("jsonrpc", jsonRpc);
+		response.put(JSONRPC, jsonRpc);
 		if (Integer.class.isInstance(id)) {
-			response.put("id", Integer.class.cast(id).intValue());
+			response.put(ID, Integer.class.cast(id).intValue());
 		} else if (Long.class.isInstance(id)) {
-			response.put("id", Long.class.cast(id).longValue());
+			response.put(ID, Long.class.cast(id).longValue());
 		} else if (Float.class.isInstance(id)) {
-			response.put("id", Float.class.cast(id).floatValue());
+			response.put(ID, Float.class.cast(id).floatValue());
 		} else if (Double.class.isInstance(id)) {
-			response.put("id", Double.class.cast(id).doubleValue());
+			response.put(ID, Double.class.cast(id).doubleValue());
 		} else if (BigDecimal.class.isInstance(id)) {
-			response.put("id", BigDecimal.class.cast(id));
+			response.put(ID, BigDecimal.class.cast(id));
 		} else {
-			response.put("id", String.class.cast(id));
+			response.put(ID, String.class.cast(id));
 		}
-		response.set("result", result);
+		response.set(RESULT, result);
 		return response;
 	}
 
 	/**
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
-	 * it as a {@link MethodAndArgs} class.
+	 * it as a {@link AMethodWithItsArgs} class.
 	 *
-	 * @param methods the {@link Method}s
+	 * @param methods    the {@link Method}s
 	 * @param paramsNode the {@link JsonNode} passed as the parameters
-	 * @return the {@link MethodAndArgs}
+	 * @return the {@link AMethodWithItsArgs}
 	 */
-	private MethodAndArgs findBestMethodByParamsNode(Set<Method> methods, JsonNode paramsNode) {
+	private AMethodWithItsArgs findBestMethodByParamsNode(Set<Method> methods, JsonNode paramsNode) {
+		if (hasNoParameters(paramsNode)) return findBestMethodUsingParamIndexes(methods, 0, null);
+		if (paramsNode.isArray()) return findBestMethodUsingParamIndexes(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode));
+		if (paramsNode.isObject()) return findBestMethodUsingParamNames(methods, collectFieldNames(paramsNode), ObjectNode.class.cast(paramsNode));
+		throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
+	}
 
-		// no parameters
-		if (paramsNode==null || paramsNode.isNull()) {
-			return findBestMethodUsingParamIndexes(methods, 0, null);
-
-		// array parameters
-		} else if (paramsNode.isArray()) {
-			return findBestMethodUsingParamIndexes(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode));
-
-		// named parameters
-		} else if (paramsNode.isObject()) {
-			Set<String> fieldNames = new HashSet<String>();
-			Iterator<String> itr=paramsNode.fieldNames();
-			while (itr.hasNext()) {
-				fieldNames.add(itr.next());
-			}
-			return findBestMethodUsingParamNames(methods, fieldNames, ObjectNode.class.cast(paramsNode));
-
+	private Set<String> collectFieldNames(JsonNode paramsNode) {
+		Set<String> fieldNames = new HashSet<>();
+		Iterator<String> itr = paramsNode.fieldNames();
+		while (itr.hasNext()) {
+			fieldNames.add(itr.next());
 		}
+		return fieldNames;
+	}
 
-		// unknown params node type
-		throw new IllegalArgumentException("Unknown params node type: "+paramsNode.toString());
+	private boolean hasNoParameters(JsonNode paramsNode) {
+		return isNullNodeOrValue(paramsNode);
 	}
 
 	/**
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
-	 * it as a {@link MethodAndArgs} class.
+	 * it as a {@link AMethodWithItsArgs} class.
 	 *
-	 * @param methods the {@link Method}s
+	 * @param methods    the {@link Method}s
 	 * @param paramCount the number of expect parameters
 	 * @param paramNodes the parameters for matching types
-	 * @return the {@link MethodAndArgs}
+	 * @return the {@link AMethodWithItsArgs}
 	 */
-	private MethodAndArgs findBestMethodUsingParamIndexes(
-		Set<Method> methods, int paramCount, ArrayNode paramNodes) {
+	private AMethodWithItsArgs findBestMethodUsingParamIndexes(Set<Method> methods, int paramCount, ArrayNode paramNodes) {
+		int numParams = isNullNodeOrValue(paramNodes) ? 0 : paramNodes.size();
+		int bestParamNumDiff = Integer.MAX_VALUE;
+		Set<Method> matchedMethods = collectMethodsMatchingParamCount(methods, paramCount, bestParamNumDiff);
+		if (matchedMethods.isEmpty()) return null;
+		Method bestMethod = getBestMatchingArgTypeMethod(paramNodes, numParams, matchedMethods);
+		return new AMethodWithItsArgs(bestMethod, paramCount, paramNodes);
+	}
 
-		// get param count
-		int numParams = paramNodes!=null && !paramNodes.isNull()
-			? paramNodes.size() : 0;
+	private Method getBestMatchingArgTypeMethod(ArrayNode paramNodes, int numParams, Set<Method> matchedMethods) {
+		if (matchedMethods.size() == 1 || numParams == 0) return matchedMethods.iterator().next();
+		Method bestMethod = null;
+		int mostMatches = Integer.MIN_VALUE;
+		for (Method method : matchedMethods) {
+			List<Class<?>> parameterTypes = getParameterTypes(method);
+			int numMatches = getNumArgTypeMatches(paramNodes, numParams, parameterTypes);
+			if (hasMoreMatches(mostMatches, numMatches)) {
+				mostMatches = numMatches;
+				bestMethod = method;
+			}
+		}
+		return bestMethod;
+	}
 
-		// determine param count
-		int bestParamNumDiff		= Integer.MAX_VALUE;
-		Set<Method> matchedMethods	= new HashSet<Method>();
+	private int getNumArgTypeMatches(ArrayNode paramNodes, int numParams, List<Class<?>> parameterTypes) {
+		int numMatches = 0;
+		for (int i = 0; i < parameterTypes.size() && i < numParams; i++) {
+			if (isMatchingType(paramNodes.get(i), parameterTypes.get(i))) {
+				numMatches++;
+			}
+		}
+		return numMatches;
+	}
 
+	private Set<Method> collectMethodsMatchingParamCount(Set<Method> methods, int paramCount, int bestParamNumDiff) {
+		Set<Method> matchedMethods = new HashSet<>();
 		// check every method
 		for (Method method : methods) {
-
-			// get parameter types
 			Class<?>[] paramTypes = method.getParameterTypes();
-			int paramNumDiff = paramTypes.length-paramCount;
-
-			// we've already found a better match
-			if (Math.abs(paramNumDiff)>Math.abs(bestParamNumDiff)) {
-				continue;
-
-			// we don't allow extra params
-			} else if (
-				!allowExtraParams && paramNumDiff<0
-				|| !allowLessParams && paramNumDiff>0) {
-				continue;
-
-			// check the parameters
-			} else {
-				if (Math.abs(paramNumDiff)<Math.abs(bestParamNumDiff)) {
-					matchedMethods.clear();
-				}
+			final int paramNumDiff = paramTypes.length - paramCount;
+			if (hasLessOrEqualAbsParamDiff(bestParamNumDiff, paramNumDiff) && acceptParamCount(paramNumDiff)) {
+				if (hasLessAbsParamDiff(bestParamNumDiff, paramNumDiff)) matchedMethods.clear();
 				matchedMethods.add(method);
 				bestParamNumDiff = paramNumDiff;
-				continue;
 			}
 		}
+		return matchedMethods;
+	}
 
-		// bail early
-		if (matchedMethods.isEmpty()) {
-			return null;
-		}
+	private boolean hasLessAbsParamDiff(int bestParamNumDiff, int paramNumDiff) {
+		return Math.abs(paramNumDiff) < Math.abs(bestParamNumDiff);
+	}
 
-		// now narrow it down to the best method
-		// based on argument types
-		Method bestMethod = null;
-		if (matchedMethods.size()==1 || numParams==0) {
-			bestMethod = matchedMethods.iterator().next();
+	private boolean acceptParamCount(int paramNumDiff) {
+		return paramNumDiff == 0 || acceptNonExactParam(paramNumDiff);
+	}
 
-		} else {
+	private boolean acceptNonExactParam(int paramNumDiff) {
+		return acceptMoreParam(paramNumDiff) || acceptLessParam(paramNumDiff);
+	}
 
-			// check the matching methods for
-			// matching parameter types
-			int mostMatches	= -1;
-			for (Method method : matchedMethods) {
-				List<Class<?>> parameterTypes = getParameterTypes(method);
-				int numMatches = 0;
-				for (int i=0; i<parameterTypes.size() && i<numParams; i++) {
-					if (isMatchingType(paramNodes.get(i), parameterTypes.get(i))) {
-						numMatches++;
-					}
-				}
-				if (numMatches>mostMatches) {
-					mostMatches = numMatches;
-					bestMethod = method;
-				}
-			}
-		}
+	private boolean acceptLessParam(int paramNumDiff) {
+		return allowLessParams && paramNumDiff > 0;
+	}
 
-		// create return
-		MethodAndArgs ret = new MethodAndArgs();
-		ret.method = bestMethod;
+	private boolean acceptMoreParam(int paramNumDiff) {
+		return allowExtraParams && paramNumDiff < 0;
+	}
 
-		// now fill arguments
-		int numParameters = bestMethod.getParameterTypes().length;
-		for (int i=0; i<numParameters; i++) {
-			if (i<numParams) {
-				ret.arguments.add(paramNodes.get(i));
-			} else {
-				ret.arguments.add(NullNode.getInstance());
-			}
-		}
-
-		// return the method
-		return ret;
+	private boolean hasLessOrEqualAbsParamDiff(int bestParamNumDiff, int paramNumDiff) {
+		return Math.abs(paramNumDiff) <= Math.abs(bestParamNumDiff);
 	}
 
 	/**
-	 * Finds the {@link Method} from the supplied {@link Set} that
-	 * best matches the rest of the arguments supplied and returns
-	 * it as a {@link MethodAndArgs} class.
+	 * Finds the {@link Method} from the supplied {@link Set} that best matches the rest of the arguments supplied and
+	 * returns it as a {@link AMethodWithItsArgs} class.
 	 *
 	 * @param methods the {@link Method}s
-	 * @param paramNames the parameter names
+	 * @param paramNames the parameter allNames
 	 * @param paramNodes the parameters for matching types
-	 * @return the {@link MethodAndArgs}
+	 * @return the {@link AMethodWithItsArgs}
 	 */
-	private MethodAndArgs findBestMethodUsingParamNames(
-		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes) {
-
-		// determine param count
-		int maxMatchingParams 				= -1;
-		int maxMatchingParamTypes			= -1;
-		Method bestMethod 					= null;
-		List<JsonRpcParam> bestAnnotations	= null;
+	private AMethodWithItsArgs findBestMethodUsingParamNames(Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes) {
+		ParameterCount max = new ParameterCount();
 
 		for (Method method : methods) {
-
-			// get parameter types
 			List<Class<?>> parameterTypes = getParameterTypes(method);
 
-			// bail early if possible
-			if (!allowExtraParams && paramNames.size()>parameterTypes.size()) {
-				continue;
-			} else if (!allowLessParams && paramNames.size()<parameterTypes.size()) {
-				continue;
-			}
+			int typeNameCountDiff = parameterTypes.size() - paramNames.size();
+			if (!acceptParamCount(typeNameCountDiff)) continue;
 
-			// list of params
-			List<JsonRpcParam> annotations = new ArrayList<JsonRpcParam>();
-
-			@SuppressWarnings("unchecked")
-			List<List<Annotation>> jaxwsAnnotations = WEBPARAM_ANNOTATION_CLASS != null
-				? getParameterAnnotations(method, (Class<Annotation>) WEBPARAM_ANNOTATION_CLASS)
-				: new ArrayList<List<Annotation>>();
-			for (List<Annotation> annotationList : jaxwsAnnotations) {
-				if (annotationList.size()>0) {
-					final Annotation annotation = annotationList.get(0);
-					annotations.add(new JsonRpcParam() {
-						public Class<? extends Annotation> annotationType() {
-							return JsonRpcParam.class;
-						}
-						public String value() {
-							try {
-								return (String) WEBPARAM_NAME_METHOD.invoke(annotation);
-							} catch (Exception e) {
-								throw new RuntimeException(e);
-							}
-						}
-					});
-				} else {
-					annotationList.add(null);
-				}
-			}
-
-			// now try the non-deprecated parameters
-			List<List<JsonRpcParam>> methodAnnotations = getParameterAnnotations(method, JsonRpcParam.class);
-			for (List<JsonRpcParam> annots : methodAnnotations) {
-				if (annots.size()>0) {
-					annotations.add(annots.get(0));
-				} else {
-					annots.add(null);
-				}
-			}
-
-			// count the matching params for this method
-			int numMatchingParamTypes = 0;
-			int numMatchingParams = 0;
-			for (int i=0; i<annotations.size(); i++) {
-
-				// skip parameters that didn't have an annotation
-				JsonRpcParam annotation	= annotations.get(i);
-				if (annotation==null) {
-					continue;
-				}
-
-				// check for a match
-				String paramName			= annotation.value();
-				boolean hasParamName 		= paramNames.contains(paramName);
-
-				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(i))) {
-					numMatchingParamTypes++;
-					numMatchingParams++;
-
-				} else if (hasParamName) {
-					numMatchingParams++;
-
-				}
-			}
-
-			// check for exact param matches
-			// bail early if possible
-			if (!allowExtraParams && numMatchingParams>parameterTypes.size()) {
-				continue;
-			} else if (!allowLessParams && numMatchingParams<parameterTypes.size()) {
-				continue;
-			}
-
-			// better match
-			if (numMatchingParams>maxMatchingParams
-				|| (numMatchingParams==maxMatchingParams && numMatchingParamTypes>maxMatchingParamTypes)) {
-				bestMethod 				= method;
-				maxMatchingParams 		= numMatchingParams;
-				maxMatchingParamTypes 	= numMatchingParamTypes;
-				bestAnnotations 		= annotations;
-			}
+			ParameterCount parStat = new ParameterCount(paramNames, paramNodes, parameterTypes, method);
+			if (!acceptParamCount(parStat.nameCount - paramNames.size())) continue;
+			if (hasMoreMatches(max.nameCount, parStat.nameCount) || (parStat.nameCount == max.nameCount && hasMoreMatches(max.typeCount, parStat.typeCount))) max = parStat;
 		}
+		if (max.method == null) return null;
+		return new AMethodWithItsArgs(max.method, paramNames, max.allNames, paramNodes);
 
-		// bail early
-		if (bestMethod==null) {
-			return null;
-		}
+	}
 
-		// create return
-		MethodAndArgs ret = new MethodAndArgs();
-		ret.method = bestMethod;
+	private boolean hasMoreMatches(int maxMatchingParams, int numMatchingParams) {
+		return numMatchingParams > maxMatchingParams;
+	}
 
-		// now fill arguments
-		int numParameters = bestMethod.getParameterTypes().length;
-		for (int i=0; i<numParameters; i++) {
-			JsonRpcParam param = bestAnnotations.get(i);
-			if (param!=null && paramNames.contains(param.value())) {
-				ret.arguments.add(paramNodes.get(param.value()));
-			} else {
-				ret.arguments.add(NullNode.getInstance());
-			}
-		}
-
-		// return the method
-		return ret;
+	private boolean missingAnnotation(JsonRpcParam name) {
+		return name == null;
 	}
 
 	/**
 	 * Determines whether or not the given {@link JsonNode} matches
-	 * the given type.  This method is limitted to a few java types
+	 * the given type.  This method is limited to a few java types
 	 * only and shouldn't be used to determine with great accuracy
 	 * whether or not the types match.
 	 *
@@ -833,95 +612,63 @@ public class JsonRpcBasicServer {
 	 * @param type the {@link Class}
 	 * @return true if the types match, false otherwise
 	 */
+	@SuppressWarnings("SimplifiableIfStatement")
 	private boolean isMatchingType(JsonNode node, Class<?> type) {
-
-		if (node.isNull()) {
-			return true;
-
-		} else if (node.isTextual()) {
-			return String.class.isAssignableFrom(type);
-
-		} else if (node.isNumber()) {
-			return Number.class.isAssignableFrom(type)
-				|| short.class.isAssignableFrom(type)
-				|| int.class.isAssignableFrom(type)
-				|| long.class.isAssignableFrom(type)
-				|| float.class.isAssignableFrom(type)
-				|| double.class.isAssignableFrom(type);
-
-		} else if (node.isArray() && type.isArray()) {
-			return (node.size()>0)
-				? isMatchingType(node.get(0), type.getComponentType())
-				: false;
-
-		} else if (node.isArray()) {
-			return type.isArray() || Collection.class.isAssignableFrom(type);
-
-		} else if (node.isBinary()) {
-			return byte[].class.isAssignableFrom(type)
-				|| Byte[].class.isAssignableFrom(type)
-				|| char[].class.isAssignableFrom(type)
-				|| Character[].class.isAssignableFrom(type);
-
-		} else if (node.isBoolean()) {
-			return boolean.class.isAssignableFrom(type)
-				|| Boolean.class.isAssignableFrom(type);
-
-		} else if (node.isObject() || node.isPojo()) {
-			return !type.isPrimitive()
-				&& !String.class.isAssignableFrom(type)
-				&& !Number.class.isAssignableFrom(type)
-				&& !Boolean.class.isAssignableFrom(type);
-		}
-
-		// not sure if it's a matching type
+		if (node.isNull()) return true;
+		if (node.isTextual()) return String.class.isAssignableFrom(type);
+		if (node.isNumber()) return isNumericAssignable(type);
+		if (node.isArray() && type.isArray()) return (node.size() > 0) && isMatchingType(node.get(0), type.getComponentType());
+		if (node.isArray()) return type.isArray() || Collection.class.isAssignableFrom(type);
+		if (node.isBinary()) return byteOrCharAssignable(type);
+		if (node.isBoolean()) return boolean.class.isAssignableFrom(type) || Boolean.class.isAssignableFrom(type);
+		if (node.isObject() || node.isPojo()) { return !type.isPrimitive() && !String.class.isAssignableFrom(type) &&
+				!Number.class.isAssignableFrom(type) && !Boolean.class.isAssignableFrom(type); }
 		return false;
+	}
+
+	private boolean byteOrCharAssignable(Class<?> type) {
+		return byte[].class.isAssignableFrom(type) || Byte[].class.isAssignableFrom(type) ||
+				char[].class.isAssignableFrom(type) || Character[].class.isAssignableFrom(type);
+	}
+
+	private boolean isNumericAssignable(Class<?> type) {
+		return Number.class.isAssignableFrom(type) || short.class.isAssignableFrom(type) || int.class.isAssignableFrom(type)
+				|| long.class.isAssignableFrom(type) || float.class.isAssignableFrom(type) || double.class.isAssignableFrom(type);
+	}
+
+	private int writeAndFlushValueError(OutputStream output, ObjectNode value) throws IOException {
+		logger.warn("failed " + value);
+		writeAndFlushValue(output, value);
+		return value.get(ERROR).get(ERROR_CODE).asInt();
 	}
 
 	/**
 	 * Writes and flushes a value to the given {@link OutputStream}
 	 * and prevents Jackson from closing it. Also writes newline.
-	 * @param ops the {@link OutputStream}
-	 * @param value the value to write
+	 *
+	 * @param output the {@link OutputStream}
+	 * @param value  the value to write
 	 * @throws IOException on error
 	 */
-	private void writeAndFlushValue(OutputStream ops, Object value)
-		throws IOException {
-		mapper.writeValue(new NoCloseOutputStream(ops), value);
-		ops.write('\n');
-//		ops.flush();
+	private void writeAndFlushValue(OutputStream output, Object value) throws IOException {
+		logger.debug("Response: {}", value);
+		mapper.writeValue(new NoCloseOutputStream(output), value);
+		output.write('\n');
 	}
 
-	/**
-	 * Simple inner class for the {@code findXXX} methods.
-	 */
-	private static class MethodAndArgs {
-		private Method method = null;
-		private List<JsonNode> arguments = new ArrayList<JsonNode>();
-	}
-
-	/**
-	 * Parses an ID.
-	 * @param node
-	 * @return
-	 */
 	private Object parseId(JsonNode node) {
-		if (node==null || node.isNull()) {
-			return null;
-		} else if (node.isDouble()) {
-			return node.asDouble();
-		} else if (node.isFloatingPointNumber()) {
-			return node.asDouble();
-		} else if (node.isInt()) {
-			return node.asInt();
-		} else if (node.isIntegralNumber()) {
-			return node.asInt();
-		} else if (node.isLong()) {
-			return node.asLong();
-		} else if (node.isTextual()) {
-			return node.asText();
-		}
+		if (isNullNodeOrValue(node)) return null;
+		if (node.isDouble()) return node.asDouble();
+		if (node.isFloatingPointNumber()) return node.asDouble();
+		if (node.isInt()) return node.asInt();
+		if (node.isIntegralNumber()) return node.asInt();
+		if (node.isLong()) return node.asLong();
+		if (node.isTextual()) return node.asText();
 		throw new IllegalArgumentException("Unknown id type");
+	}
+
+	private boolean isNullNodeOrValue(JsonNode node) {
+		return node == null || node.isNull();
 	}
 
 	/**
@@ -930,10 +677,10 @@ public class JsonRpcBasicServer {
 	 * omission of the jsonrpc property on the request object,
 	 * not the class hinting.
 	 *
-	 * @param backwardsComaptible the backwardsComaptible to set
+	 * @param backwardsCompatible the backwardsCompatible to set
 	 */
-	public void setBackwardsComaptible(boolean backwardsComaptible) {
-		this.backwardsComaptible = backwardsComaptible;
+	public void setBackwardsCompatible(boolean backwardsCompatible) {
+		this.backwardsCompatible = backwardsCompatible;
 	}
 
 	/**
@@ -978,20 +725,163 @@ public class JsonRpcBasicServer {
 	}
 
 	/**
-	 * @param exceptionLogLevel the exceptionLogLevel to set
+	 * Sets the {@link InvocationListener} instance that can be
+	 * used to provide feedback for capturing method-invocation
+	 * statistics.
+	 *
+	 * @param invocationListener is the listener to set
 	 */
-	public void setExceptionLogLevel(Level exceptionLogLevel) {
-		this.exceptionLogLevel = exceptionLogLevel;
+
+	public void setInvocationListener(InvocationListener invocationListener) {
+		this.invocationListener = invocationListener;
 	}
 
-    /**
-     * Sets the {@link InvocationListener} instance that can be
-     * used to provide feedback for capturing method-invocation
-     * statistics.
-     * @param invocationListener is the listener to set
-     */
+	/**
+	 * Simple inner class for the {@code findXXX} methods.
+	 */
+	private static class AMethodWithItsArgs {
+		private final List<JsonNode> arguments = new ArrayList<>();
+		private final Method method;
 
-    public void setInvocationListener(InvocationListener invocationListener) {
-        this.invocationListener = invocationListener;
-    }
+		public AMethodWithItsArgs(Method method, int paramCount, ArrayNode paramNodes) {
+			this(method);
+			collectArgumentsBasedOnCount(method, paramCount, paramNodes);
+		}
+
+		public AMethodWithItsArgs(Method method) {
+			this.method = method;
+		}
+
+		private void collectArgumentsBasedOnCount(Method method, int paramCount, ArrayNode paramNodes) {
+			int numParameters = method.getParameterTypes().length;
+			for (int i = 0; i < numParameters; i++) {
+				if (i < paramCount) {
+					arguments.add(paramNodes.get(i));
+				} else {
+					arguments.add(NullNode.getInstance());
+				}
+			}
+		}
+
+		public AMethodWithItsArgs(Method method, Set<String> paramNames, List<JsonRpcParam> allNames, ObjectNode paramNodes) {
+			this(method);
+			collectArgumentsBasedOnName(method, paramNames, allNames, paramNodes);
+		}
+
+		private void collectArgumentsBasedOnName(Method method, Set<String> paramNames, List<JsonRpcParam> allNames, ObjectNode paramNodes) {
+			int numParameters = method.getParameterTypes().length;
+			for (int i = 0; i < numParameters; i++) {
+				JsonRpcParam param = allNames.get(i);
+				if (param != null && paramNames.contains(param.value())) {
+					arguments.add(paramNodes.get(param.value()));
+				} else {
+					arguments.add(NullNode.getInstance());
+				}
+			}
+		}
+	}
+
+	private static class InvokeListenerHandler implements AutoCloseable {
+
+		private final long startMs = System.currentTimeMillis();
+		private final AMethodWithItsArgs methodArgs;
+		private final InvocationListener invocationListener;
+		public Throwable error = null;
+		public JsonNode result = null;
+
+		public InvokeListenerHandler(AMethodWithItsArgs methodArgs, InvocationListener invocationListener) {
+			this.methodArgs = methodArgs;
+			this.invocationListener = invocationListener;
+			if (this.invocationListener != null) {
+				this.invocationListener.willInvoke(methodArgs.method, methodArgs.arguments);
+			}
+		}
+
+		@Override
+		public void close() {
+			if (invocationListener != null) {
+				invocationListener.didInvoke(methodArgs.method, methodArgs.arguments, result, error, System.currentTimeMillis() - startMs);
+			}
+		}
+	}
+
+	private class ParameterCount {
+		private final int typeCount;
+		private final int nameCount;
+		private final List<JsonRpcParam> allNames;
+		private final Method method;
+
+		public ParameterCount(Set<String> paramNames, ObjectNode paramNodes, List<Class<?>> parameterTypes, Method method) {
+			this.allNames = getAnnotatedParameterNames(method);
+			this.method = method;
+			int typeCount = 0;
+			int nameCount = 0;
+			int at = 0;
+
+			for (JsonRpcParam name : this.allNames) {
+				if (missingAnnotation(name)) continue;
+				String paramName = name.value();
+				boolean hasParamName = paramNames.contains(paramName);
+				if (hasParamName) nameCount += 1;
+				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(at))) typeCount += 1;
+				at += 1;
+			}
+			this.typeCount = typeCount;
+			this.nameCount = nameCount;
+		}
+
+		@SuppressWarnings("Convert2streamapi")
+		private List<JsonRpcParam> getAnnotatedParameterNames(Method method) {
+			List<JsonRpcParam> parameterNames = new ArrayList<>();
+			for (List<Annotation> webParamAnnotation : getWebParameterAnnotations(method)) {
+				if (!webParamAnnotation.isEmpty()) parameterNames.add(createNewJsonRcpParamType(webParamAnnotation.get(0)));
+			}
+			for (List<JsonRpcParam> annotation : getJsonRpcParamAnnotations(method)) {
+				if (!annotation.isEmpty()) parameterNames.add(annotation.get(0));
+			}
+			return parameterNames;
+		}
+
+		private List<List<Annotation>> getWebParameterAnnotations(Method method) {
+			if (WEB_PARAM_ANNOTATION_CLASS == null) return new ArrayList<>();
+			// noinspection unchecked
+			return ReflectionUtil.getParameterAnnotations(method, (Class<Annotation>) WEB_PARAM_ANNOTATION_CLASS);
+		}
+
+		private JsonRpcParam createNewJsonRcpParamType(final Annotation annotation) {
+			return new JsonRpcParam() {
+				public Class<? extends Annotation> annotationType() {
+					return JsonRpcParam.class;
+				}
+
+				public String value() {
+					try {
+						return (String) WEB_PARAM_NAME_METHOD.invoke(annotation);
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				}
+			};
+		}
+
+		private List<List<JsonRpcParam>> getJsonRpcParamAnnotations(Method method) {
+			return ReflectionUtil.getParameterAnnotations(method, JsonRpcParam.class);
+		}
+
+		public ParameterCount() {
+			typeCount = -1;
+			nameCount = -1;
+			allNames = null;
+			method = null;
+		}
+
+		public int getTypeCount() {
+			return typeCount;
+		}
+
+		public int getNameCount() {
+			return nameCount;
+		}
+
+	}
 }
