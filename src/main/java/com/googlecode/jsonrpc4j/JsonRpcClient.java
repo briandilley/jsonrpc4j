@@ -1,38 +1,10 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.VERSION;
+import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
+
+import org.apache.logging.log4j.LogManager;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
@@ -42,19 +14,34 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Random;
+
 /**
  * A JSON-RPC client.
  */
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public class JsonRpcClient {
 
-	private static final Logger LOGGER = Logger.getLogger(JsonRpcClient.class.getName());
-
-	private static final String JSON_RPC_VERSION = "2.0";
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	private final ObjectMapper mapper;
 	private final Random random;
 	private RequestListener requestListener;
 	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
+
+	/**
+	 * Creates a client that uses the default {@link ObjectMapper}
+	 * to map to and from JSON and Java objects.
+	 */
+	public JsonRpcClient() {
+		this(new ObjectMapper());
+	}
 
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
@@ -64,14 +51,6 @@ public class JsonRpcClient {
 	public JsonRpcClient(ObjectMapper mapper) {
 		this.mapper = mapper;
 		this.random = new Random(System.currentTimeMillis());
-	}
-
-	/**
-	 * Creates a client that uses the default {@link ObjectMapper}
-	 * to map to and from JSON and Java objects.
-	 */
-	public JsonRpcClient() {
-		this(new ObjectMapper());
 	}
 
 	/**
@@ -90,18 +69,16 @@ public class JsonRpcClient {
 	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
 	 * @param argument the argument to pass to the method
-	 * @param returnType the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
+	 * @param clazz the expected return type
+	 * @param output the {@link OutputStream} to write to
+	 * @param input the {@link InputStream} to read from
+	 * @param <T> the expected return type
 	 * @return the returned Object
 	 * @throws Throwable on error
 	 */
-	public Object invokeAndReadResponse(
-		String methodName, Object argument, Type returnType,
-		OutputStream ops, InputStream ips)
-		throws Throwable {
-		return invokeAndReadResponse(
-			methodName, argument, returnType, ops, ips, random.nextLong() + "");
+	@SuppressWarnings("unchecked")
+	public <T> T invokeAndReadResponse(String methodName, Object argument, Class<T> clazz, OutputStream output, InputStream input) throws Throwable {
+		return (T) invokeAndReadResponse(methodName, argument, Type.class.cast(clazz), output, input);
 	}
 
 	/**
@@ -112,20 +89,14 @@ public class JsonRpcClient {
 	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
 	 * @param argument the argument to pass to the method
-	 * @param clazz the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
-	 * @param <T> the expected return type
+	 * @param returnType the expected return type
+	 * @param output the {@link OutputStream} to write to
+	 * @param input the {@link InputStream} to read from
 	 * @return the returned Object
 	 * @throws Throwable on error
 	 */
-	@SuppressWarnings("unchecked")
-	public <T> T invokeAndReadResponse(
-		String methodName, Object argument, Class<T> clazz,
-		OutputStream ops, InputStream ips)
-		throws Throwable {
-		return (T)invokeAndReadResponse(
-			methodName, argument, Type.class.cast(clazz), ops, ips);
+	public Object invokeAndReadResponse(String methodName, Object argument, Type returnType, OutputStream output, InputStream input) throws Throwable {
+		return invokeAndReadResponse(methodName, argument, returnType, output, input, generateRandomId());
 	}
 
 	/**
@@ -136,66 +107,20 @@ public class JsonRpcClient {
 	 * @param methodName the method to invoke
 	 * @param argument the argument to pass to the method
 	 * @param returnType the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
+	 * @param output the {@link OutputStream} to write to
+	 * @param input the {@link InputStream} to read from
 	 * @param id id to send with the JSON-RPC request
 	 * @return the returned Object
 	 * @throws Throwable if there is an error
 	 * 	while reading the response
 	 */
-	public Object invokeAndReadResponse(
-		String methodName, Object argument, Type returnType,
-		OutputStream ops, InputStream ips, String id)
-		throws Throwable {
-
-		// invoke it
-		invoke(methodName, argument, ops, id);
-
-		// read it
-		return readResponse(returnType, ips, id);
+	private Object invokeAndReadResponse(String methodName, Object argument, Type returnType, OutputStream output, InputStream input, String id) throws Throwable {
+		invoke(methodName, argument, output, id);
+		return readResponse(returnType, input, id);
 	}
 
-	/**
-	 * Invokes the given method on the remote service
-	 * passing the given arguments and reads a response.
-	 *
-	 * @see #writeRequest(String, Object, OutputStream, String)
-	 * @param methodName the method to invoke
-	 * @param argument the argument to pass to the method
-	 * @param clazz the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
-	 * @param id id to send with the JSON-RPC request
-	 * @param <T> the expected return type
-	 * @return the returned Object
-	 * @throws Throwable if there is an error
-	 * 	while reading the response
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> T invokeAndReadResponse(
-		String methodName, Object argument, Class<T> clazz,
-		OutputStream ops, InputStream ips, String id)
-		throws Throwable {
-		return (T)invokeAndReadResponse(
-			methodName, argument, Type.class.cast(clazz), ops, ips, id);
-	}
-
-	/**
-	 * Invokes the given method on the remote service passing
-	 * the given argument.  An id is generated automatically.  To read
-	 * the response {@link #readResponse(Type, InputStream)}  must be
-	 * subsequently called.
-	 *
-	 * @see #writeRequest(String, Object, OutputStream, String)
-	 * @param methodName the method to invoke
-	 * @param argument the arguments to pass to the method
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void invoke(
-		String methodName, Object argument, OutputStream ops)
-		throws IOException {
-		invoke(methodName, argument, ops, random.nextLong()+"");
+	private String generateRandomId() {
+		return random.nextInt(Integer.MAX_VALUE) + "";
 	}
 
 	/**
@@ -207,82 +132,13 @@ public class JsonRpcClient {
 	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
 	 * @param argument the argument to pass to the method
-	 * @param ops the {@link OutputStream} to write to
+	 * @param output the {@link OutputStream} to write to
 	 * @param id the request id
 	 * @throws IOException on error
 	 */
-	public void invoke(
-		String methodName, Object argument, OutputStream ops, String id)
-		throws IOException {
-		writeRequest(methodName, argument, ops, id);
-		ops.flush();
-	}
-
-	/**
-	 * Invokes the given method on the remote service passing
-	 * the given argument without reading or expecting a return
-	 * response.
-	 *
-	 * @see #writeRequest(String, Object, OutputStream, String)
-	 * @param methodName the method to invoke
-	 * @param argument the argument to pass to the method
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void invokeNotification(
-		String methodName, Object argument, OutputStream ops)
-		throws IOException {
-		writeRequest(methodName, argument, ops, null);
-		ops.flush();
-	}
-
-	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
-	 * a response is received.
-	 *
-	 * @param clazz the expected return type
-	 * @param ips the {@link InputStream} to read from
-	 * @param <T> the expected return type
-	 * @return the object returned by the JSON-RPC response
-	 * @throws Throwable on error
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> T readResponse(Class<T> clazz, InputStream ips)
-		throws Throwable {
-		return (T)readResponse((Type)clazz, ips);
-	}
-
-	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
-	 * a response is received. If an id is given, responses that do
-	 * not correspond, are disregarded.
-	 *
-	 * @param clazz the expected return type
-	 * @param ips the {@link InputStream} to read from
-	 * @param id The id used to compare the response with
-	 * @param <T> the expected return type
-	 * @return the object returned by the JSON-RPC response
-	 * @throws Throwable on error
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> T readResponse(Class<T> clazz, InputStream ips, String id)
-		throws Throwable {
-		return (T)readResponse((Type)clazz, ips, id);
-	}
-
-	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
-	 * a response is received.
-	 *
-	 * @param returnType the expected return type
-	 * @param ips the {@link InputStream} to read from
-	 * @return the object returned by the JSON-RPC response
-	 * @throws Throwable on error
-	 */
-	public Object readResponse(Type returnType, InputStream ips)
-		throws Throwable {
-
-		return readResponse(returnType, ips, null);
+	private void invoke(String methodName, Object argument, OutputStream output, String id) throws IOException {
+		writeRequest(methodName, argument, output, id);
+		output.flush();
 	}
 
 	/**
@@ -291,75 +147,21 @@ public class JsonRpcClient {
 	 * not correspond, are disregarded.
 	 *
 	 * @param returnType the expected return type
-	 * @param ips the {@link InputStream} to read from
+	 * @param input the {@link InputStream} to read from
 	 * @param id The id used to compare the response with.
 	 * @return the object returned by the JSON-RPC response
 	 * @throws Throwable on error
 	 */
-	public Object readResponse(Type returnType, InputStream ips, String id)
-		throws Throwable {
+	private Object readResponse(Type returnType, InputStream input, String id) throws Throwable {
 
-		// get node iterator
-		ReadContext ctx = ReadContext.getReadContext(ips, mapper);
+		ReadContext context = ReadContext.getReadContext(input, mapper);
+		ObjectNode jsonObject = getValidResponse(id, context);
+		notifyAnswerListener(jsonObject);
+		handleErrorResponse(jsonObject);
 
-		// read the response
-		ctx.assertReadable();
-		JsonNode response = ctx.nextValue();
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Response: {0}", response.toString());
-		}
-
-		// bail on invalid response
-		if (!response.isObject()) {
-			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
-		}
-		ObjectNode jsonObject = ObjectNode.class.cast(response);
-
-		if(id != null) {
-			while(!jsonObject.has("id") ||
-				jsonObject.get("id") == null ||
-				!jsonObject.get("id").asText().equals(id)) {
-				response = ctx.nextValue();
-
-				if (!response.isObject()) {
-					throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
-				}
-				jsonObject = ObjectNode.class.cast(response);
-			}
-		}
-
-		// show to listener
-		if (this.requestListener!=null) {
-			this.requestListener.onBeforeResponseProcessed(this, jsonObject);
-		}
-
-		// detect errors
-		if (jsonObject.has("error")
-				&& jsonObject.get("error")!=null
-				&& !jsonObject.get("error").isNull()) {
-
-			// resolve and throw the exception
-			if (exceptionResolver==null) {
-				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
-			} else {
-				throw exceptionResolver.resolveException(jsonObject);
-			}
-		}
-
-		// convert it to a return object
-		if (jsonObject.has("result")
-			&& !jsonObject.get("result").isNull()
-			&& jsonObject.get("result")!=null) {
-			if (returnType==null) {
-				LOGGER.warning(
-					"Server returned result but returnType is null");
-				return null;
-			}
-			
-			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
-			JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
-			
-			return mapper.readValue(returnJsonParser, returnJavaType);
+		if (hasResult(jsonObject)) {
+			if (isReturnTypeInvalid(returnType)) return null;
+			return constructResponseObject(returnType, jsonObject);
 		}
 
 		// no return type
@@ -369,7 +171,7 @@ public class JsonRpcClient {
 	/**
 	 * Writes a JSON-RPC request to the given {@link OutputStream}.
 	 * If the value passed for argument is null then the {@code params}
-	 * property is ommitted from the JSON-RPC request.  If the argument
+	 * property is omitted from the JSON-RPC request.  If the argument
 	 * is not not null then it is used as the value of the {@code params}
 	 * property.  This means that if a POJO is passed as the argument
 	 * that it's properties will be used as the param, ie:
@@ -394,172 +196,39 @@ public class JsonRpcClient {
 	 *
 	 * @param methodName the method to invoke
 	 * @param argument the method argument
-	 * @param ops the {@link OutputStream} to write to
+	 * @param output the {@link OutputStream} to write to
 	 * @param id the request id
 	 * @throws IOException on error
 	 */
-	public void writeRequest(
-		String methodName, Object argument, OutputStream ops, String id)
-		throws IOException {
-		internalWriteRequest(methodName, argument, ops, id);
+	private void writeRequest(
+			String methodName, Object argument, OutputStream output, String id)
+					throws IOException {
+		internalWriteRequest(methodName, argument, output, id);
 	}
 
+	private ObjectNode getValidResponse(String id, ReadContext context) throws IOException {
+		JsonNode response = readResponseNode(context);
+		raiseExceptionIfNotValidResponseObject(response);
+		ObjectNode jsonObject = ObjectNode.class.cast(response);
 
-	public ObjectNode createRequest(String methodName, Object argument) {
-		return internalCreateRequest(methodName, argument, "" + random.nextLong());
-	}
-
-	public ObjectNode createRequest(String methodName, Object argument, String id)  {
-		return internalCreateRequest(methodName, argument, id);
-	}
-
-	/**
-	 * Writes a JSON-RPC notification to the given
-	 * {@link OutputStream}.
-	 * 
-	 * @see #writeRequest(String, Object, OutputStream, String)
-	 * @param methodName the method to invoke
-	 * @param argument the method argument
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void writeNotification(
-		String methodName, Object argument, OutputStream ops)
-		throws IOException {
-		internalWriteRequest(methodName, argument, ops, null);
-	}
-
-	/**
-	 * Writes a request.
-	 * @param methodName the method name
-	 * @param arguments the arguments
-	 * @param ops the stream
-	 * @param id the optional id
-	 * @throws IOException on error
-	 */
-	private void internalWriteRequest(
-		String methodName, Object arguments, OutputStream ops, String id)
-		throws IOException {
-		
-		// create the request
-		final ObjectNode request =  internalCreateRequest(methodName, arguments, id); 
-		// post the json data;
-		writeAndFlushValue(ops, request);
-	}
-
-
-	/**
-	 * Creates RPC request.
-	 * @param methodName the method name
-	 * @param arguments the arguments
-	 * @param ops the stream
-	 * @param id the optional id
-	 * @return 
-	 *	Jackson request object
-	 * @throws IOException on error
-	 */
-	private ObjectNode internalCreateRequest(String methodName, Object arguments, String id) {
-		
-		// create the request
-		final ObjectNode request = mapper.createObjectNode();
-		
-		// add id
-		if (id!=null) { request.put("id", id); }
-		
-		// add protocol and method
-		request.put("jsonrpc", JSON_RPC_VERSION);
-		request.put("method", methodName);
-		
-		// object array args
-		if (arguments!=null && arguments.getClass().isArray()) {
-			Object[] args = Object[].class.cast(arguments);
-			if (args.length > 0) {
-				// serialize every param for itself so jackson can determine
-				// right serializer
-				ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
-				for (Object arg : args) {
-					JsonNode argNode = mapper.valueToTree(arg);
-					paramsNode.add(argNode);
-				}
-				request.set("params", paramsNode);
+		if (id != null) {
+			while (isIdValueNotCorrect(id, jsonObject)) {
+				response = context.nextValue();
+				raiseExceptionIfNotValidResponseObject(response);
+				jsonObject = ObjectNode.class.cast(response);
 			}
-		
-		// collection args
-		} else if (arguments!=null && Collection.class.isInstance(arguments)) {
-			Collection<?> args = Collection.class.cast(arguments);
-			if (!args.isEmpty()) {
-				// serialize every param for itself so jackson can determine
-				// right serializer
-				ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
-				for (Object arg : args) {
-					JsonNode argNode = mapper.valueToTree(arg);
-					paramsNode.add(argNode);
-				}
-				request.set("params", paramsNode);
-			}
-			
-		// map args
-		} else if (arguments != null && Map.class.isInstance(arguments)) {
-			if (!Map.class.cast(arguments).isEmpty()) {
-				request.set("params", mapper.valueToTree(arguments));
-			}
-
-		// other args
-		} else if (arguments != null) {
-			request.set("params", mapper.valueToTree(arguments));
 		}
-
-		// show to listener
-		if (this.requestListener!=null) {
-			this.requestListener.onBeforeRequestSent(this, request);
-		}
-
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Request: {0}", request.toString());
-		}
-
-		return request;
+		return jsonObject;
 	}
 
-	/**
-	 * Writes and flushes a value to the given {@link OutputStream}
-	 * and prevents Jackson from closing it.
-	 * @param ops the {@link OutputStream}
-	 * @param value the value to write
-	 * @throws IOException on error
-	 */
-	private void writeAndFlushValue(OutputStream ops, Object value)
-		throws IOException {
-		mapper.writeValue(new NoCloseOutputStream(ops), value);
-		ops.flush();
-	}
-
-
-	// Suppose than jsonObject is single and containts valid id :)
-	protected Object readResponse(Type returnType, ObjectNode jsonObject)
-		throws Throwable {
-		return readResponse(returnType, jsonObject, null);
-	}
-
-	// Suppose than jsonObject is single and containts valid id :)
-	protected Object readResponse(Type returnType, ObjectNode jsonObject, String id)
-		throws Throwable {
-
-		if (!jsonObject.isObject()) 
-			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", jsonObject);
-
-
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "JSON-PRC Response: {0}", jsonObject.toString());
-		}
-
-		// show to listener
-		if (this.requestListener!=null) {
+	private void notifyAnswerListener(ObjectNode jsonObject) {
+		if (this.requestListener != null) {
 			this.requestListener.onBeforeResponseProcessed(this, jsonObject);
 		}
+	}
 
-		// detect errors
-		if (jsonObject.has("error") && jsonObject.get("error") != null && !jsonObject.get("error").isNull()) {
+	private void handleErrorResponse(ObjectNode jsonObject) throws Throwable {
+		if (hasError(jsonObject)) {
 			// resolve and throw the exception
 			if (exceptionResolver == null) {
 				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
@@ -567,24 +236,303 @@ public class JsonRpcClient {
 				throw exceptionResolver.resolveException(jsonObject);
 			}
 		}
+	}
 
-		// convert it to a return object
-		if (jsonObject.has("result")
-			&& !jsonObject.get("result").isNull()
-			&& jsonObject.get("result") != null) {
-			if (returnType == null) {
-				LOGGER.warning(
-					"Server returned result but returnType is null");
-				return null;
-			}
-			
-			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
-			JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
-			
-			return mapper.readValue(returnJsonParser, returnJavaType);
+	private boolean hasResult(ObjectNode jsonObject) {
+		return hasNonNullData(jsonObject, "result");
+	}
+
+	private boolean isReturnTypeInvalid(Type returnType) {
+		if (returnType == null) {
+			logger.warn("Server returned result but returnType is null");
+			return true;
 		}
+		return false;
+	}
 
-		// no return type
+	private Object constructResponseObject(Type returnType, ObjectNode jsonObject) throws IOException {
+		JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
+		JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
+		return mapper.readValue(returnJsonParser, returnJavaType);
+	}
+
+	/**
+	 * Writes a request.
+	 * @param methodName the method name
+	 * @param arguments the arguments
+	 * @param output the stream
+	 * @param id the optional id
+	 * @throws IOException on error
+	 */
+	private void internalWriteRequest(String methodName, Object arguments, OutputStream output, String id) throws IOException {
+		final ObjectNode request = internalCreateRequest(methodName, arguments, id);
+		logger.debug("Request {}", request);
+		writeAndFlushValue(output, request);
+	}
+
+	private JsonNode readResponseNode(ReadContext context) throws IOException {
+		context.assertReadable();
+		JsonNode response = context.nextValue();
+		logger.debug("JSON-PRC Response: {}", response.toString());
+		return response;
+	}
+
+	private void raiseExceptionIfNotValidResponseObject(JsonNode response) {
+		if (isInvalidResponse(response)) { throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response); }
+	}
+
+	private boolean isIdValueNotCorrect(String id, ObjectNode jsonObject) {
+		return !jsonObject.has("id") || jsonObject.get("id") == null || !jsonObject.get("id").asText().equals(id);
+	}
+
+	private boolean hasError(ObjectNode jsonObject) {
+		return jsonObject.has("error") && jsonObject.get("error") != null && !jsonObject.get("error").isNull();
+	}
+
+	/**
+	 * Creates RPC request.
+	 * @param methodName the method name
+	 * @param arguments the arguments
+	 * @param id the optional id
+	 * @return
+	 *	Jackson request object
+	 */
+	private ObjectNode internalCreateRequest(String methodName, Object arguments, String id) {
+		final ObjectNode request = mapper.createObjectNode();
+		addId(id, request);
+		addProtocolAndMethod(methodName, request);
+		addParameters(arguments, request);
+		notifyBeforeRequestListener(request);
+		return request;
+	}
+
+	/**
+	 * Writes and flushes a value to the given {@link OutputStream}
+	 * and prevents Jackson from closing it.
+	 * @param output the {@link OutputStream}
+	 * @param value the value to write
+	 * @throws IOException on error
+	 */
+	private void writeAndFlushValue(OutputStream output, Object value) throws IOException {
+		mapper.writeValue(new NoCloseOutputStream(output), value);
+		output.flush();
+	}
+
+	private boolean isInvalidResponse(JsonNode response) {
+		return !response.isObject();
+	}
+
+	private void addId(String id, ObjectNode request) {
+		if (id != null) {
+			request.put("id", id);
+		}
+	}
+
+	private void addProtocolAndMethod(String methodName, ObjectNode request) {
+		request.put("jsonrpc", VERSION);
+		request.put("method", methodName);
+	}
+
+	private void addParameters(Object arguments, ObjectNode request) {
+		// object array args
+		if (isArrayArguments(arguments)) {
+			addArrayArguments(arguments, request);
+			// collection args
+		} else if (isCollectionArguments(arguments)) {
+			addCollectionArguments(arguments, request);
+			// map args
+		} else if (isMapArguments(arguments)) {
+			addMapArguments(arguments, request);
+			// other args
+		} else if (arguments != null) {
+			request.set(PARAMS, mapper.valueToTree(arguments));
+		}
+	}
+
+	private void notifyBeforeRequestListener(ObjectNode request) {
+		if (this.requestListener != null) {
+			this.requestListener.onBeforeRequestSent(this, request);
+		}
+	}
+
+	private boolean isArrayArguments(Object arguments) {
+		return arguments != null && arguments.getClass().isArray();
+	}
+
+	private void addArrayArguments(Object arguments, ObjectNode request) {
+		Object[] args = Object[].class.cast(arguments);
+		if (args.length > 0) {
+			// serialize every param for itself so jackson can determine right serializer
+			ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
+			for (Object arg : args) {
+				JsonNode argNode = mapper.valueToTree(arg);
+				paramsNode.add(argNode);
+			}
+			request.set(PARAMS, paramsNode);
+		}
+	}
+
+	private boolean isCollectionArguments(Object arguments) {
+		return arguments != null && Collection.class.isInstance(arguments);
+	}
+
+	private void addCollectionArguments(Object arguments, ObjectNode request) {
+		Collection<?> args = Collection.class.cast(arguments);
+		if (!args.isEmpty()) {
+			// serialize every param for itself so jackson can determine right serializer
+			ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
+			for (Object arg : args) {
+				JsonNode argNode = mapper.valueToTree(arg);
+				paramsNode.add(argNode);
+			}
+			request.set(PARAMS, paramsNode);
+		}
+	}
+
+	private boolean isMapArguments(Object arguments) {
+		return arguments != null && Map.class.isInstance(arguments);
+	}
+
+	private void addMapArguments(Object arguments, ObjectNode request) {
+		if (!Map.class.cast(arguments).isEmpty()) {
+			request.set(PARAMS, mapper.valueToTree(arguments));
+		}
+	}
+
+	/**
+	 * Invokes the given method on the remote service
+	 * passing the given arguments and reads a response.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the argument to pass to the method
+	 * @param clazz the expected return type
+	 * @param output the {@link OutputStream} to write to
+	 * @param input the {@link InputStream} to read from
+	 * @param id id to send with the JSON-RPC request
+	 * @param <T> the expected return type
+	 * @return the returned Object
+	 * @throws Throwable if there is an error
+	 * 	while reading the response
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T invokeAndReadResponse(String methodName, Object argument, Class<T> clazz, OutputStream output, InputStream input, String id) throws Throwable {
+		return (T) invokeAndReadResponse(methodName, argument, Type.class.cast(clazz), output, input, id);
+	}
+
+	/**
+	 * Invokes the given method on the remote service passing
+	 * the given argument.  An id is generated automatically.  To read
+	 * the response {@link #readResponse(Type, InputStream)}  must be
+	 * subsequently called.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the arguments to pass to the method
+	 * @param output the {@link OutputStream} to write to
+	 * @throws IOException on error
+	 */
+	public void invoke(String methodName, Object argument, OutputStream output) throws IOException {
+		invoke(methodName, argument, output, generateRandomId());
+	}
+
+	/**
+	 * Invokes the given method on the remote service passing
+	 * the given argument without reading or expecting a return
+	 * response.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the argument to pass to the method
+	 * @param output the {@link OutputStream} to write to
+	 * @throws IOException on error
+	 */
+	public void invokeNotification(String methodName, Object argument, OutputStream output) throws IOException {
+		writeRequest(methodName, argument, output, null);
+		output.flush();
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received.
+	 *
+	 * @param clazz the expected return type
+	 * @param input the {@link InputStream} to read from
+	 * @param <T> the expected return type
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T readResponse(Class<T> clazz, InputStream input) throws Throwable {
+		return (T) readResponse((Type) clazz, input);
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received.
+	 *
+	 * @param returnType the expected return type
+	 * @param input the {@link InputStream} to read from
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	Object readResponse(Type returnType, InputStream input) throws Throwable {
+		return readResponse(returnType, input, null);
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received. If an id is given, responses that do
+	 * not correspond, are disregarded.
+	 *
+	 * @param clazz the expected return type
+	 * @param input the {@link InputStream} to read from
+	 * @param id The id used to compare the response with
+	 * @param <T> the expected return type
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T readResponse(Class<T> clazz, InputStream input, String id) throws Throwable {
+		return (T) readResponse((Type) clazz, input, id);
+	}
+
+	protected ObjectNode createRequest(String methodName, Object argument) {
+		return internalCreateRequest(methodName, argument, generateRandomId());
+	}
+
+	public ObjectNode createRequest(String methodName, Object argument, String id) {
+		return internalCreateRequest(methodName, argument, id);
+	}
+
+	/**
+	 * Writes a JSON-RPC notification to the given
+	 * {@link OutputStream}.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the method argument
+	 * @param output the {@link OutputStream} to write to
+	 * @throws IOException on error
+	 */
+	public void writeNotification(String methodName, Object argument, OutputStream output) throws IOException {
+		internalWriteRequest(methodName, argument, output, null);
+	}
+
+	// Suppose than jsonObject is single and contains valid id :)
+	protected Object readResponse(Type returnType, ObjectNode jsonObject) throws Throwable {
+		return readResponse(returnType, jsonObject, null);
+	}
+
+	// Suppose than jsonObject is single and contains valid id :)
+	private Object readResponse(Type returnType, ObjectNode jsonObject, String id) throws Throwable {
+		raiseExceptionIfNotValidResponseObject(jsonObject);
+		notifyAnswerListener(jsonObject);
+		handleErrorResponse(jsonObject);
+		if (hasResult(jsonObject)) {
+			if (isReturnTypeInvalid(returnType)) return null;
+			return constructResponseObject(returnType, jsonObject);
+		}
 		return null;
 	}
 

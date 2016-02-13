@@ -1,33 +1,9 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.lang.reflect.Method;
 import java.util.List;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Resolves {@link Throwable}s thrown by JSON-RPC services.
@@ -50,11 +26,12 @@ public interface ErrorResolver {
 	/**
 	 * A JSON error.
 	 */
-	public static class JsonError {
+	@SuppressWarnings("WeakerAccess")
+	class JsonError {
 
-		private int code;
-		private String message;
-		private Object data;
+		private final int code;
+		private final String message;
+		private final Object data;
 
 		/**
 		 * Creates the error.
@@ -63,31 +40,38 @@ public interface ErrorResolver {
 		 * @param data the data
 		 */
 		public JsonError(int code, String message, Object data) {
-			this.code 		= code;
-			this.message	= message;
-			this.data		= data;
+			this.code = code;
+			this.message = message;
+			this.data = data;
 		}
 
 		/**
 		 * @return the code
 		 */
-		protected int getCode() {
+		int getCode() {
 			return code;
 		}
 
 		/**
 		 * @return the message
 		 */
-		protected String getMessage() {
+		String getMessage() {
 			return message;
 		}
 
 		/**
 		 * @return the data
 		 */
-		protected Object getData() {
+		Object getData() {
 			return data;
 		}
 
+		@Override
+		public String toString() {
+			return "JsonError{" + "code=" + code +
+					", message='" + message + '\'' +
+					", data=" + data +
+					'}';
+		}
 	}
 }

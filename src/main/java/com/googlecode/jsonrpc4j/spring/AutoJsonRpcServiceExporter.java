@@ -1,40 +1,11 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j.spring;
 
 import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.forName;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
 
-import com.googlecode.jsonrpc4j.InvocationListener;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -43,14 +14,20 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Auto exports {@link JsonRpcService} annotated beans as JSON-RPC services.
  * <p>
- * Minmizes the configuration necessary to export beans as JSON-RPC services to:
+ * Minimizes the configuration necessary to export beans as JSON-RPC services to:
  * 
  * <pre>
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter&quot;/&gt;
@@ -58,65 +35,70 @@ import com.googlecode.jsonrpc4j.JsonRpcService;
  * &ltbean class="MyServiceBean"/&gt;
  * </pre>
  */
-public class AutoJsonRpcServiceExporter
-	implements BeanFactoryPostProcessor {
+@SuppressWarnings("unused")
+public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 
-	private static final Logger LOG = Logger.getLogger(AutoJsonRpcServiceExporter.class.getName());
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	private static final String PATH_PREFIX = "/";
-
-	private Map<String, String> serviceBeanNames = new HashMap<String, String>();
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
 	private Boolean registerTraceInterceptor;
-	private boolean backwardsComaptible = true;
+	private boolean backwardsCompatible = true;
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
-	private Level exceptionLogLevel = Level.WARNING;
-    private InvocationListener invocationListener = null;
-
-	public void postProcessBeanFactory(
-		ConfigurableListableBeanFactory beanFactory)
-		throws BeansException {
-		DefaultListableBeanFactory dlbf = (DefaultListableBeanFactory) beanFactory;
-		findServiceBeanDefinitions(dlbf);
-		for (Entry<String, String> entry : serviceBeanNames.entrySet()) {
-			String servicePath = entry.getKey();
-			String serviceBeanName = entry.getValue();
-			registerServiceProxy(dlbf, makeUrlPath(servicePath), serviceBeanName);
-		}
-	}
+	private InvocationListener invocationListener = null;
 
 	/**
-	 * Finds the beans to expose and puts them in the {@link #serviceBeanNames}
+	 * Finds the beans to expose
 	 * map.
 	 * <p>
 	 * Searches parent factories as well.
 	 */
-	private void findServiceBeanDefinitions(
-		ConfigurableListableBeanFactory beanFactory) {
+	private static Map<String, String> findServiceBeanDefinitions(ConfigurableListableBeanFactory beanFactory) {
+		final Map<String, String> serviceBeanNames = new HashMap<>();
 		for (String beanName : beanFactory.getBeanDefinitionNames()) {
 			JsonRpcService jsonRpcPath = beanFactory.findAnnotationOnBean(beanName, JsonRpcService.class);
-			if (jsonRpcPath != null) {
+			if (hasServiceAnnotation(jsonRpcPath)) {
 				String pathValue = jsonRpcPath.value();
-				LOG.fine(
-					format("Found JSON-RPC path '%s' for bean [%s].",
-					pathValue, beanName));
-				if (serviceBeanNames.containsKey(pathValue)) {
-					String otherBeanName = serviceBeanNames.get(pathValue);
-					LOG.warning(format(
-						"Duplicate JSON-RPC path specification: found %s on both [%s] and [%s].",
-						pathValue, beanName, otherBeanName));
-				}
-				serviceBeanNames.put(pathValue, beanName);
+				logger.debug("Found JSON-RPC path '{}' for bean [{}].", pathValue, beanName);
+				if (isNotDuplicateService(serviceBeanNames, beanName, pathValue)) serviceBeanNames.put(pathValue, beanName);
 			}
 		}
+		collectFromParentBeans(beanFactory, serviceBeanNames);
+		return serviceBeanNames;
+	}
+
+	@SuppressWarnings("Convert2streamapi")
+	private static void collectFromParentBeans(ConfigurableListableBeanFactory beanFactory, Map<String, String> serviceBeanNames) {
 		BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
-		if (parentBeanFactory != null 
-			&& ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
-			findServiceBeanDefinitions((ConfigurableListableBeanFactory) parentBeanFactory);
+		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
+			for (Entry<String, String> entry : findServiceBeanDefinitions((ConfigurableListableBeanFactory) parentBeanFactory).entrySet()) {
+				if (isNotDuplicateService(serviceBeanNames, entry.getKey(), entry.getValue())) serviceBeanNames.put(entry.getKey(), entry.getValue());
+			}
+		}
+	}
+
+	private static boolean isNotDuplicateService(Map<String, String> serviceBeanNames, String beanName, String pathValue) {
+		if (serviceBeanNames.containsKey(pathValue)) {
+			String otherBeanName = serviceBeanNames.get(pathValue);
+			logger.debug("Duplicate JSON-RPC path specification: found {} on both [{}] and [{}].", pathValue, beanName, otherBeanName);
+			return false;
+		}
+		return true;
+	}
+
+	private static boolean hasServiceAnnotation(JsonRpcService jsonRpcPath) {
+		return jsonRpcPath != null;
+	}
+
+	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) beanFactory;
+		Map<String, String> servicePathToBeanName = findServiceBeanDefinitions(defaultListableBeanFactory);
+		for (Entry<String, String> entry : servicePathToBeanName.entrySet()) {
+			registerServiceProxy(defaultListableBeanFactory, makeUrlPath(entry.getKey()), entry.getValue());
 		}
 	}
 
@@ -132,19 +114,13 @@ public class AutoJsonRpcServiceExporter
 	/**
 	 * Registers the new beans with the bean factory.
 	 */
-	private void registerServiceProxy(
-		DefaultListableBeanFactory dlbf, String servicePath, String serviceBeanName) {
-		BeanDefinitionBuilder builder = BeanDefinitionBuilder
-			.rootBeanDefinition(JsonServiceExporter.class)
-			.addPropertyReference("service", serviceBeanName);
-		BeanDefinition serviceBeanDefinition = findBeanDefintion(dlbf, serviceBeanName);
-		for (Class<?> iface :
-			getBeanInterfaces(serviceBeanDefinition, dlbf.getBeanClassLoader())) {
-			if (iface.isAnnotationPresent(JsonRpcService.class)) {
-				String serviceInterface = iface.getName();
-				LOG.fine(format(
-					"Registering interface '%s' for JSON-RPC bean [%s].",
-					serviceInterface, serviceBeanName));
+	private void registerServiceProxy(DefaultListableBeanFactory defaultListableBeanFactory, String servicePath, String serviceBeanName) {
+		BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(JsonServiceExporter.class).addPropertyReference("service", serviceBeanName);
+		BeanDefinition serviceBeanDefinition = findBeanDefinition(defaultListableBeanFactory, serviceBeanName);
+		for (Class<?> currentInterface : getBeanInterfaces(serviceBeanDefinition, defaultListableBeanFactory.getBeanClassLoader())) {
+			if (currentInterface.isAnnotationPresent(JsonRpcService.class)) {
+				String serviceInterface = currentInterface.getName();
+				logger.debug("Registering interface '{}' for JSON-RPC bean [{}].", serviceInterface, serviceBeanName);
 				builder.addPropertyValue("serviceInterface", serviceInterface);
 				break;
 			}
@@ -157,53 +133,40 @@ public class AutoJsonRpcServiceExporter
 			builder.addPropertyValue("errorResolver", errorResolver);
 		}
 
-        if (invocationListener != null) {
-            builder.addPropertyValue("invocationListener", invocationListener);
-        }
+		if (invocationListener != null) {
+			builder.addPropertyValue("invocationListener", invocationListener);
+		}
 
-		if(registerTraceInterceptor != null) {
+		if (registerTraceInterceptor != null) {
 			builder.addPropertyValue("registerTraceInterceptor", registerTraceInterceptor);
 		}
 
-		builder.addPropertyValue("backwardsComaptible", Boolean.valueOf(backwardsComaptible));
-		builder.addPropertyValue("rethrowExceptions", Boolean.valueOf(rethrowExceptions));
-		builder.addPropertyValue("allowExtraParams", Boolean.valueOf(allowExtraParams));
-		builder.addPropertyValue("allowLessParams", Boolean.valueOf(allowLessParams));
-		builder.addPropertyValue("exceptionLogLevel", exceptionLogLevel);
-		dlbf.registerBeanDefinition(servicePath, builder.getBeanDefinition());
+		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
+		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
+		builder.addPropertyValue("allowExtraParams", allowExtraParams);
+		builder.addPropertyValue("allowLessParams", allowLessParams);
+
+		defaultListableBeanFactory.registerBeanDefinition(servicePath, builder.getBeanDefinition());
 	}
 
 	/**
 	 * Find a {@link BeanDefinition} in the {@link BeanFactory} or it's parents.
 	 */
-	private BeanDefinition findBeanDefintion(
-		ConfigurableListableBeanFactory beanFactory, String serviceBeanName) {
-		if (beanFactory.containsLocalBean(serviceBeanName)) {
-			return beanFactory.getBeanDefinition(serviceBeanName);
-		}
+	private BeanDefinition findBeanDefinition(ConfigurableListableBeanFactory beanFactory, String serviceBeanName) {
+		if (beanFactory.containsLocalBean(serviceBeanName)) return beanFactory.getBeanDefinition(serviceBeanName);
 		BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
-		if (parentBeanFactory != null
-			&& ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
-			return findBeanDefintion(
-				(ConfigurableListableBeanFactory) parentBeanFactory,
-				serviceBeanName);
-		}
-		throw new RuntimeException(format(
-				"Bean with name '%s' can no longer be found.", serviceBeanName));
+		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory))
+			return findBeanDefinition((ConfigurableListableBeanFactory) parentBeanFactory, serviceBeanName);
+		throw new RuntimeException(format("Bean with name '%s' can no longer be found.", serviceBeanName));
 	}
 
-	private Class<?>[] getBeanInterfaces(
-		BeanDefinition serviceBeanDefinition, ClassLoader beanClassLoader) {
+	private Class<?>[] getBeanInterfaces(BeanDefinition serviceBeanDefinition, ClassLoader beanClassLoader) {
 		String beanClassName = serviceBeanDefinition.getBeanClassName();
 		try {
 			Class<?> beanClass = forName(beanClassName, beanClassLoader);
 			return getAllInterfacesForClass(beanClass, beanClassLoader);
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(format("Cannot find bean class '%s'.",
-					beanClassName), e);
-		} catch (LinkageError e) {
-			throw new RuntimeException(format("Cannot find bean class '%s'.",
-					beanClassName), e);
+		} catch (ClassNotFoundException | LinkageError e) {
+			throw new RuntimeException(format("Cannot find bean class '%s'.", beanClassName), e);
 		}
 	}
 
@@ -222,10 +185,10 @@ public class AutoJsonRpcServiceExporter
 	}
 
 	/**
-	 * @param backwardsComaptible the backwardsComaptible to set
+	 * @param backwardsCompatible the backwardsCompatible to set
 	 */
-	public void setBackwardsComaptible(boolean backwardsComaptible) {
-		this.backwardsComaptible = backwardsComaptible;
+	public void setBackwardsCompatible(boolean backwardsCompatible) {
+		this.backwardsCompatible = backwardsCompatible;
 	}
 
 	/**
@@ -250,13 +213,6 @@ public class AutoJsonRpcServiceExporter
 	}
 
 	/**
-	 * @param exceptionLogLevel the exceptionLogLevel to set
-	 */
-	public void setExceptionLogLevel(Level exceptionLogLevel) {
-		this.exceptionLogLevel = exceptionLogLevel;
-	}
-
-	/**
 	 * See {@link org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
 	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
 	 */
@@ -264,10 +220,10 @@ public class AutoJsonRpcServiceExporter
 		this.registerTraceInterceptor = registerTraceInterceptor;
 	}
 
-    /**
-     * @param invocationListener the invocationListener to set
-     */
-    public void setInvocationListener(InvocationListener invocationListener) {
-        this.invocationListener = invocationListener;
-    }
+	/**
+	 * @param invocationListener the invocationListener to set
+	 */
+	public void setInvocationListener(InvocationListener invocationListener) {
+		this.invocationListener = invocationListener;
+	}
 }

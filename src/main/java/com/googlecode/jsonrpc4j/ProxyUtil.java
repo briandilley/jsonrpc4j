@@ -1,28 +1,8 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import org.apache.logging.log4j.LogManager;
+
+import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,15 +16,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utilities for create client proxies.
  */
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public abstract class ProxyUtil {
 
-	private static final Logger LOGGER = Logger.getLogger(ProxyUtil.class.getName());
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	/**
 	 * Creates a composite service using all of the given
@@ -55,8 +34,7 @@ public abstract class ProxyUtil {
 	 * @param allowMultipleInheritance whether or not to allow multiple inheritance
 	 * @return the object
 	 */
-	public static Object createCompositeServiceProxy(
-		ClassLoader classLoader, Object[] services, boolean allowMultipleInheritance) {
+	public static Object createCompositeServiceProxy(ClassLoader classLoader, Object[] services, boolean allowMultipleInheritance) {
 		return createCompositeServiceProxy(classLoader, services, null, allowMultipleInheritance);
 	}
 
@@ -70,63 +48,57 @@ public abstract class ProxyUtil {
 	 * @param allowMultipleInheritance whether or not to allow multiple inheritance
 	 * @return the object
 	 */
-	public static Object createCompositeServiceProxy(
-		ClassLoader classLoader, Object[] services,
-		Class<?>[] serviceInterfaces, boolean allowMultipleInheritance) {
-		
-		// get interfaces
-		Set<Class<?>> interfaces = new HashSet<Class<?>>();
-		if (serviceInterfaces!=null) {
+	public static Object createCompositeServiceProxy(ClassLoader classLoader, Object[] services, Class<?>[] serviceInterfaces, boolean allowMultipleInheritance) {
+
+		Set<Class<?>> interfaces = collectInterfaces(services, serviceInterfaces);
+		final Map<Class<?>, Object> serviceClassToInstanceMapping = buildServiceMap(services, allowMultipleInheritance, interfaces);
+		// now create the proxy
+		return Proxy.newProxyInstance(classLoader, interfaces.toArray(new Class<?>[0]), new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				Class<?> clazz = method.getDeclaringClass();
+				if (clazz == Object.class) { return proxyObjectMethods(method, proxy, args); }
+				return method.invoke(serviceClassToInstanceMapping.get(clazz), args);
+			}
+		});
+	}
+
+	private static Set<Class<?>> collectInterfaces(Object[] services, Class<?>[] serviceInterfaces) {
+		Set<Class<?>> interfaces = new HashSet<>();
+		if (serviceInterfaces != null) {
 			interfaces.addAll(Arrays.asList(serviceInterfaces));
 		} else {
 			for (Object o : services) {
 				interfaces.addAll(Arrays.asList(o.getClass().getInterfaces()));
 			}
 		}
+		return interfaces;
+	}
 
-		// build the service map
-		final Map<Class<?>, Object> serviceMap = new HashMap<Class<?>, Object>();
+	private static Map<Class<?>, Object> buildServiceMap(Object[] services, boolean allowMultipleInheritance, Set<Class<?>> interfaces) {
+		final Map<Class<?>, Object> serviceMap = new HashMap<>();
 		for (Class<?> clazz : interfaces) {
-
-			// we will allow for this, but the first
-			// object that was registered wins
 			if (serviceMap.containsKey(clazz) && allowMultipleInheritance) {
 				continue;
-			} else if (serviceMap.containsKey(clazz)) {
-				throw new IllegalArgumentException(
-					"Multiple inheritance not allowed "+clazz.getName());
-			}
-
-			// find a service for this interface
+			} else if (serviceMap.containsKey(clazz)) { throw new IllegalArgumentException("Multiple inheritance not allowed " + clazz.getName()); }
 			for (Object o : services) {
 				if (clazz.isInstance(o)) {
-					if (LOGGER.isLoggable(Level.FINE)) {
-						LOGGER.log(Level.FINE, "Using {0} for {1}", new Object[]{o.getClass().getName(), clazz.getName()});
-					}
+					logger.debug("Using {} for {}", o.getClass().getName(), clazz.getName());
 					serviceMap.put(clazz, o);
 					break;
 				}
 			}
-
-			// make sure we have one
-			if (!serviceMap.containsKey(clazz)) {
-				throw new IllegalArgumentException(
-					"None of the provided services implement "+clazz.getName());
-			}
+			if (!serviceMap.containsKey(clazz)) { throw new IllegalArgumentException("None of the provided services implement " + clazz.getName()); }
 		}
+		return serviceMap;
+	}
 
-		// now create the proxy
-		return Proxy.newProxyInstance(classLoader, interfaces.toArray(new Class<?>[0]),
-			new InvocationHandler() {
-			public Object invoke(Object proxy, Method method, Object[] args)
-				throws Throwable {
-				Class<?> clazz = method.getDeclaringClass();
-				if (clazz == Object.class) {
-					return proxyObjectMethods(method, proxy, args);
-				}
-				return method.invoke(serviceMap.get(clazz), args);
-			}
-		});
+	private static Object proxyObjectMethods(Method method, Object proxyObject, Object[] args) {
+		String name = method.getName();
+		if (name.equals("toString")) { return proxyObject.getClass().getName() + "@" + System.identityHashCode(proxyObject); }
+		if (name.equals("hashCode")) { return System.identityHashCode(proxyObject); }
+		if (name.equals("equals")) { return proxyObject == args[0]; }
+		throw new RuntimeException(method.getName() + " is not a member of java.lang.Object");
 	}
 
 	/**
@@ -138,22 +110,12 @@ public abstract class ProxyUtil {
 	 * @param client the {@link JsonRpcClient}
 	 * @param socket the {@link Socket}
 	 * @return the proxied interface
-	 * @throws IOException
-	 *             if an I/O error occurs when creating the input stream,  the
-	 *             output stream, the socket is closed, the socket is not
-	 *             connected,  or the socket input has been shutdown using
-	 *             shutdownInput()
+	 * @throws IOException if an I/O error occurs when creating the input stream,  the output stream, the socket 
+	 * is closed, the socket is not connected,  or the socket input has been shutdown using shutdownInput()
 	 */
-	public static <T> T createClientProxy(
-		ClassLoader classLoader,
-		Class<T> proxyInterface,
-		final JsonRpcClient client,
-		Socket socket) throws IOException {
-
-		// create and return the proxy
-		return createClientProxy(
-			classLoader, proxyInterface, client,
-			socket.getInputStream(), socket.getOutputStream());
+	@SuppressWarnings("WeakerAccess")
+	public static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final JsonRpcClient client, Socket socket) throws IOException {
+		return createClientProxy(classLoader, proxyInterface, client, socket.getInputStream(), socket.getOutputStream());
 	}
 
 	/**
@@ -163,41 +125,48 @@ public abstract class ProxyUtil {
 	 * @param classLoader the {@link ClassLoader}
 	 * @param proxyInterface the interface to proxy
 	 * @param client the {@link JsonRpcClient}
-	 * @param ips the {@link InputStream}
-	 * @param ops the {@link OutputStream}
+	 * @param input the {@link InputStream}
+	 * @param output the {@link OutputStream}
 	 * @return the proxied interface
 	 */
-	@SuppressWarnings("unchecked")
-	public static <T> T createClientProxy(
-		ClassLoader classLoader,
-		Class<T> proxyInterface,
-		final JsonRpcClient client,
-		final InputStream ips,
-		final OutputStream ops) {
+	@SuppressWarnings({ "unchecked", "WeakerAccess" })
+	public static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final JsonRpcClient client, final InputStream input, final OutputStream output) {
 
 		// create and return the proxy
-		return (T)Proxy.newProxyInstance(
-			classLoader,
-			new Class<?>[] {proxyInterface},
-			new InvocationHandler() {
-				public Object invoke(Object proxy, Method method, Object[] args)
-					throws Throwable {
-					if (method.getDeclaringClass() == Object.class) {
-						return proxyObjectMethods(method, proxy, args);
-					}
-					Object arguments = ReflectionUtil.parseArguments(method, args);
+		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
 
-					String methodName=method.getName();
-					JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
-		            if (methodAnnotation!=null && methodAnnotation.value()!=null) {
-		            	methodName=methodAnnotation.value();
-		            }
+				final Object arguments = ReflectionUtil.parseArguments(method, args);
+				final String methodName = getMethodName(method);
+				return client.invokeAndReadResponse(methodName, arguments, method.getGenericReturnType(), output, input);
+			}
+		});
+	}
 
-                    
-					return client.invokeAndReadResponse(
-						methodName, arguments, method.getGenericReturnType(), ops, ips);
-				}
-			});
+	private static boolean isDeclaringClassAnObject(Method method) {
+		return method.getDeclaringClass() == Object.class;
+	}
+
+	private static String getMethodName(Method method) {
+		return method.getName();
+	}
+
+	public static <T> T createClientProxy(Class<T> clazz, JsonRpcRestClient client) {
+		return createClientProxy(clazz.getClassLoader(), clazz, client);
+	}
+
+	/**
+	 * Creates a {@link Proxy} of the given {@code proxyInterface} that uses the given {@link JsonRpcHttpClient}.
+	 * @param <T> the proxy type
+	 * @param classLoader the {@link ClassLoader}
+	 * @param proxyInterface the interface to proxy
+	 * @param client the {@link JsonRpcHttpClient}
+	 * @return the proxied interface
+	 */
+	public static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final IJsonRpcClient client) {
+		return createClientProxy(classLoader, proxyInterface, client, new HashMap<String, String>());
 	}
 
 	/**
@@ -211,63 +180,18 @@ public abstract class ProxyUtil {
 	 * @return the proxied interface
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T createClientProxy(
-		ClassLoader classLoader,
-		Class<T> proxyInterface,
-		final IJsonRpcClient client,
-		final Map<String, String> extraHeaders) {
+	private static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final IJsonRpcClient client, final Map<String, String> extraHeaders) {
 
-		// create and return the proxy
-		return (T)Proxy.newProxyInstance(
-			classLoader,
-			new Class<?>[] {proxyInterface},
-			new InvocationHandler() {
-				public Object invoke(Object proxy, Method method, Object[] args)
-					throws Throwable {
-					if (method.getDeclaringClass() == Object.class) {
-						return proxyObjectMethods(method, proxy, args);
-					}
-					Object arguments = ReflectionUtil.parseArguments(method, args);
+		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
 
-					String methodName=method.getName();
-					JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
-		            if (methodAnnotation!=null && methodAnnotation.value()!=null) {
-		            	methodName=methodAnnotation.value();
-		            }
-		            
-					return client.invoke(
-						methodName, arguments, method.getGenericReturnType(), extraHeaders);
-				}
-			});
+				final Object arguments = ReflectionUtil.parseArguments(method, args);
+				final String methodName = getMethodName(method);
+				return client.invoke(methodName, arguments, method.getGenericReturnType(), extraHeaders);
+			}
+		});
 	}
 
-	/**
-	 * Creates a {@link Proxy} of the given {@code proxyInterface}
-	 * that uses the given {@link JsonRpcHttpClient}.
-	 * @param <T> the proxy type
-	 * @param classLoader the {@link ClassLoader}
-	 * @param proxyInterface the interface to proxy
-	 * @param client the {@link JsonRpcHttpClient}
-	 * @return the proxied interface
-	 */
-	public static <T> T createClientProxy(
-		ClassLoader classLoader,
-		Class<T> proxyInterface,
-		final IJsonRpcClient client) {
-		return createClientProxy(classLoader, proxyInterface, client, new HashMap<String, String>());
-	}
-
-	private static Object proxyObjectMethods(Method method, Object proxyObject, Object[] args) {
-		String name = method.getName();
-		if (name.equals("toString")) {
-			return proxyObject.getClass().getName() + "@" + System.identityHashCode(proxyObject);
-		}
-		if (name.equals("hashCode")) {
-			return System.identityHashCode(proxyObject);
-		}
-		if (name.equals("equals")) {
-			return proxyObject == args[0];
-		}
-		throw new RuntimeException(method.getName() + " is not a member of java.lang.Object");
-	}
 }

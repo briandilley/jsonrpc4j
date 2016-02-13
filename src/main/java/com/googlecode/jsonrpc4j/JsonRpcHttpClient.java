@@ -1,35 +1,14 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC_CONTENT_TYPE;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -44,26 +23,32 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * A JSON-RPC client that uses the HTTP protocol.
  *
  */
-public class JsonRpcHttpClient
-	extends JsonRpcClient
-	implements IJsonRpcClient {
+@SuppressWarnings("unused")
+public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 
-	public static final String JSONRPC_CONTENT_TYPE="application/json-rpc";
-
+	private final Map<String, String> headers = new HashMap<>();
 	private URL serviceUrl;
+	private Proxy connectionProxy = Proxy.NO_PROXY;
+	private int connectionTimeoutMillis = 60 * 1000;
+	private int readTimeoutMillis = 60 * 1000 * 2;
+	private SSLContext sslContext = null;
+	private HostnameVerifier hostNameVerifier = null;
 
-	private Proxy connectionProxy 				= Proxy.NO_PROXY;
-	private int connectionTimeoutMillis			= 60 * 1000;
-	private int readTimeoutMillis				= 60 * 1000 * 2;
-	private SSLContext sslContext				= null;
-	private HostnameVerifier hostNameVerifier	= null;
-	private final Map<String, String> headers	= new HashMap<String, String>();
+	/**
+	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
+	 * The headers provided in the {@code headers} map are added to every request
+	 * made to the {@code serviceUrl}.
+	 *
+	 * @param serviceUrl the service end-point URL
+	 * @param headers the headers
+	 */
+	public JsonRpcHttpClient(URL serviceUrl, Map<String, String> headers) {
+		this(new ObjectMapper(), serviceUrl, headers);
+	}
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -86,18 +71,6 @@ public class JsonRpcHttpClient
 	 * made to the {@code serviceUrl}.
 	 *
 	 * @param serviceUrl the service end-point URL
-	 * @param headers the headers
-	 */
-	public JsonRpcHttpClient(URL serviceUrl, Map<String, String> headers) {
-		this(new ObjectMapper(), serviceUrl, headers);
-	}
-
-	/**
-	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
-	 * The headers provided in the {@code headers} map are added to every request
-	 * made to the {@code serviceUrl}.
-	 *
-	 * @param serviceUrl the service end-point URL
 	 */
 	public JsonRpcHttpClient(URL serviceUrl) {
 		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
@@ -107,8 +80,7 @@ public class JsonRpcHttpClient
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void invoke(String methodName, Object argument)
-		throws Throwable {
+	public void invoke(String methodName, Object argument) throws Throwable {
 		invoke(methodName, argument, null, new HashMap<String, String>());
 	}
 
@@ -116,82 +88,34 @@ public class JsonRpcHttpClient
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Object invoke(
-		String methodName, Object argument, Type returnType)
-		throws Throwable {
+	public Object invoke(String methodName, Object argument, Type returnType) throws Throwable {
 		return invoke(methodName, argument, returnType, new HashMap<String, String>());
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T invoke(
-		String methodName, Object argument, Class<T> clazz)
-		throws Throwable {
-		return (T)invoke(methodName, argument, Type.class.cast(clazz));
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Object invoke(
-		String methodName, Object argument, Type returnType,
-		Map<String, String> extraHeaders)
-		throws Throwable {
-
-		// create URLConnection
-		HttpURLConnection con = prepareConnection(extraHeaders);
-		con.connect();
-
-		// invoke it
-		OutputStream ops = con.getOutputStream();
+	public Object invoke(String methodName, Object argument, Type returnType, Map<String, String> extraHeaders) throws Throwable {
+		HttpURLConnection connection = prepareConnection(extraHeaders);
+		connection.connect();
 		try {
-			super.invoke(methodName, argument, ops);
-		} finally {
-			ops.close();
-		}
-
-		// read and return value
-		try {
-			InputStream ips = con.getInputStream();
-			String contentEncoding = con.getHeaderField("Content-Encoding");
-			boolean useGzip = contentEncoding != null && contentEncoding.equalsIgnoreCase("gzip");
+			try (OutputStream send = connection.getOutputStream()) {
+				super.invoke(methodName, argument, send);
+			}
+			// read and return value
 			try {
-				// in case of http error try to read response body and return it in exception
-				if (useGzip) {
-					ips = new GZIPInputStream(ips);
+				try (InputStream answer = getAnswerStream(connection, useGzip(connection))) {
+					return super.readResponse(returnType, answer);
 				}
-				return super.readResponse(returnType, ips);
-			} finally {
-				ips.close();
-			}
-		} catch (IOException e) {
-			throw new HttpException(readString(con.getErrorStream()), e);
-		}
-	}
-
-	private static String readString(InputStream stream) {
-		if (stream == null) return "null";
-		try {
-			StringBuilder buf = new StringBuilder();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-			for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
-				buf.append((char) ch);
-			}
-			return buf.toString();
-		} catch (UnsupportedEncodingException e) {
-			return e.getMessage();
-		} catch (IOException e) {
-			return e.getMessage();
-		} finally {
-			try {
-				stream.close();
 			} catch (IOException e) {
+				// in case of error try to read response body and return it in exception
+				throw new HttpException(readErrorString(connection), e);
 			}
+		} finally {
+			connection.disconnect();
 		}
+
 	}
 
 	/**
@@ -199,11 +123,17 @@ public class JsonRpcHttpClient
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T invoke(
-		String methodName, Object argument, Class<T> clazz,
-		Map<String, String> extraHeaders)
-		throws Throwable {
-		return (T)invoke(methodName, argument, Type.class.cast(clazz), extraHeaders);
+	public <T> T invoke(String methodName, Object argument, Class<T> clazz) throws Throwable {
+		return (T) invoke(methodName, argument, Type.class.cast(clazz));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T invoke(String methodName, Object argument, Class<T> clazz, Map<String, String> extraHeaders) throws Throwable {
+		return (T) invoke(methodName, argument, Type.class.cast(clazz), extraHeaders);
 	}
 
 	/**
@@ -212,24 +142,53 @@ public class JsonRpcHttpClient
 	 * @return the unopened connection
 	 * @throws IOException
 	 */
-	protected HttpURLConnection prepareConnection(Map<String, String> extraHeaders)
-		throws IOException {
+	private HttpURLConnection prepareConnection(Map<String, String> extraHeaders) throws IOException {
 
 		// create URLConnection
-		HttpURLConnection con = (HttpURLConnection)serviceUrl.openConnection(connectionProxy);
-		con.setConnectTimeout(connectionTimeoutMillis);
-		con.setReadTimeout(readTimeoutMillis);
-		con.setAllowUserInteraction(false);
-		con.setDefaultUseCaches(false);
-		con.setDoInput(true);
-		con.setDoOutput(true);
-		con.setUseCaches(false);
-		con.setInstanceFollowRedirects(true);
-		con.setRequestMethod("POST");
+		HttpURLConnection connection = (HttpURLConnection) serviceUrl.openConnection(connectionProxy);
+		connection.setConnectTimeout(connectionTimeoutMillis);
+		connection.setReadTimeout(readTimeoutMillis);
+		connection.setAllowUserInteraction(false);
+		connection.setDefaultUseCaches(false);
+		connection.setDoInput(true);
+		connection.setDoOutput(true);
+		connection.setUseCaches(false);
+		connection.setInstanceFollowRedirects(true);
+		connection.setRequestMethod("POST");
 
-		// do stuff for ssl
-		if (HttpsURLConnection.class.isInstance(con)) {
-			HttpsURLConnection https = HttpsURLConnection.class.cast(con);
+		setupSsl(connection);
+		addHeaders(extraHeaders, connection);
+
+		return connection;
+	}
+
+	private InputStream getAnswerStream(final HttpURLConnection connection, final boolean useGzip) throws IOException {
+		InputStream inputStream = connection.getInputStream();
+		if (useGzip) return new GZIPInputStream(inputStream);
+		return inputStream;
+	}
+
+	private boolean useGzip(final HttpURLConnection connection) {
+		String contentEncoding = connection.getHeaderField("Content-Encoding");
+		return contentEncoding != null && contentEncoding.equalsIgnoreCase("gzip");
+	}
+
+	private static String readErrorString(final HttpURLConnection connection) {
+		try (InputStream stream = connection.getErrorStream()) {
+			StringBuilder buffer = new StringBuilder();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+			for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
+				buffer.append((char) ch);
+			}
+			return buffer.toString();
+		} catch (IOException e) {
+			return e.getMessage();
+		}
+	}
+
+	private void setupSsl(HttpURLConnection connection) {
+		if (HttpsURLConnection.class.isInstance(connection)) {
+			HttpsURLConnection https = HttpsURLConnection.class.cast(connection);
 			if (hostNameVerifier != null) {
 				https.setHostnameVerifier(hostNameVerifier);
 			}
@@ -237,18 +196,16 @@ public class JsonRpcHttpClient
 				https.setSSLSocketFactory(sslContext.getSocketFactory());
 			}
 		}
+	}
 
-		// add headers
-		con.setRequestProperty("Content-Type", JSONRPC_CONTENT_TYPE);
+	private void addHeaders(Map<String, String> extraHeaders, HttpURLConnection connection) {
+		connection.setRequestProperty("Content-Type", JSONRPC_CONTENT_TYPE);
 		for (Entry<String, String> entry : headers.entrySet()) {
-			con.setRequestProperty(entry.getKey(), entry.getValue());
+			connection.setRequestProperty(entry.getKey(), entry.getValue());
 		}
 		for (Entry<String, String> entry : extraHeaders.entrySet()) {
-			con.setRequestProperty(entry.getKey(), entry.getValue());
+			connection.setRequestProperty(entry.getKey(), entry.getValue());
 		}
-
-		// return it
-		return con;
 	}
 
 	/**

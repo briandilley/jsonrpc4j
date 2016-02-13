@@ -1,37 +1,12 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import org.apache.logging.log4j.LogManager;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A multiple service dispatcher that supports JSON-RPC "method" names
@@ -61,23 +36,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * }
  * </pre>
  */
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public class JsonRpcMultiServer extends JsonRpcServer {
 
 	public static final char DEFAULT_SEPARATOR = '.';
-	private static final Logger LOGGER = Logger.getLogger(JsonRpcMultiServer.class.getName());
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
-	private Map<String, Object> handlerMap;
-	private Map<String, Class<?>> interfaceMap;
+	private final Map<String, Object> handlerMap;
+	private final Map<String, Class<?>> interfaceMap;
 	private char separator = DEFAULT_SEPARATOR;
 
 	public JsonRpcMultiServer() {
 		this(new ObjectMapper());
+		logger.debug("created empty multi server");
 	}
 
-	public JsonRpcMultiServer(ObjectMapper mapper) {
-		super(mapper, (Object) null);
-		this.handlerMap = new HashMap<String, Object>();
-		this.interfaceMap = new HashMap<String, Class<?>>();
+	private JsonRpcMultiServer(ObjectMapper mapper) {
+		super(mapper, null);
+		this.handlerMap = new HashMap<>();
+		this.interfaceMap = new HashMap<>();
 	}
 
 	public JsonRpcMultiServer addService(String name, Object handler) {
@@ -85,6 +62,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	}
 
 	public JsonRpcMultiServer addService(String name, Object handler, Class<?> remoteInterface) {
+		logger.debug("add service interface {} with handler {}", remoteInterface, handler);
 		handlerMap.put(name, handler);
 		if (remoteInterface != null) {
 			interfaceMap.put(name, remoteInterface);
@@ -111,12 +89,43 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	protected Class<?>[] getHandlerInterfaces(String serviceName) {
 		Class<?> remoteInterface = interfaceMap.get(serviceName);
 		if (remoteInterface != null) {
-			return new Class<?>[] {remoteInterface};
+			return new Class<?>[] { remoteInterface };
 		} else if (Proxy.isProxyClass(getHandler(serviceName).getClass())) {
 			return getHandler(serviceName).getClass().getInterfaces();
 		} else {
-			return new Class<?>[] {getHandler(serviceName).getClass()};
+			return new Class<?>[] { getHandler(serviceName).getClass() };
 		}
+	}
+
+	/**
+	 * Get the service name from the methodNode.  JSON-RPC methods with the form
+	 * Service.method will result in "Service" being returned in this case.
+	 *
+	 * @param methodName method name
+	 * @return the name of the service, or <code>null</code>
+	 */
+	@Override
+	protected String getServiceName(final String methodName) {
+		if (methodName != null) {
+			int ndx = methodName.indexOf(this.separator);
+			if (ndx > 0) { return methodName.substring(0, ndx); }
+		}
+		return methodName;
+	}
+
+	/**
+	 * Get the method name from the methodNode, stripping off the service name.
+	 *
+	 * @param methodName the JsonNode for the method
+	 * @return the name of the method that should be invoked
+	 */
+	@Override
+	protected String getMethodName(final String methodName) {
+		if (methodName != null) {
+			int ndx = methodName.indexOf(this.separator);
+			if (ndx > 0) { return methodName.substring(ndx + 1); }
+		}
+		return methodName;
 	}
 
 	/**
@@ -127,49 +136,12 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	 * @return the handler to invoke the RPC call against
 	 */
 	@Override
-	protected Object getHandler(String serviceName) {
+	Object getHandler(String serviceName) {
 		Object handler = handlerMap.get(serviceName);
 		if (handler == null) {
-			LOGGER.log(Level.SEVERE, "Service '" + serviceName + "' is not registered in this multi-server");
+			logger.error("Service '{}' is not registered in this multi-server", serviceName);
 			throw new RuntimeException("Service '" + serviceName + "' does not exist");
 		}
 		return handler;
-	}
-
-	/**
-	 * Get the service name from the methodNode.  JSON-RPC methods with the form
-	 * Service.method will result in "Service" being returned in this case.
-	 *
-	 * @param methodNode the JsonNode for the method
-	 * @return the name of the service, or <code>null</code>
-	 */
-	@Override
-	protected String getServiceName(JsonNode methodNode) {
-		String methodName = (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
-		if (methodName != null) {
-			int ndx = methodName.indexOf(this.separator);
-			if (ndx > 0) {
-				return methodName.substring(0, ndx);
-			}
-		}
-		return methodName;
-	}
-
-	/**
-	 * Get the method name from the methodNode, stripping off the service name.
-	 *
-	 * @param methodNode the JsonNode for the method
-	 * @return the name of the method that should be invoked
-	 */
-	@Override
-	protected String getMethodName(JsonNode methodNode) {
-		String methodName = (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
-		if (methodName != null) {
-			int ndx = methodName.indexOf(this.separator);
-			if (ndx > 0) {
-				return methodName.substring(ndx + 1);
-			}
-		}
-		return methodName;
 	}
 }
