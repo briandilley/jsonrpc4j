@@ -42,6 +42,9 @@ In `<dependencies>`:
 
 ```
 
+If you want to just download the projects output JAR and it's dependencies you can
+do it over at the [Maven repository][Maven repository].
+
 ## JSON-RPC specification
 The official source for the [JSON-RPC 2.0 specification][JSON RPC Spec].
 The guys over at [json-rpc google group][Google Group]
@@ -435,3 +438,4 @@ public interface LibraryService {
 [Jackson page]: https://github.com/FasterXML/jackson
 [JSON RPC Spec]: http://www.jsonrpc.org/specification
 [Maven page]: http://maven.apache.org
+[Maven repository]: http://mvnrepository.com/artifact/com.github.briandilley.jsonrpc4j/jsonrpc4j
