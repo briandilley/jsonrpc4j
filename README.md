@@ -4,7 +4,10 @@ This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
 [Jackson][Jackson page] library to convert java
 objects to and from json objects (and other things related to
-JSON-RPC).
+JSON-RPC). 
+
+[ ![Download](https://api.bintray.com/packages/bintray/jcenter/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/images/download.svg) ](https://bintray.com/bintray/jcenter/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/_latestVersion)
+[![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
