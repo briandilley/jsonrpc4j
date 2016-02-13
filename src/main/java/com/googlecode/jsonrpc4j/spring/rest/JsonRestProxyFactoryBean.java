@@ -153,7 +153,7 @@ public class JsonRestProxyFactoryBean<T>
     @SuppressWarnings("unchecked")
     @Override
 	public Class<T> getObjectType() {
-		return getServiceInterface();
+		return (Class<T>) getServiceInterface();
 	}
 
 	/**
