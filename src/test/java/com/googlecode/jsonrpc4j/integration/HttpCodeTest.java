@@ -1,8 +1,9 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.integration;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 
+import com.googlecode.jsonrpc4j.ProxyUtil;
 import org.junit.Test;
 
 import org.springframework.web.client.HttpClientErrorException;

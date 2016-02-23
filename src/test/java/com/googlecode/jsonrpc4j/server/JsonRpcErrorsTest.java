@@ -1,4 +1,4 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.mapper;
@@ -6,6 +6,9 @@ import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.JsonRpcError;
+import com.googlecode.jsonrpc4j.JsonRpcErrors;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -93,14 +96,14 @@ public class JsonRpcErrorsTest {
 		Object testMethod();
 	}
 
-	@SuppressWarnings("unused")
-	private interface ServiceInterfaceWithAnnotation {
+	@SuppressWarnings({"unused", "WeakerAccess"})
+	public interface ServiceInterfaceWithAnnotation {
 		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = 1234) })
 		Object testMethod();
 	}
 
-	@SuppressWarnings("unused")
-	private interface ServiceInterfaceWithAnnotationMessageAndData {
+	@SuppressWarnings({"unused", "WeakerAccess"})
+	public interface ServiceInterfaceWithAnnotationMessageAndData {
 		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = -5678, message = "The message", data = "The data") })
 		Object testMethod();
 	}

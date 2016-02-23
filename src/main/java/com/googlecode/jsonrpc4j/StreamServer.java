@@ -70,7 +70,7 @@ public class StreamServer {
 	public StreamServer(JsonRpcBasicServer jsonRpcServer, int maxThreads, ServerSocket serverSocket) {
 		this.jsonRpcServer = jsonRpcServer;
 		this.serverSocket = serverSocket;
-		executor = new ThreadPoolExecutor(maxThreads + 1, maxThreads + 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+		executor = new ThreadPoolExecutor(maxThreads + 1, maxThreads + 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
 		jsonRpcServer.setRethrowExceptions(false);
 	}

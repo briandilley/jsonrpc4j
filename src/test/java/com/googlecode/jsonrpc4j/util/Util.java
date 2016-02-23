@@ -40,7 +40,7 @@ public class Util {
 		return messageOf(id, methodName, Arrays.asList(args));
 	}
 
-	public static InputStream messageOf(Object id, final String methodName, Object params) throws JsonProcessingException {
+	public static InputStream messageOf(final Object id, final String methodName, final Object params) throws JsonProcessingException {
 		String data = mapper.writeValueAsString(new HashMap<String, Object>() {
 			{
 				if (id != null) put(JsonRpcBasicServer.ID, id);

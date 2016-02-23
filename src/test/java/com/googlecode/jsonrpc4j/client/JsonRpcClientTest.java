@@ -1,10 +1,11 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.client;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.googlecode.jsonrpc4j.JsonRpcClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

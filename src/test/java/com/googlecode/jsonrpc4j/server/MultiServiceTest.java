@@ -1,4 +1,4 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParams;
@@ -6,6 +6,8 @@ import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static org.junit.Assert.assertEquals;
 
+import com.googlecode.jsonrpc4j.JsonRpcMultiServer;
+import com.googlecode.jsonrpc4j.JsonRpcParam;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +45,7 @@ public class MultiServiceTest {
 		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 
-	private interface ServiceInterfaceWithParamNameAnnotation {
+	public interface ServiceInterfaceWithParamNameAnnotation {
 		String testMethod(@JsonRpcParam("param1") String param1);
 	}
 

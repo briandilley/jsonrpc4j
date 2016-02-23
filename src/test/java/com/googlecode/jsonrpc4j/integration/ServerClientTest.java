@@ -1,8 +1,10 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.googlecode.jsonrpc4j.ProxyUtil;
+import com.googlecode.jsonrpc4j.util.TestException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

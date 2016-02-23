@@ -1,4 +1,4 @@
-package com.googlecode.jsonrpc4j;
+package com.googlecode.jsonrpc4j.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -8,6 +8,10 @@ import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.JsonRpcClient;
+import com.googlecode.jsonrpc4j.ProxyUtil;
+import com.googlecode.jsonrpc4j.StreamServer;
 import com.googlecode.jsonrpc4j.StreamServer.Server;
 
 import java.io.IOException;
@@ -90,10 +94,14 @@ public class StreamServerTest {
 		Socket socket = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
 		final Service service1 = ProxyUtil.createClientProxy(this.getClass().getClassLoader(), Service.class, jsonRpcClient, socket);
 
-		Thread t = new Thread(() -> {
-			//noinspection InfiniteLoopStatement
-			while (true) {
-				service1.inc();
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				// noinspection InfiniteLoopStatement
+				while (true) {
+					service1.inc();
+				}
+
 			}
 		});
 		t.start();
@@ -109,15 +117,18 @@ public class StreamServerTest {
 		StreamServer streamServer = createAndStartServer();
 		final Socket socket = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
 		final Service service1 = ProxyUtil.createClientProxy(this.getClass().getClassLoader(), Service.class, jsonRpcClient, socket);
-		Thread t = new Thread(() -> {
-			while (true) {
-				if (service1.inc() > 5) {
-					try {
-						socket.close();
-					} catch (IOException e) {
-						e.printStackTrace();
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					if (service1.inc() > 5) {
+						try {
+							socket.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return;
 					}
-					return;
 				}
 			}
 		});
@@ -160,7 +171,8 @@ public class StreamServerTest {
 		streamServer.stop();
 	}
 
-	private interface Service {
+	@SuppressWarnings("WeakerAccess")
+	public interface Service {
 		String hello(String whatever);
 
 		int inc();
@@ -168,7 +180,8 @@ public class StreamServerTest {
 		void reset();
 	}
 
-	private class ServiceImpl implements Service {
+	@SuppressWarnings("WeakerAccess")
+	public class ServiceImpl implements Service {
 
 		private int val;
 

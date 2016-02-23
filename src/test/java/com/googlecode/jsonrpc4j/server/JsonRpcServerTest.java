@@ -9,6 +9,7 @@ import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static com.googlecode.jsonrpc4j.util.Util.param3;
 import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -92,7 +93,7 @@ public class JsonRpcServerTest {
 
 	@Test
 	public void callMethodWithTooFewParametersAllowOn() throws Exception {
-		EasyMock.expect(mockService.testMethod(anyObject())).andReturn("success");
+		EasyMock.expect(mockService.testMethod(anyString())).andReturn("success");
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowLessParams(true);
 		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
@@ -207,7 +208,7 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.notNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.<Throwable> notNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 
@@ -237,7 +238,7 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.isNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.<Throwable> isNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 

@@ -39,7 +39,7 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	}
 
 	private JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper) {
-		this(serviceUrl, mapper, null, new HashMap<>());
+		this(serviceUrl, mapper, null, new HashMap<String, String>());
 	}
 
 	@SuppressWarnings("WeakerAccess")
@@ -171,7 +171,7 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	 */
 	@Override
 	public Object invoke(String methodName, Object argument, Type returnType) throws Throwable {
-		return invoke(methodName, argument, returnType, new HashMap<>());
+		return invoke(methodName, argument, returnType, new HashMap<String, String>());
 	}
 
 	/**

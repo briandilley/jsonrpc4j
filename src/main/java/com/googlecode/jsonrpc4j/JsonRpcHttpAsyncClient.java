@@ -115,7 +115,7 @@ public class JsonRpcHttpAsyncClient {
 	 * @param serviceUrl the service end-point URL
 	 */
 	private JsonRpcHttpAsyncClient(URL serviceUrl) {
-		this(new ObjectMapper(), serviceUrl, new HashMap<>());
+		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
 	}
 
 	/**
@@ -382,23 +382,26 @@ public class JsonRpcHttpAsyncClient {
 		final ConnectingIOReactor ioReactor = createIoReactor(config);
 		createSslContext();
 		int socketBufferSize = Integer.getInteger("com.googlecode.jsonrpc4j.async.socket.buffer", 8 * 1024);
-		ConnectionConfig connectionConfig = ConnectionConfig.custom().setBufferSize(socketBufferSize).build();
+		final ConnectionConfig connectionConfig = ConnectionConfig.custom().setBufferSize(socketBufferSize).build();
 		BasicNIOConnFactory nioConnFactory = new BasicNIOConnFactory(sslContext, null, connectionConfig);
 		pool = new BasicNIOConnPool(ioReactor, nioConnFactory, Integer.getInteger("com.googlecode.jsonrpc4j.async.connect.timeout", 30000));
 		pool.setDefaultMaxPerRoute(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.route", 500));
 		pool.setMaxTotal(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.total", 500));
 
-		Thread t = new Thread(() -> {
-			try {
-				HttpAsyncRequestExecutor protocolHandler = new HttpAsyncRequestExecutor();
-				IOEventDispatch ioEventDispatch = new DefaultHttpClientIODispatch(protocolHandler, sslContext, connectionConfig);
-				ioReactor.execute(ioEventDispatch);
-			} catch (InterruptedIOException ex) {
-				System.err.println("Interrupted");
-			} catch (IOException e) {
-				System.err.println("I/O error: " + e.getMessage());
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					HttpAsyncRequestExecutor protocolHandler = new HttpAsyncRequestExecutor();
+					IOEventDispatch ioEventDispatch = new DefaultHttpClientIODispatch(protocolHandler, sslContext, connectionConfig);
+					ioReactor.execute(ioEventDispatch);
+				} catch (InterruptedIOException ex) {
+					System.err.println("Interrupted");
+				} catch (IOException e) {
+					System.err.println("I/O error: " + e.getMessage());
+				}
 			}
-		} , "jsonrpc4j HTTP IOReactor");
+		}, "jsonrpc4j HTTP IOReactor");
 
 		t.setDaemon(true);
 		t.start();

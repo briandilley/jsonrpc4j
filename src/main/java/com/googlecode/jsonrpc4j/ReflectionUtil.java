@@ -3,6 +3,7 @@ package com.googlecode.jsonrpc4j;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Utilities for reflection.
@@ -89,7 +89,17 @@ public abstract class ReflectionUtil {
 	 * @return the {@link Annotation}s
 	 */
 	public static <T extends Annotation> List<T> getAnnotations(Method method, Class<T> type) {
-		return getAnnotations(method).stream().filter(type::isInstance).map(type::cast).collect(Collectors.toList());
+		return filterAnnotations(getAnnotations(method), type);
+	}
+
+	private static <T extends Annotation> List<T> filterAnnotations(Collection<Annotation> annotations, Class<T> type) {
+		List<T> result = new ArrayList<>();
+		for (Annotation annotation : annotations) {
+			if (type.isInstance(annotation)) {
+				result.add(type.cast(annotation));
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -133,8 +143,7 @@ public abstract class ReflectionUtil {
 	static <T extends Annotation> List<List<T>> getParameterAnnotations(Method method, Class<T> type) {
 		List<List<T>> annotations = new ArrayList<>();
 		for (List<Annotation> paramAnnotations : getParameterAnnotations(method)) {
-			List<T> listAnnotations = paramAnnotations.stream().filter(type::isInstance).map(type::cast).collect(Collectors.toList());
-			annotations.add(listAnnotations);
+			annotations.add(filterAnnotations(paramAnnotations, type));
 		}
 		return annotations;
 	}

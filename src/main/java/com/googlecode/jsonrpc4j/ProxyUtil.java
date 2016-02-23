@@ -7,6 +7,7 @@ import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
@@ -52,10 +53,13 @@ public abstract class ProxyUtil {
 		Set<Class<?>> interfaces = collectInterfaces(services, serviceInterfaces);
 		final Map<Class<?>, Object> serviceClassToInstanceMapping = buildServiceMap(services, allowMultipleInheritance, interfaces);
 		// now create the proxy
-		return Proxy.newProxyInstance(classLoader, interfaces.toArray(new Class<?>[0]), (proxy, method, args) -> {
-			Class<?> clazz = method.getDeclaringClass();
-			if (clazz == Object.class) { return proxyObjectMethods(method, proxy, args); }
-			return method.invoke(serviceClassToInstanceMapping.get(clazz), args);
+		return Proxy.newProxyInstance(classLoader, interfaces.toArray(new Class<?>[0]), new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				Class<?> clazz = method.getDeclaringClass();
+				if (clazz == Object.class) { return proxyObjectMethods(method, proxy, args); }
+				return method.invoke(serviceClassToInstanceMapping.get(clazz), args);
+			}
 		});
 	}
 
@@ -129,12 +133,15 @@ public abstract class ProxyUtil {
 	public static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final JsonRpcClient client, final InputStream input, final OutputStream output) {
 
 		// create and return the proxy
-		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, (proxy, method, args) -> {
-			if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
+		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
 
-			final Object arguments = ReflectionUtil.parseArguments(method, args);
-			final String methodName = getMethodName(method);
-			return client.invokeAndReadResponse(methodName, arguments, method.getGenericReturnType(), output, input);
+				final Object arguments = ReflectionUtil.parseArguments(method, args);
+				final String methodName = getMethodName(method);
+				return client.invokeAndReadResponse(methodName, arguments, method.getGenericReturnType(), output, input);
+			}
 		});
 	}
 
@@ -175,12 +182,15 @@ public abstract class ProxyUtil {
 	@SuppressWarnings("unchecked")
 	private static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final IJsonRpcClient client, final Map<String, String> extraHeaders) {
 
-		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, (proxy, method, args) -> {
-			if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
+		return (T) Proxy.newProxyInstance(classLoader, new Class<?>[] { proxyInterface }, new InvocationHandler() {
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				if (isDeclaringClassAnObject(method)) return proxyObjectMethods(method, proxy, args);
 
-			final Object arguments = ReflectionUtil.parseArguments(method, args);
-			final String methodName = getMethodName(method);
-			return client.invoke(methodName, arguments, method.getGenericReturnType(), extraHeaders);
+				final Object arguments = ReflectionUtil.parseArguments(method, args);
+				final String methodName = getMethodName(method);
+				return client.invoke(methodName, arguments, method.getGenericReturnType(), extraHeaders);
+			}
 		});
 	}
 

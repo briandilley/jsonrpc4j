@@ -73,7 +73,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 * @param serviceUrl the service end-point URL
 	 */
 	public JsonRpcHttpClient(URL serviceUrl) {
-		this(new ObjectMapper(), serviceUrl, new HashMap<>());
+		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
 	}
 
 	/**
@@ -89,7 +89,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 */
 	@Override
 	public Object invoke(String methodName, Object argument, Type returnType) throws Throwable {
-		return invoke(methodName, argument, returnType, new HashMap<>());
+		return invoke(methodName, argument, returnType, new HashMap<String, String>());
 	}
 
 	/**
