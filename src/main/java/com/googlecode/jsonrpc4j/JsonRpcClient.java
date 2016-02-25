@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
@@ -56,6 +57,8 @@ public class JsonRpcClient {
 	private RequestListener requestListener;
 	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
 
+	private Map<String,Object> additionalJsonHeaders = new HashMap();
+
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
 	 * map to and from JSON and Java objects.
@@ -80,6 +83,25 @@ public class JsonRpcClient {
 	 */
 	public void setRequestListener(RequestListener requestListener) {
 		this.requestListener = requestListener;
+	}
+
+	/**
+	 * get the additional request headers of the json-rpc object
+	 *
+	 * @return the json header map
+	 */
+	public Map<String, Object> getAdditionalJsonHeaders()
+	{
+		return additionalJsonHeaders;
+	}
+
+	/**
+	 * sets the additional request headers of the json-rpc object
+	 *
+	 */
+	public void setAdditionalJsonHeaders(Map<String, Object> additionalJsonHeaders)
+	{
+		this.additionalJsonHeaders = additionalJsonHeaders;
 	}
 
 	/**
@@ -507,6 +529,15 @@ public class JsonRpcClient {
 		// other args
 		} else if (arguments != null) {
 			request.set("params", mapper.valueToTree(arguments));
+		}
+
+		// inject additional json headers
+		if(this.additionalJsonHeaders!=null && this.additionalJsonHeaders.size()>0)
+		{
+			for(String headerString : this.additionalJsonHeaders.keySet())
+			{
+				request.set(headerString, mapper.valueToTree(this.additionalJsonHeaders.get(headerString)));
+			}
 		}
 
 		// show to listener

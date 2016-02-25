@@ -65,7 +65,7 @@ public class JsonRpcClientTest {
 
 	@Test
 	public void testInvokeHashParams()
-		throws Throwable {
+			throws Throwable {
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("hello", "Guvna");
 		params.put("x", 1);
@@ -76,6 +76,19 @@ public class JsonRpcClientTest {
 		assertTrue(node.get("params").isObject());
 		assertEquals("Guvna", node.get("params").get("hello").textValue());
 		assertEquals(1, node.get("params").get("x").intValue());
+	}
+
+	@Test
+	public void testInvokeCustomHeader()
+			throws Throwable {
+		Map<String, Object> header = new HashMap<String, Object>();
+		header.put("auth", "s3cr3td1E6e5t");
+		client.setAdditionalJsonHeaders(header);
+		client.invoke("test", new Object[0], baos);
+		JsonNode node = readJSON(baos);
+
+		assertTrue(node.has("auth"));
+		assertEquals("s3cr3td1E6e5t", node.get("auth").textValue());
 	}
 
 }
