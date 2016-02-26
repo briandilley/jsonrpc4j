@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 public @interface JsonRpcMethod {
 
 	/**
-	 * The method's name.
+	 * @return the method's name.
 	 */
 	String value();
 

@@ -14,22 +14,22 @@ import java.lang.annotation.Target;
 public @interface JsonRpcError {
 
 	/**
-	 * Exception handled by the annotation.
+	 * @return  the exception handled by the annotation.
 	 */
 	Class<? extends Throwable> exception();
 
 	/**
-	 * The JsonRpc error code.
+	 * @return the exception code
 	 */
 	int code();
 
 	/**
-	 * The JsonRpc error message.
+	 * @return the error message.
 	 */
 	String message() default "";
 
 	/**
-	 * The JsonRpc error data. If data is not specified, message from exception will be used. If the message is null,
+	 * @return  the ata. If data is not specified, message from exception will be used. If the message is null,
 	 * the data element be omitted in the error.
 	 */
 	String data() default "";

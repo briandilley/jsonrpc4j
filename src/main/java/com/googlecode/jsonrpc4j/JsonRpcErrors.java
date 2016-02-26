@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 public @interface JsonRpcErrors {
 
 	/**
-	 * The errors.
+	 * @return  the errors list.
 	 */
 	JsonRpcError[] value();
 }

@@ -32,7 +32,7 @@ import java.util.Map.Entry;
  * <pre>
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter&quot;/&gt;
  * 
- * &ltbean class="MyServiceBean"/&gt;
+ * &lt;bean class="MyServiceBean"/&gt;
  * </pre>
  */
 @SuppressWarnings("unused")
