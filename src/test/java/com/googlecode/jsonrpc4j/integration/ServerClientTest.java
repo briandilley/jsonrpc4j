@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.googlecode.jsonrpc4j.ProxyUtil;
-import com.googlecode.jsonrpc4j.util.TestException;
+import com.googlecode.jsonrpc4j.util.TestThrowable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -75,10 +75,10 @@ public class ServerClientTest {
 	@Test
 	public void testNoArgFuncCallException() throws Throwable {
 		final String message = "testing";
-		EasyMock.expect(mockService.hello()).andThrow(new TestException(message));
+		EasyMock.expect(mockService.hello()).andThrow(new TestThrowable(message));
 		EasyMock.replay(mockService);
 		expectedEx.expectMessage(message);
-		expectedEx.expect(TestException.class);
+		expectedEx.expect(TestThrowable.class);
 		client.hello();
 		EasyMock.verify(mockService);
 	}
@@ -87,10 +87,10 @@ public class ServerClientTest {
 	public void testOneArgFuncCallException() throws Throwable {
 		final String name = "uranus";
 		final String message = name + " testing";
-		EasyMock.expect(mockService.hello(name)).andThrow(new TestException(message));
+		EasyMock.expect(mockService.hello(name)).andThrow(new TestThrowable(message));
 		EasyMock.replay(mockService);
 		expectedEx.expectMessage(message);
-		expectedEx.expect(TestException.class);
+		expectedEx.expect(TestThrowable.class);
 		client.hello(name);
 		EasyMock.verify(mockService);
 	}

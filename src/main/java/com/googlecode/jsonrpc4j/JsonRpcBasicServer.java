@@ -30,6 +30,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -148,9 +149,10 @@ public class JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	static InputStream createInputStream(String method, String id, String params) throws IOException {
-		final String decodedParams = URLDecoder.decode(new String(Base64.decode(params)), "UTF-8");
+		final String base64Encoded = new String(Base64.decode(params), StandardCharsets.UTF_8);
+		final String decodedParams = URLDecoder.decode(base64Encoded, StandardCharsets.UTF_8.name());
 		final String request = String.format("{'id': %s, 'method': '%s', 'params': '%s'}", id, method, decodedParams);
-		return new ByteArrayInputStream(request.getBytes());
+		return new ByteArrayInputStream(request.getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**

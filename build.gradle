@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'findbugs'
+    id 'build-announcements'
     id "nebula.optional-base" version "3.0.3"
     id "nebula.provided-base" version "3.0.3"
     id "com.github.ben-manes.versions" version "0.12.0"

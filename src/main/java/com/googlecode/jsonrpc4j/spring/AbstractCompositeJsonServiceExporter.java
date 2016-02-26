@@ -20,8 +20,6 @@ abstract class AbstractCompositeJsonServiceExporter
 		implements InitializingBean,
 		ApplicationContextAware {
 
-	@SuppressWarnings("FieldCanBeLocal")
-	private final boolean rethrowExceptions = false;
 	private ObjectMapper objectMapper;
 	private ApplicationContext applicationContext;
 	private ErrorResolver errorResolver = null;
@@ -66,7 +64,6 @@ abstract class AbstractCompositeJsonServiceExporter
 		jsonRpcServer = new JsonRpcServer(objectMapper, service);
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsCompatible(backwardsCompatible);
-		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
 

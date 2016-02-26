@@ -181,7 +181,7 @@ public class StreamServerTest {
 	}
 
 	@SuppressWarnings("WeakerAccess")
-	public class ServiceImpl implements Service {
+	public static class ServiceImpl implements Service {
 
 		private int val;
 

@@ -233,8 +233,8 @@ public class JsonRpcHttpAsyncClient {
 	 * @param headers to be used
 	 */
 	private void addHeaders(HttpRequest request, Map<String, String> headers) {
-		for (String key : headers.keySet()) {
-			request.addHeader(key, headers.get(key));
+		for (Map.Entry<String, String> key : headers.entrySet()) {
+			request.addHeader(key.getKey(), key.getValue());
 		}
 	}
 
@@ -487,7 +487,7 @@ public class JsonRpcHttpAsyncClient {
 		}
 	}
 
-	private class JsonRpcFuture<T> implements Future<T>, JsonRpcCallback<T> {
+	private static class JsonRpcFuture<T> implements Future<T>, JsonRpcCallback<T> {
 
 		private T object;
 		private boolean done;

@@ -26,8 +26,8 @@ public class JsonRpcPathClientIntegrationTest {
 
 	@Test
 	public void callToObjectMethodsShouldBeHandledLocally() {
-		assertNotNull(service.toString());
 		if (service != null) {
+			assertNotNull(service.toString());
 			// noinspection ResultOfMethodCallIgnored
 			service.hashCode();
 			// noinspection EqualsWithItself

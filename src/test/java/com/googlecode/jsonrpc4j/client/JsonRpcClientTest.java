@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +49,7 @@ public class JsonRpcClientTest {
 
 	private JsonNode readJSON(ByteArrayOutputStream byteArrayOutputStream)
 			throws IOException {
-		return client.getObjectMapper().readTree(byteArrayOutputStream.toString());
+		return client.getObjectMapper().readTree(byteArrayOutputStream.toString(StandardCharsets.UTF_8.name()));
 	}
 
 	@Test
