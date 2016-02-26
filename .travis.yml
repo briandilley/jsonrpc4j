@@ -3,4 +3,4 @@ jdk:
   - oraclejdk8
 install: true
 script:
-  - gradle test -i
+  - gradle build -i
