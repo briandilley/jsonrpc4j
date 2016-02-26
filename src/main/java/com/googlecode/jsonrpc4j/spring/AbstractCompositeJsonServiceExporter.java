@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import org.apache.logging.log4j.LogManager;
+
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -16,9 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 @SuppressWarnings("unused")
-abstract class AbstractCompositeJsonServiceExporter
-		implements InitializingBean,
-		ApplicationContextAware {
+abstract class AbstractCompositeJsonServiceExporter implements InitializingBean, ApplicationContextAware {
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	private ObjectMapper objectMapper;
 	private ApplicationContext applicationContext;
@@ -47,9 +48,10 @@ abstract class AbstractCompositeJsonServiceExporter
 		}
 		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = BeanFactoryUtils
-						.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-			} catch (Exception e) { /* no-op */ }
+				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+			} catch (Exception e) {
+				logger.error(e);
+			}
 		}
 		if (objectMapper == null) {
 			objectMapper = new ObjectMapper();

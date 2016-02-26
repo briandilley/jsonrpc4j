@@ -32,6 +32,9 @@ public class Util {
 			" }\n" +
 			" ";
 
+	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
+	public static final String DEFAULT_LOCAL_HOSTNAME = "127.0.0.1";
+
 	public static InputStream invalidJsonStream() {
 		return new ByteArrayInputStream(invalidJson.getBytes(StandardCharsets.UTF_8));
 	}

@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.integration;
 
+import static com.googlecode.jsonrpc4j.util.Util.DEFAULT_LOCAL_HOSTNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -33,7 +34,7 @@ public class StreamServerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		serverSocket = ServerSocketFactory.getDefault().createServerSocket(0, 0, InetAddress.getByName("127.0.0.1"));
+		serverSocket = ServerSocketFactory.getDefault().createServerSocket(0, 0, InetAddress.getByName(DEFAULT_LOCAL_HOSTNAME));
 		service = new ServiceImpl();
 		jsonRpcServer = new JsonRpcBasicServer(service, Service.class);
 		jsonRpcClient = new JsonRpcClient();

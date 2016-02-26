@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import static com.googlecode.jsonrpc4j.Util.DEFAULT_HOSTNAME;
+
 import org.springframework.beans.factory.DisposableBean;
 
 import com.googlecode.jsonrpc4j.StreamServer;
@@ -24,7 +26,6 @@ class JsonStreamServiceExporter extends AbstractJsonServiceExporter implements D
 	private static final int DEFAULT_PORT = 10420;
 	private static final int DEFAULT_BACKLOG = 0;
 	private static final int DEFAULT_MAX_CLIENT_ERRORS = 5;
-	private static final String DEFAULT_HOSTNAME = "0.0.0.0";
 
 	private ServerSocketFactory serverSocketFactory;
 	private int maxThreads = DEFAULT_MAX_THREADS;

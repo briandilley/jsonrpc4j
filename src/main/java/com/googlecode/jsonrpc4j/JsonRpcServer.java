@@ -131,7 +131,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	private int getHttpStatusCode(HttpServletResponse response, int result) {
 		if (result == 0) return HttpServletResponse.SC_OK;
 
-		if (result == -32700 || result == -32602 || result == -32603 || (result <= -32000 && result >= -32099)) {
+		if (result == -32700 || result == -32602 || result == -32603 || result <= -32000 && result >= -32099) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} else if (result == -32600) {
 			return HttpServletResponse.SC_BAD_REQUEST;

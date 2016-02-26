@@ -211,7 +211,7 @@ public class StreamServer {
 					executor.submit(new Server());
 					break;
 				} catch (SocketTimeoutException e) {
-					// this is expected because of so_timeout
+					handleSocketTimeoutException(e);
 				} catch (SSLException sslException) {
 					logger.error("SSLException while listening for clients, terminating", sslException);
 					break;
@@ -261,6 +261,10 @@ public class StreamServer {
 					closeQuietly(output);
 				}
 			}
+		}
+
+		private void handleSocketTimeoutException(SocketTimeoutException e) {
+			// this is expected because of so_timeout
 		}
 	}
 }

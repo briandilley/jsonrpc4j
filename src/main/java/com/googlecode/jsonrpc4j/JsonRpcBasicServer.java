@@ -316,7 +316,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private boolean isValidRequest(ObjectNode node) {
-		return (!backwardsCompatible || hasMethodAndVersion(node));
+		return !backwardsCompatible || hasMethodAndVersion(node);
 	}
 
 	private boolean hasMethodAndVersion(ObjectNode node) {
@@ -589,7 +589,7 @@ public class JsonRpcBasicServer {
 
 			ParameterCount parStat = new ParameterCount(paramNames, paramNodes, parameterTypes, method);
 			if (!acceptParamCount(parStat.nameCount - paramNames.size())) continue;
-			if (hasMoreMatches(max.nameCount, parStat.nameCount) || (parStat.nameCount == max.nameCount && hasMoreMatches(max.typeCount, parStat.typeCount))) max = parStat;
+			if (hasMoreMatches(max.nameCount, parStat.nameCount) || parStat.nameCount == max.nameCount && hasMoreMatches(max.typeCount, parStat.typeCount)) max = parStat;
 		}
 		if (max.method == null) return null;
 		return new AMethodWithItsArgs(max.method, paramNames, max.allNames, paramNodes);
@@ -619,7 +619,7 @@ public class JsonRpcBasicServer {
 		if (node.isNull()) return true;
 		if (node.isTextual()) return String.class.isAssignableFrom(type);
 		if (node.isNumber()) return isNumericAssignable(type);
-		if (node.isArray() && type.isArray()) return (node.size() > 0) && isMatchingType(node.get(0), type.getComponentType());
+		if (node.isArray() && type.isArray()) return node.size() > 0 && isMatchingType(node.get(0), type.getComponentType());
 		if (node.isArray()) return type.isArray() || Collection.class.isAssignableFrom(type);
 		if (node.isBinary()) return byteOrCharAssignable(type);
 		if (node.isBoolean()) return boolean.class.isAssignableFrom(type) || Boolean.class.isAssignableFrom(type);

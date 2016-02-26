@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j.util;
 
+import static com.googlecode.jsonrpc4j.util.Util.DEFAULT_LOCAL_HOSTNAME;
+
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -20,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 public class JettyServer implements AutoCloseable {
 
 	public static final String SERVLET = "someSunnyServlet";
-	private static final String LOCAL_SERVER = "127.0.0.1";
 	private static final String PROTOCOL = "http";
 
 	private final Class service;
@@ -32,7 +33,7 @@ public class JettyServer implements AutoCloseable {
 	}
 
 	public String getCustomServerUrlString(final String servletName) {
-		return PROTOCOL + "://" + LOCAL_SERVER + ":" + port + "/" + servletName;
+		return PROTOCOL + "://" + DEFAULT_LOCAL_HOSTNAME + ":" + port + "/" + servletName;
 	}
 
 	public void startup() throws Exception {

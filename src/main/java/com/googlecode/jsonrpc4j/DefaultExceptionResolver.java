@@ -107,7 +107,9 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 		Constructor<? extends Throwable> defaultCtr = null;
 		try {
 			defaultCtr = clazz.getConstructor();
-		} catch (NoSuchMethodException t) { /* eat it */ }
+		} catch (NoSuchMethodException e) {
+			handleException(e);
+		}
 		return defaultCtr;
 	}
 
@@ -115,7 +117,14 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 		Constructor<? extends Throwable> messageCtr = null;
 		try {
 			messageCtr = clazz.getConstructor(String.class);
-		} catch (NoSuchMethodException t) { /* eat it */ }
+		} catch (NoSuchMethodException e) {
+			handleException(e);
+		}
 		return messageCtr;
+	}
+
+	@SuppressWarnings("UnusedParameters")
+	private void handleException(Exception e) {
+		/* do nothing */
 	}
 }
