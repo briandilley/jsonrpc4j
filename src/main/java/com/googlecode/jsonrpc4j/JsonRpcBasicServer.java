@@ -173,7 +173,7 @@ public class JsonRpcBasicServer {
 			final JsonNode jsonNode = readContext.nextValue();
 			return handleNode(jsonNode, output);
 		} catch (JsonParseException e) {
-			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", -32700, "Json parse error", null));
+			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", JsonError.PARSE_ERROR));
 		}
 	}
 
@@ -204,7 +204,7 @@ public class JsonRpcBasicServer {
 	private int handleNode(final JsonNode node, final OutputStream output) throws IOException {
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
-		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", -32600, "Invalid Request", null));
+		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
 	}
 
 	/**
@@ -247,13 +247,13 @@ public class JsonRpcBasicServer {
 		logger.debug("Request: {}", node);
 
 		if (!isValidRequest(node))
-			return writeAndFlushValueError(output, createResponseError(VERSION, "null", -32600, "Invalid Request", null));
+			return writeAndFlushValueError(output, createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
 		Object id = parseId(node.get(ID));
 
 		// get node values
 		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get("jsonrpc").asText() : VERSION;
 		if (!hasNonNullData(node, "method"))
-			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32601, "Missing node", null));
+			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
 
 		final String fullMethodName = node.get(METHOD).asText();
 		final String partialMethodName = getMethodName(fullMethodName);
@@ -261,9 +261,9 @@ public class JsonRpcBasicServer {
 
 		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName);
 		if (methods.isEmpty())
-			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32601, "Method not found", null));
+			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
 		AMethodWithItsArgs methodArgs = findBestMethodByParamsNode(methods, node.get(PARAMS));
-		if (methodArgs == null) return writeAndFlushValueError(output, createResponseError(jsonRpc, id, -32602, "Invalid method parameters", null));
+		if (methodArgs == null) return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_PARAMS_INVALID));
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
 				handler.result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
@@ -283,7 +283,7 @@ public class JsonRpcBasicServer {
 		Throwable unwrappedException = getException(e);
 		logger.warn("Error in JSON-RPC Service", unwrappedException);
 		JsonError error = resolveError(methodArgs, unwrappedException);
-		int responseCode = writeAndFlushValueError(output, createResponseError(jsonRpc, id, error.getCode(), error.getMessage(), error.getData()));
+		int responseCode = writeAndFlushValueError(output, createResponseError(jsonRpc, id, error));
 		if (rethrowExceptions) { throw new RuntimeException(unwrappedException); }
 		return responseCode;
 	}
@@ -398,18 +398,16 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param jsonRpc the jsonrpc string
 	 * @param id      the id
-	 * @param code    the error code
-	 * @param message the error message
-	 * @param data    the error data (if any)
+	 * @param errorObject    the error data (if any)
 	 * @return the error response
 	 */
-	private ObjectNode createResponseError(String jsonRpc, Object id, int code, String message, Object data) {
+	private ObjectNode createResponseError(String jsonRpc, Object id, JsonError errorObject) {
 		ObjectNode response = mapper.createObjectNode();
 		ObjectNode error = mapper.createObjectNode();
-		error.put(ERROR_CODE, code);
-		error.put(ERROR_MESSAGE, message);
-		if (data != null) {
-			error.set(DATA, mapper.valueToTree(data));
+		error.put(ERROR_CODE, errorObject.code);
+		error.put(ERROR_MESSAGE, errorObject.message);
+		if (errorObject.data != null) {
+			error.set(DATA, mapper.valueToTree(errorObject.data));
 		}
 		response.put(JSONRPC, jsonRpc);
 		if (Integer.class.isInstance(id)) {

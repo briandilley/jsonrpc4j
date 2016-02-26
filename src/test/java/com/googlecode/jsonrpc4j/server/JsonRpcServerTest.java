@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.server;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.intParam1;
 import static com.googlecode.jsonrpc4j.util.Util.intParam2;
@@ -63,7 +64,7 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
 		EasyMock.replay(mockService);
 		jsonRpcServer.handle(messageOf(1, "testMethod", null), byteArrayOutputStream);
-		assertEquals(-32602, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
+		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
 	}
 
 	@Test
@@ -79,7 +80,7 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
 		EasyMock.replay(mockService);
 		jsonRpcServer.handle(messageWithListParams(1, "testMethod", param1, param2), byteArrayOutputStream);
-		assertEquals(-32602, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
+		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
 	}
 
 	@Test
@@ -208,7 +209,7 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.<Throwable> notNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.<Throwable>notNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 
@@ -238,7 +239,7 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.<Throwable> isNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.<Throwable>isNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 
