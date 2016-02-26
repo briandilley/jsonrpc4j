@@ -38,8 +38,8 @@ public class ReadContext {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (input.hashCode());
-		result = prime * result + ((mapper == null) ? 0 : mapper.hashCode());
+		result = prime * result + input.hashCode();
+		result = prime * result + (mapper == null ? 0 : mapper.hashCode());
 		return result;
 	}
 
