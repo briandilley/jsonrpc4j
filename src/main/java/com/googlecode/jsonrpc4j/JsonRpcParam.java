@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 public @interface JsonRpcParam {
 
 	/**
-	 * The parameter's name.
+	 * @return the parameter's name.
 	 */
 	String value();
 
