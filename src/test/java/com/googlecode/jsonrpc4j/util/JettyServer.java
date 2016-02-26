@@ -57,7 +57,8 @@ public class JettyServer implements AutoCloseable {
 
 	public static class JsonRpcTestServlet extends HttpServlet {
 
-		private JsonRpcServer jsonRpcServer;
+		static final long serialVersionUID = 1L;
+		private transient JsonRpcServer jsonRpcServer;
 
 		@Override
 		public void init() {

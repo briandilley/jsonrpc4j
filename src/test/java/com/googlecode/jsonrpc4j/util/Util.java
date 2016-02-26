@@ -23,7 +23,7 @@ public class Util {
 	public static final String param4 = "param4";
 	public static final int intParam1 = 1;
 	public static final int intParam2 = 2;
-	public static final String JSON_ENCODING = StandardCharsets.UTF_8.displayName();
+	public static final String JSON_ENCODING = StandardCharsets.UTF_8.name();
 	public static final ObjectMapper mapper = new ObjectMapper();
 	private static final String invalidJson = "{\"jsonrpc\": \"2.0,\n" +
 			" \"method\": \"testMethod\",\n" +

@@ -1,8 +1,8 @@
 package com.googlecode.jsonrpc4j.util;
 
 @SuppressWarnings({ "serial", "WeakerAccess" })
-public class TestException extends Throwable {
-	public TestException(String message) {
+public class TestThrowable extends Throwable {
+	public TestThrowable(String message) {
 		super(message);
 	}
 }

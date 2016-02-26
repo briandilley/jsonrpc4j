@@ -176,9 +176,10 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	private static String readErrorString(final HttpURLConnection connection) {
 		try (InputStream stream = connection.getErrorStream()) {
 			StringBuilder buffer = new StringBuilder();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-			for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
-				buffer.append((char) ch);
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"))) {
+				for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
+					buffer.append((char) ch);
+				}
 			}
 			return buffer.toString();
 		} catch (IOException e) {
