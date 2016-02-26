@@ -88,6 +88,7 @@ public class JsonRpcBasicServer {
 	private Class<?> remoteInterface;
     private InvocationListener invocationListener = null;
 	private Level exceptionLogLevel = Level.WARNING;
+	private RequestInterceptor requestInterceptor = null;
 
 	static {
 		ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
@@ -237,6 +238,22 @@ public class JsonRpcBasicServer {
 	public int handleNode(JsonNode node, OutputStream ops)
 		throws IOException {
 
+		// invoke interceptor
+		if(this.requestInterceptor!=null)
+		{
+			try
+			{
+				this.requestInterceptor.interceptRequest(node);
+			}
+			catch(Exception xe)
+			{
+				this.writeAndFlushValue(
+						ops, this.createErrorResponse(
+								"2.0", "null", -32602, "Invalid params.", xe.getMessage()));
+				return -32602;
+			}
+		}
+
 		// handle objects
 		if (node.isObject()) {
 			return handleObject(ObjectNode.class.cast(node), ops);
@@ -248,8 +265,8 @@ public class JsonRpcBasicServer {
 		// bail on bad data
 		} else {
 			this.writeAndFlushValue(
-				ops, this.createErrorResponse(
-				"2.0", "null", -32600, "Invalid Request", null));
+					ops, this.createErrorResponse(
+							"2.0", "null", -32600, "Invalid Request", null));
 			return -32600;
 		}
 	}
@@ -984,14 +1001,24 @@ public class JsonRpcBasicServer {
 		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
-    /**
-     * Sets the {@link InvocationListener} instance that can be
-     * used to provide feedback for capturing method-invocation
-     * statistics.
-     * @param invocationListener is the listener to set
-     */
-
+	/**
+	 * Sets the {@link InvocationListener} instance that can be
+	 * used to provide feedback for capturing method-invocation
+	 * statistics.
+	 * @param invocationListener is the listener to set
+	 */
     public void setInvocationListener(InvocationListener invocationListener) {
         this.invocationListener = invocationListener;
     }
+
+	/**
+	 * Sets the {@link RequestInterceptor} instance that can be
+	 * used to intercept requests.
+	 * @param requestInterceptor is the interceptor to set
+	 */
+	public void setRequestInterceptor(RequestInterceptor requestInterceptor)
+	{
+		this.requestInterceptor = requestInterceptor;
+	}
+
 }
