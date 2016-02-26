@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'findbugs'
     id 'pmd'
+    id 'jacoco'
     id 'build-announcements'
     id "nebula.optional-base" version "3.0.3"
     id "nebula.provided-base" version "3.0.3"
@@ -52,5 +53,17 @@ dependencies {
     testCompile("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
+}
 
+jacoco {
+    toolVersion = '0.7.6.201602180812'
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination "${buildDir}/jacocoHtml"
+    }
 }
