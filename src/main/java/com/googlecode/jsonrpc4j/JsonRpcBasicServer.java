@@ -77,6 +77,7 @@ public class JsonRpcBasicServer {
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
+	private RequestInterceptor requestInterceptor = null;
 	private ErrorResolver errorResolver = null;
 	private InvocationListener invocationListener = null;
 
@@ -155,6 +156,14 @@ public class JsonRpcBasicServer {
 		return new ByteArrayInputStream(request.getBytes(StandardCharsets.UTF_8));
 	}
 
+	public RequestInterceptor getRequestInterceptor() {
+		return requestInterceptor;
+	}
+
+	public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
+		this.requestInterceptor = requestInterceptor;
+	}
+
 	/**
 	 * Handles a single request from the given {@link InputStream},
 	 * that is to say that a single {@link JsonNode} is read from
@@ -202,6 +211,13 @@ public class JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	private int handleNode(final JsonNode node, final OutputStream output) throws IOException {
+
+		try {
+			if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
+		} catch (Exception e) {
+			return this.writeAndFlushValueError(output, createResponseError(VERSION, "null", new JsonError(JsonError.INVALID_REQUEST.code, JsonError.INVALID_REQUEST.message, e)));
+		}
+
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
 		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));

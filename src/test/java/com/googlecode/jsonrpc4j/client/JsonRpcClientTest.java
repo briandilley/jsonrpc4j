@@ -5,10 +5,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.googlecode.jsonrpc4j.JsonRpcClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.googlecode.jsonrpc4j.JsonRpcClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -35,8 +36,7 @@ public class JsonRpcClientTest {
 	}
 
 	@Test
-	public void testInvokeNoParams()
-			throws Throwable {
+	public void testInvokeNoParams() throws Throwable {
 
 		client.invoke("test", new Object[0], byteArrayOutputStream);
 		JsonNode node = readJSON(byteArrayOutputStream);
@@ -47,14 +47,12 @@ public class JsonRpcClientTest {
 		assertFalse(node.has(PARAMS));
 	}
 
-	private JsonNode readJSON(ByteArrayOutputStream byteArrayOutputStream)
-			throws IOException {
+	private JsonNode readJSON(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
 		return client.getObjectMapper().readTree(byteArrayOutputStream.toString(StandardCharsets.UTF_8.name()));
 	}
 
 	@Test
-	public void testInvokeArrayParams()
-			throws Throwable {
+	public void testInvokeArrayParams() throws Throwable {
 		client.invoke("test", new Object[] { 1, 2 }, byteArrayOutputStream);
 		JsonNode node = readJSON(byteArrayOutputStream);
 
@@ -65,8 +63,23 @@ public class JsonRpcClientTest {
 	}
 
 	@Test
-	public void testInvokeHashParams()
-			throws Throwable {
+	public void testInvokeAdditionalJsonContent() throws Throwable {
+		final String auth = "auth";
+		final String authValue = "secret";
+		client.setAdditionalJsonContent(new HashMap<String, Object>() {
+			{
+				put(auth, authValue);
+			}
+		});
+		client.invoke("test", new Object[] { 1, 2 }, byteArrayOutputStream);
+		JsonNode node = readJSON(byteArrayOutputStream);
+
+		assertTrue(node.has(auth));
+		assertEquals(node.get(auth).textValue(), authValue);
+	}
+
+	@Test
+	public void testInvokeHashParams() throws Throwable {
 		Map<String, Object> params = new HashMap<>();
 		params.put("hello", "test");
 		params.put("x", 1);

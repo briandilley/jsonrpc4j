@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -34,6 +35,7 @@ public class JsonRpcClient {
 	private final Random random;
 	private RequestListener requestListener;
 	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
+	private Map<String, Object> additionalJsonContent = new HashMap<>();
 
 	/**
 	 * Creates a client that uses the default {@link ObjectMapper}
@@ -51,6 +53,14 @@ public class JsonRpcClient {
 	public JsonRpcClient(ObjectMapper mapper) {
 		this.mapper = mapper;
 		this.random = new Random(System.currentTimeMillis());
+	}
+
+	public Map<String, Object> getAdditionalJsonContent() {
+		return additionalJsonContent;
+	}
+
+	public void setAdditionalJsonContent(Map<String, Object> additionalJsonContent) {
+		this.additionalJsonContent = additionalJsonContent;
 	}
 
 	/**
@@ -200,9 +210,7 @@ public class JsonRpcClient {
 	 * @param id the request id
 	 * @throws IOException on error
 	 */
-	private void writeRequest(
-			String methodName, Object argument, OutputStream output, String id)
-					throws IOException {
+	private void writeRequest(String methodName, Object argument, OutputStream output, String id) throws IOException {
 		internalWriteRequest(methodName, argument, output, id);
 	}
 
@@ -302,6 +310,7 @@ public class JsonRpcClient {
 		addId(id, request);
 		addProtocolAndMethod(methodName, request);
 		addParameters(arguments, request);
+		addAdditionalHeaders(request);
 		notifyBeforeRequestListener(request);
 		return request;
 	}
@@ -346,6 +355,12 @@ public class JsonRpcClient {
 			// other args
 		} else if (arguments != null) {
 			request.set(PARAMS, mapper.valueToTree(arguments));
+		}
+	}
+
+	private void addAdditionalHeaders(ObjectNode request) {
+		for (Map.Entry<String, Object> entry : additionalJsonContent.entrySet()) {
+			request.set(entry.getKey(), mapper.valueToTree(entry.getValue()));
 		}
 	}
 
