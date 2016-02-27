@@ -10,14 +10,13 @@ plugins {
     id "nebula.nebula-javadoc-jar" version "2.2.2"
     id "nebula.nebula-source-jar" version "2.2.2"
     id "com.github.ben-manes.versions" version "0.12.0"
-    id "ru.vyarus.github-info" version "1.0.0"
-    id 'nebula.nebula-bintray' version '3.3.4'
     id 'maven-publish'
-
+    id "com.jfrog.bintray" version "1.6"
 }
 
-description="This project aims to provide the facility to easily implement JSON-RPC for the java programming language. jsonrpc4j uses the Jackson library to convert java objects to and from json objects (and other things related to JSON-RPC)."
-version="1.2.1"
+description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
+version = '1.3.0-rc2'
+group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.8
@@ -78,31 +77,46 @@ jacocoTestReport {
     }
 }
 
-github {
-    user 'gaborbernat'
-    license 'MIT'
+
+publishing {
+    publications {
+        jar(MavenPublication) {
+            from components.java
+        }
+        javadoc(MavenPublication) { // if maven-publish is applied
+            artifact tasks.javadocJar
+        }
+        source(MavenPublication) {
+            artifact tasks.sourceJar
+        }
+    }
 }
 
-
 bintray {
+    user = property('user')
+    key = property('key')
     dryRun = false
     publish = true
     pkg {
-        repo = 'gradle-plugins'
-        userOrg = 'nebula'
-        name = 'project.name'
+        repo = 'maven'
+        name = 'com.github.briandilley.jsonrpc4j:jsonrpc4j'
         desc = project.description
+        licenses = ['MIT']
+        publications = ['jar', 'javadoc', 'source']
         websiteUrl = 'https://briandilley.github.io/jsonrpc4j'
         issueTrackerUrl = 'https://github.com/briandilley/jsonrpc4j/issues'
         vcsUrl = 'git@github.com:briandilley/jsonrpc4j.git'
-        licenses = ['MIT']
         labels = ['json', 'rpc', 'java']
         publicDownloadNumbers = true
-        attributes = [:]
+        githubRepo = 'briandilley/jsonrpc4j'
+        githubReleaseNotesFile = 'README.md'
         version {
+            gpg {
+                sign = true
+            }
             name = project.version
             vcsTag = project.version
-            attributes = [:]
+            released = new Date()
         }
     }
 }
