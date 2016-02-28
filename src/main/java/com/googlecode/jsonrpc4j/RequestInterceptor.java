@@ -15,6 +15,6 @@ public interface RequestInterceptor {
 	 * be sent back to the client.
 	 * @param request is the request object.
 	 */
-	void interceptRequest(JsonNode request) throws Exception;
+	void interceptRequest(JsonNode request) throws Throwable;
 
 }

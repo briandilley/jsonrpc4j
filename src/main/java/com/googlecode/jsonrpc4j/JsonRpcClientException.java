@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * an error occurs.
  */
 @SuppressWarnings({ "serial", "unused", "WeakerAccess" })
-class JsonRpcClientException
-		extends RuntimeException {
+class JsonRpcClientException extends RuntimeException {
 
 	private final int code;
 	private final JsonNode data;

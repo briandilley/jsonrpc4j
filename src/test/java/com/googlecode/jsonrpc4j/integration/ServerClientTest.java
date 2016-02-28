@@ -1,10 +1,10 @@
 package com.googlecode.jsonrpc4j.integration;
 
+import static com.googlecode.jsonrpc4j.util.Util.param1;
+import static com.googlecode.jsonrpc4j.util.Util.param3;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.googlecode.jsonrpc4j.ProxyUtil;
-import com.googlecode.jsonrpc4j.util.TestThrowable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -17,7 +17,12 @@ import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
 import org.easymock.MockType;
 
+import com.googlecode.jsonrpc4j.ProxyUtil;
+import com.googlecode.jsonrpc4j.RequestInterceptor;
 import com.googlecode.jsonrpc4j.util.LocalThreadServer;
+import com.googlecode.jsonrpc4j.util.TestThrowable;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(EasyMockRunner.class)
 public class ServerClientTest {
@@ -81,6 +86,32 @@ public class ServerClientTest {
 		expectedEx.expect(TestThrowable.class);
 		client.hello();
 		EasyMock.verify(mockService);
+	}
+
+	@Test
+	public void testInterceptorDoingNothingCalled() throws Throwable {
+		EasyMock.expect(mockService.hello()).andReturn(param1);
+		RequestInterceptor interceptorMock = EasyMock.mock(RequestInterceptor.class);
+		interceptorMock.interceptRequest(EasyMock.anyObject(JsonNode.class));
+		EasyMock.expectLastCall().andVoid();
+		server.setRequestInterceptor(interceptorMock);
+		EasyMock.replay(interceptorMock, mockService);
+		assertEquals(param1, client.hello());
+		EasyMock.verify(interceptorMock, mockService);
+	}
+
+	@Test
+	public void testInterceptorRaisesException() throws Throwable {
+		EasyMock.expect(mockService.hello()).andReturn(param1);
+		RequestInterceptor interceptorMock = EasyMock.mock(RequestInterceptor.class);
+		interceptorMock.interceptRequest(EasyMock.anyObject(JsonNode.class));
+		EasyMock.expectLastCall().andThrow(new TestThrowable(param3));
+		server.setRequestInterceptor(interceptorMock);
+		expectedEx.expectMessage(param3);
+		expectedEx.expect(TestThrowable.class);
+		EasyMock.replay(interceptorMock, mockService);
+		client.hello();
+		EasyMock.verify(interceptorMock, mockService);
 	}
 
 	@Test

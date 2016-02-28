@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.ProxyUtil;
+import com.googlecode.jsonrpc4j.RequestInterceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,6 +32,10 @@ public class LocalThreadServer<T> extends Thread implements AutoCloseable {
 		this.service = service;
 		jsonRpcServer = new JsonRpcServer(new ObjectMapper(), service, remoteInterface);
 		start();
+	}
+
+	public void setRequestInterceptor(RequestInterceptor interceptor) {
+		jsonRpcServer.setRequestInterceptor(interceptor);
 	}
 
 	public T client(Class<T> clazz) throws IOException {

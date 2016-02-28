@@ -211,13 +211,6 @@ public class JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	private int handleNode(final JsonNode node, final OutputStream output) throws IOException {
-
-		try {
-			if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
-		} catch (Exception e) {
-			return this.writeAndFlushValueError(output, createResponseError(VERSION, "null", new JsonError(JsonError.INVALID_REQUEST.code, JsonError.INVALID_REQUEST.message, e)));
-		}
-
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
 		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
@@ -266,7 +259,6 @@ public class JsonRpcBasicServer {
 			return writeAndFlushValueError(output, createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
 		Object id = parseId(node.get(ID));
 
-		// get node values
 		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get("jsonrpc").asText() : VERSION;
 		if (!hasNonNullData(node, "method"))
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
@@ -282,6 +274,7 @@ public class JsonRpcBasicServer {
 		if (methodArgs == null) return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_PARAMS_INVALID));
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
+				if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
 				handler.result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
 				if (!isNotificationRequest(id)) {
 					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
