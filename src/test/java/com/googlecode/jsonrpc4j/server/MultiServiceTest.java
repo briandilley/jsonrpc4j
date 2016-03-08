@@ -1,7 +1,7 @@
 package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParams;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
 import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +40,7 @@ public class MultiServiceTest {
 		EasyMock.expect(mockService.testMethod(param2)).andReturn("success");
 		EasyMock.replay(mockService);
 
-		multiServer.handle(messageWithMapParams(serviceName + JsonRpcMultiServer.DEFAULT_SEPARATOR + "testMethod", param1, param2), byteArrayOutputStream);
+		multiServer.handleRequest(messageWithMapParamsStream(serviceName + JsonRpcMultiServer.DEFAULT_SEPARATOR + "testMethod", param1, param2), byteArrayOutputStream);
 
 		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}

@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.findCandidateMethods;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
@@ -175,14 +176,14 @@ public class JsonRpcBasicServer {
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	public int handle(final InputStream input, final OutputStream output) throws IOException {
+	public int handleRequest(final InputStream input, final OutputStream output) throws IOException {
 		final ReadContext readContext = ReadContext.getReadContext(input, mapper);
 		try {
 			readContext.assertReadable();
 			final JsonNode jsonNode = readContext.nextValue();
-			return handleNode(jsonNode, output);
+			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
-			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", JsonError.PARSE_ERROR));
+			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", JsonError.PARSE_ERROR)).code;
 		}
 	}
 
@@ -210,7 +211,7 @@ public class JsonRpcBasicServer {
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	private int handleNode(final JsonNode node, final OutputStream output) throws IOException {
+	private JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
 		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
@@ -225,22 +226,27 @@ public class JsonRpcBasicServer {
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	private int handleArray(ArrayNode node, OutputStream output) throws IOException {
-		logger.debug("Handing {} requests", node.size());
-
-		// loop through each array element
+	private JsonError handleArray(ArrayNode node, OutputStream output) throws IOException {
+		logger.debug("Handling {} requests", node.size());
+		JsonError result = JsonError.OK;
 		output.write('[');
+		int errorCount = 0;
 		for (int i = 0; i < node.size(); i++) {
-			int result = handleNode(node.get(i), output);
-			if (isError(result)) return result;
+			JsonError nodeResult = handleJsonNodeRequest(node.get(i), output);
+			if (isError(nodeResult)) {
+				result = JsonError.BULK_ERROR;
+				errorCount += 1;
+			}
 			if (i != node.size() - 1) output.write(',');
 		}
 		output.write(']');
-		return 0;
+		logger.debug("served {} requests, error {}, result {}", node.size(), errorCount, result);
+		// noinspection unchecked
+		return result;
 	}
 
-	private boolean isError(int result) {
-		return result != 0;
+	private boolean isError(JsonError result) {
+		return result.code != JsonError.OK.code;
 	}
 
 	/**
@@ -252,7 +258,7 @@ public class JsonRpcBasicServer {
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	private int handleObject(final ObjectNode node, final OutputStream output) throws IOException {
+	private JsonError handleObject(final ObjectNode node, final OutputStream output) throws IOException {
 		logger.debug("Request: {}", node);
 
 		if (!isValidRequest(node))
@@ -280,7 +286,7 @@ public class JsonRpcBasicServer {
 					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
 					writeAndFlushValue(output, response);
 				}
-				return CODE_OK;
+				return JsonError.OK;
 			} catch (Throwable e) {
 				handler.error = e;
 				return handleError(output, id, jsonRpc, methodArgs, e);
@@ -288,13 +294,13 @@ public class JsonRpcBasicServer {
 		}
 	}
 
-	private int handleError(OutputStream output, Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) throws IOException {
+	private JsonError handleError(OutputStream output, Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) throws IOException {
 		Throwable unwrappedException = getException(e);
 		logger.warn("Error in JSON-RPC Service", unwrappedException);
 		JsonError error = resolveError(methodArgs, unwrappedException);
-		int responseCode = writeAndFlushValueError(output, createResponseError(jsonRpc, id, error));
+		writeAndFlushValueError(output, createResponseError(jsonRpc, id, error));
 		if (rethrowExceptions) { throw new RuntimeException(unwrappedException); }
-		return responseCode;
+		return error;
 	}
 
 	private Throwable getException(final Throwable thrown) {
@@ -315,7 +321,7 @@ public class JsonRpcBasicServer {
 		final ErrorResolver currentResolver = errorResolver == null ? DEFAULT_ERROR_RESOLVER : errorResolver;
 		error = currentResolver.resolveError(e, methodArgs.method, methodArgs.arguments);
 		if (error == null) {
-			error = new JsonError(0, e.getMessage(), e.getClass().getName());
+			error = new JsonError(ERROR_NOT_HANDLED.code, e.getMessage(), e.getClass().getName());
 		}
 		return error;
 	}
@@ -410,7 +416,7 @@ public class JsonRpcBasicServer {
 	 * @param errorObject    the error data (if any)
 	 * @return the error response
 	 */
-	private ObjectNode createResponseError(String jsonRpc, Object id, JsonError errorObject) {
+	private ErrorObjectWithJsonError createResponseError(String jsonRpc, Object id, JsonError errorObject) {
 		ObjectNode response = mapper.createObjectNode();
 		ObjectNode error = mapper.createObjectNode();
 		error.put(ERROR_CODE, errorObject.code);
@@ -433,7 +439,7 @@ public class JsonRpcBasicServer {
 			response.put(ID, String.class.cast(id));
 		}
 		response.set(ERROR, error);
-		return response;
+		return new ErrorObjectWithJsonError(response, errorObject);
 	}
 
 	/**
@@ -645,10 +651,10 @@ public class JsonRpcBasicServer {
 				|| long.class.isAssignableFrom(type) || float.class.isAssignableFrom(type) || double.class.isAssignableFrom(type);
 	}
 
-	private int writeAndFlushValueError(OutputStream output, ObjectNode value) throws IOException {
+	private JsonError writeAndFlushValueError(OutputStream output, ErrorObjectWithJsonError value) throws IOException {
 		logger.warn("failed " + value);
-		writeAndFlushValue(output, value);
-		return value.get(ERROR).get(ERROR_CODE).asInt();
+		writeAndFlushValue(output, value.node);
+		return value.error;
 	}
 
 	/**
@@ -743,6 +749,24 @@ public class JsonRpcBasicServer {
 
 	public void setInvocationListener(InvocationListener invocationListener) {
 		this.invocationListener = invocationListener;
+	}
+
+	private static class ErrorObjectWithJsonError {
+		private final ObjectNode node;
+		private final JsonError error;
+
+		public ErrorObjectWithJsonError(ObjectNode node, JsonError error) {
+			this.node = node;
+			this.error = error;
+		}
+
+		@Override
+		public String toString() {
+			return "ErrorObjectWithJsonError{" +
+					"node=" + node +
+					", error=" + error +
+					'}';
+		}
 	}
 
 	/**

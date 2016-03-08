@@ -2,8 +2,8 @@ package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParams;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
 import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +40,7 @@ public class JsonRpcServerAnnotateMethodTest {
 	public void callMethodWithCustomMethodNameTest() throws Exception {
 		EasyMock.expect(mockService.customMethod()).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedMethod.handle(messageWithMapParams("Test.custom"), byteArrayOutputStream);
+		jsonRpcServerAnnotatedMethod.handleRequest(messageWithMapParamsStream("Test.custom"), byteArrayOutputStream);
 		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 
@@ -48,7 +48,7 @@ public class JsonRpcServerAnnotateMethodTest {
 	public void callMethodWithoutCustomMethodNameTest() throws Exception {
 		EasyMock.expect(mockService.customMethod()).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedMethod.handle(messageWithListParams(1, "customMethod"), byteArrayOutputStream);
+		jsonRpcServerAnnotatedMethod.handleRequest(messageWithListParamsStream(1, "customMethod"), byteArrayOutputStream);
 		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 
@@ -56,7 +56,7 @@ public class JsonRpcServerAnnotateMethodTest {
 	public void callMethodWithCustomMethodNameAndParamTest() throws Exception {
 		EasyMock.expect(mockService.customMethod2(param1)).andReturn(param2);
 		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedMethod.handle(messageWithListParams(1, "Test.custom2", param1), byteArrayOutputStream);
+		jsonRpcServerAnnotatedMethod.handleRequest(messageWithListParamsStream(1, "Test.custom2", param1), byteArrayOutputStream);
 		assertEquals(param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 
@@ -64,7 +64,7 @@ public class JsonRpcServerAnnotateMethodTest {
 	public void callMethodWithoutCustomMethodNameAndParamTest() throws Exception {
 		EasyMock.expect(mockService.customMethod2(param1)).andReturn(param2);
 		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedMethod.handle(messageWithListParams(1, "customMethod2", param1), byteArrayOutputStream);
+		jsonRpcServerAnnotatedMethod.handleRequest(messageWithListParamsStream(1, "customMethod2", param1), byteArrayOutputStream);
 		assertEquals(param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
 	}
 

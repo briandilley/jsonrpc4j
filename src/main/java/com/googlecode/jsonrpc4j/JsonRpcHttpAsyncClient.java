@@ -440,7 +440,7 @@ public class JsonRpcHttpAsyncClient {
 	}
 
 	/**
-	 * Private class to handle the HttpResponse callback.
+	 * Private class to handleRequest the HttpResponse callback.
 	 * 
 	 * @param <T>
 	 */

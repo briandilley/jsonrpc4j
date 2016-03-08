@@ -1,7 +1,9 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_UPPER;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
@@ -89,8 +91,8 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		response.setContentType(JSONRPC_CONTENT_TYPE);
 		OutputStream output = response.getPortletOutputStream();
 		InputStream input = getRequestStream(request);
-		handle(input, output);
-		// fix to not flush within handle() but outside so http status code can be set
+		handleRequest(input, output);
+		// fix to not flush within handleRequest() but outside so http status code can be set
 		output.flush();
 	}
 
@@ -120,7 +122,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		response.setContentType(JSONRPC_CONTENT_TYPE);
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
-		int result = handle(input, output);
+		int result = handleRequest(input, output);
 		response.setStatus(getHttpStatusCode(response, result));
 		output.flush();
 	}
@@ -154,7 +156,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	private boolean isErrorCode(int result) {
-		for (ErrorResolver.JsonError error : Arrays.asList(INTERNAL_ERROR, METHOD_PARAMS_INVALID)) {
+		for (ErrorResolver.JsonError error : Arrays.asList(INTERNAL_ERROR, METHOD_PARAMS_INVALID, ERROR_NOT_HANDLED, BULK_ERROR)) {
 			if (error.code == result) return true;
 		}
 		return CUSTOM_SERVER_ERROR_UPPER >= result && result >= CUSTOM_SERVER_ERROR_LOWER;

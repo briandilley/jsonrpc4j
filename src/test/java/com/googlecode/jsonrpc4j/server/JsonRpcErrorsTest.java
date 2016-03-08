@@ -2,16 +2,17 @@ package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcError;
 import com.googlecode.jsonrpc4j.JsonRpcErrors;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.googlecode.jsonrpc4j.util.CustomTestException;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,16 +38,16 @@ public class JsonRpcErrorsTest {
 	@Test
 	public void exceptionWithoutAnnotatedServiceInterface() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 		assertNotNull(error);
-		assertEquals(0, error.get("code").intValue());
+		assertEquals(ErrorResolver.JsonError.ERROR_NOT_HANDLED.code, error.get("code").intValue());
 	}
 
 	@Test
 	public void exceptionWithAnnotatedServiceInterface() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
 		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
@@ -62,7 +63,7 @@ public class JsonRpcErrorsTest {
 	@Test
 	public void exceptionWithAnnotatedServiceInterfaceMessageAndData() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotationMessageAndData.class);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
 		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
@@ -78,7 +79,7 @@ public class JsonRpcErrorsTest {
 	@Test
 	public void exceptionWithMsgInException() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new ServiceWithExceptionMsg(), ServiceInterfaceWithAnnotation.class);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
 		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
 
@@ -91,18 +92,18 @@ public class JsonRpcErrorsTest {
 		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 
-	@SuppressWarnings("unused")
-	private interface ServiceInterfaceWithoutAnnotation {
+	@SuppressWarnings({ "unused", "WeakerAccess" })
+	public interface ServiceInterfaceWithoutAnnotation {
 		Object testMethod();
 	}
 
-	@SuppressWarnings({"unused", "WeakerAccess"})
+	@SuppressWarnings({ "unused", "WeakerAccess" })
 	public interface ServiceInterfaceWithAnnotation {
 		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = 1234) })
 		Object testMethod();
 	}
 
-	@SuppressWarnings({"unused", "WeakerAccess"})
+	@SuppressWarnings({ "unused", "WeakerAccess" })
 	public interface ServiceInterfaceWithAnnotationMessageAndData {
 		@JsonRpcErrors({ @JsonRpcError(exception = CustomTestException.class, code = -5678, message = "The message", data = "The data") })
 		Object testMethod();

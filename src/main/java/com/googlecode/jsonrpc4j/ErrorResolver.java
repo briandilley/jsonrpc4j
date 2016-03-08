@@ -29,11 +29,14 @@ public interface ErrorResolver {
 	@SuppressWarnings("WeakerAccess")
 	class JsonError {
 
+		public static final JsonError OK = new JsonError(0, "ok", null);
 		public static final JsonError PARSE_ERROR = new JsonError(-32700, "JSON parse error", null);
 		public static final JsonError INVALID_REQUEST = new JsonError(-32600, "invalid request", null);
 		public static final JsonError METHOD_NOT_FOUND = new JsonError(-32601, "method not found", null);
 		public static final JsonError METHOD_PARAMS_INVALID = new JsonError(-32602, "method parameters invalid", null);
 		public static final JsonError INTERNAL_ERROR = new JsonError(-32603, "internal error", null);
+		public static final JsonError ERROR_NOT_HANDLED = new JsonError(-32001, "error not handled", null);
+		public static final JsonError BULK_ERROR = new JsonError(-32002, "bulk error", null);
 
 		public static final int CUSTOM_SERVER_ERROR_UPPER = -32000;
 		public static final int CUSTOM_SERVER_ERROR_LOWER = -32099;

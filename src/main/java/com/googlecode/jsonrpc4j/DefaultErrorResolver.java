@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
+
 /**
  * An {@link ErrorResolver} that puts type information into the
  * data portion of the error.  This {@link ErrorResolver} always
@@ -19,7 +21,7 @@ public enum DefaultErrorResolver implements ErrorResolver {
 	 * {@inheritDoc}
 	 */
 	public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
-		return new JsonError(0, t.getMessage(), new ErrorData(t.getClass().getName(), t.getMessage()));
+		return new JsonError(ERROR_NOT_HANDLED.code, t.getMessage(), new ErrorData(t.getClass().getName(), t.getMessage()));
 	}
 
 }

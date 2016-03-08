@@ -66,7 +66,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 	}
 
 	/**
-	 * Converts the scanPackage to something that the resource loader can handle.
+	 * Converts the scanPackage to something that the resource loader can handleRequest.
 	 */
 	private String resolvePackageToScan() {
 		return CLASSPATH_URL_PREFIX + convertClassNameToResourcePath(scanPackage) + "/**/*.class";

@@ -25,6 +25,8 @@ public class Util {
 	public static final int intParam2 = 2;
 	public static final String JSON_ENCODING = StandardCharsets.UTF_8.name();
 	public static final ObjectMapper mapper = new ObjectMapper();
+	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
+	public static final String DEFAULT_LOCAL_HOSTNAME = "127.0.0.1";
 	private static final String invalidJson = "{\"jsonrpc\": \"2.0,\n" +
 			" \"method\": \"testMethod\",\n" +
 			" \"params\": {},\n" +
@@ -32,41 +34,64 @@ public class Util {
 			" }\n" +
 			" ";
 
-	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
-	public static final String DEFAULT_LOCAL_HOSTNAME = "127.0.0.1";
-
 	public static InputStream invalidJsonStream() {
 		return new ByteArrayInputStream(invalidJson.getBytes(StandardCharsets.UTF_8));
 	}
 
-	public static InputStream messageWithListParams(final Object id, final String methodName, final Object... args) throws JsonProcessingException {
-		return messageOf(id, methodName, Arrays.asList(args));
+	public static InputStream messageWithListParamsStream(final Object id, final String methodName, final Object... args) throws JsonProcessingException {
+		return createStream(messageWithListParams(id, methodName, args));
 	}
 
-	public static InputStream messageOf(final Object id, final String methodName, final Object params) throws JsonProcessingException {
-		String data = mapper.writeValueAsString(new HashMap<String, Object>() {
+	public static InputStream createStream(Object content) throws JsonProcessingException {
+		String data = mapper.writeValueAsString(content);
+		return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+	}
+
+	public static HashMap<String, Object> messageWithListParams(final Object id, final String methodName, final Object... args) throws JsonProcessingException {
+		return messageOfStream(id, methodName, Arrays.asList(args));
+	}
+
+	public static HashMap<String, Object> messageOfStream(final Object id, final String methodName, final Object params) throws JsonProcessingException {
+		return makeJsonRpcRequestObject(id, methodName, params);
+	}
+
+	private static HashMap<String, Object> makeJsonRpcRequestObject(final Object id, final String methodName, final Object params) {
+		return new HashMap<String, Object>() {
 			{
 				if (id != null) put(JsonRpcBasicServer.ID, id);
 				put(JsonRpcBasicServer.JSONRPC, JsonRpcServer.VERSION);
 				if (methodName != null) put(JsonRpcBasicServer.METHOD, methodName);
 				if (params != null) put(JsonRpcBasicServer.PARAMS, params);
 			}
-		});
-		return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+		};
 	}
 
-	public static InputStream messageWithMapParams(final String methodName, final Object... args) throws JsonProcessingException {
+	public static InputStream multiMessageOfStream(Object... args) throws JsonProcessingException {
+		return createStream(args);
+	}
+
+	public static InputStream messageWithMapParamsStream(final String methodName, final Object... args) throws JsonProcessingException {
+		return createStream(messageWithMapParams(methodName, args));
+	}
+
+	private static HashMap<String, Object> messageWithMapParams(final String methodName, final Object... args) throws JsonProcessingException {
 		Map<String, Object> elements = new HashMap<>();
 		for (int i = 0; i < args.length; i += 2) {
 			final String key = (String) args[i];
 			final Object value = args[i + 1];
 			elements.put(key, value);
-
 		}
-		return messageOf(1, methodName, elements);
+		return messageOfStream(1, methodName, elements);
 	}
 
 	public static JsonNode decodeAnswer(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
 		return mapper.readTree(byteArrayOutputStream.toString(JSON_ENCODING));
+	}
+
+	public static JsonNode getFromArrayWithId(final JsonNode node, final int id) {
+		for (JsonNode n : node) {
+			if (n.get(JsonRpcBasicServer.ID).asInt() == id) { return n; }
+		}
+		throw new IllegalStateException("could not find in " + node + " id " + id);
 	}
 }

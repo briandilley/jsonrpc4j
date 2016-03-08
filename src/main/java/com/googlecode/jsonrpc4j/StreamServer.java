@@ -47,7 +47,7 @@ public class StreamServer {
 	 * default {@link ServerSocketFactory} that lists on the
 	 * given {@code port} and {@link InetAddress}.
 	 *
-	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handle requests
+	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handleRequest requests
 	 * @param maxThreads the mac number of threads the server will spawn
 	 * @param port the port to listen on
 	 * @param backlog the {@link ServerSocket} backlog
@@ -63,7 +63,7 @@ public class StreamServer {
 	 * of threads using the given {@link ServerSocket} to listen
 	 * for client connections.
 	 *
-	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handle requests
+	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handleRequest requests
 	 * @param maxThreads the mac number of threads the server will spawn
 	 * @param serverSocket the {@link ServerSocket} used for accepting client connections
 	 */
@@ -238,7 +238,7 @@ public class StreamServer {
 				try {
 					while (StreamServer.this.keepRunning.get()) {
 						try {
-							jsonRpcServer.handle(input, output);
+							jsonRpcServer.handleRequest(input, output);
 						} catch (Throwable t) {
 							if (StreamEndedException.class.isInstance(t)) {
 								logger.debug("Client disconnected: {}:{}", clientSocket.getInetAddress().getHostAddress(), clientSocket.getPort());

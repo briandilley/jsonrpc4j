@@ -51,7 +51,7 @@ public class LocalThreadServer<T> extends Thread implements AutoCloseable {
 			try {
 				final int available = serverInput.available();
 				if (available > 0) {
-					jsonRpcServer.handle(serverInput, serverOutput);
+					jsonRpcServer.handleRequest(serverInput, serverOutput);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

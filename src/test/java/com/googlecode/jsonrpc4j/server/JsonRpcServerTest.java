@@ -1,18 +1,24 @@
 package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
+import static com.googlecode.jsonrpc4j.util.Util.createStream;
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
+import static com.googlecode.jsonrpc4j.util.Util.getFromArrayWithId;
 import static com.googlecode.jsonrpc4j.util.Util.intParam1;
 import static com.googlecode.jsonrpc4j.util.Util.intParam2;
-import static com.googlecode.jsonrpc4j.util.Util.messageOf;
+import static com.googlecode.jsonrpc4j.util.Util.messageOfStream;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
+import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
+import static com.googlecode.jsonrpc4j.util.Util.multiMessageOfStream;
 import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static com.googlecode.jsonrpc4j.util.Util.param3;
+import static com.googlecode.jsonrpc4j.util.Util.param4;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -34,6 +40,8 @@ import com.googlecode.jsonrpc4j.util.Util;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -53,34 +61,34 @@ public class JsonRpcServerTest {
 
 	@Test
 	public void receiveJsonRpcNotification() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(null, "testMethod", param1), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(null, "testMethod", param1), byteArrayOutputStream);
 		assertEquals(0, byteArrayOutputStream.size());
 	}
 
 	@Test
 	public void callMethodWithTooFewParameters() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageOf(1, "testMethod", null), byteArrayOutputStream);
-		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
+		jsonRpcServer.handleRequest(createStream(messageOfStream(1, "testMethod", null)), byteArrayOutputStream);
+		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.ERROR_CODE).intValue());
 	}
 
 	@Test
 	public void callMethodExactNumberOfParameters() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod", param1), byteArrayOutputStream);
-		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1), byteArrayOutputStream);
+		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callMethodWithExtraParameter() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod", param1, param2), byteArrayOutputStream);
-		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get("error").get("code").intValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1, param2), byteArrayOutputStream);
+		assertEquals(METHOD_PARAMS_INVALID.code, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.ERROR_CODE).intValue());
 	}
 
 	@Test
@@ -88,35 +96,35 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.overloadedMethod(param1, param2)).andReturn(param1 + param2);
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowExtraParams(true);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", param1, param2, param3), byteArrayOutputStream);
-		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", param1, param2, param3), byteArrayOutputStream);
+		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callMethodWithTooFewParametersAllowOn() throws Exception {
-		EasyMock.expect(mockService.testMethod(anyString())).andReturn("success");
+		EasyMock.expect(mockService.testMethod(anyString())).andReturn(param1);
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowLessParams(true);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod"), byteArrayOutputStream);
-		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
+		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callMethodExactNumberOfParametersAllowOn() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowExtraParams(true);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod", param1), byteArrayOutputStream);
-		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1), byteArrayOutputStream);
+		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callMethodWithExtraParameterAllowOn() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowExtraParams(true);
-		jsonRpcServer.handle(messageWithListParams(1, "testMethod", param1, param2), byteArrayOutputStream);
-		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1, param2), byteArrayOutputStream);
+		assertEquals(param1, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
@@ -124,32 +132,32 @@ public class JsonRpcServerTest {
 		final String noParam = "noParam";
 		EasyMock.expect(mockService.overloadedMethod()).andReturn(noParam);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod"), byteArrayOutputStream);
-		assertEquals(noParam, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod"), byteArrayOutputStream);
+		assertEquals(noParam, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callOverloadedMethodOneStringParam() throws Exception {
 		EasyMock.expect(mockService.overloadedMethod(param2)).andReturn(param2);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", param2), byteArrayOutputStream);
-		assertEquals(param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", param2), byteArrayOutputStream);
+		assertEquals(param2, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callOverloadedMethodOneIntParam() throws Exception {
 		EasyMock.expect(mockService.overloadedMethod(intParam1)).andReturn(param1 + intParam1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", intParam1), byteArrayOutputStream);
-		assertEquals(param1 + intParam1, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", intParam1), byteArrayOutputStream);
+		assertEquals(param1 + intParam1, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void callOverloadedMethodTwoStringParams() throws Exception {
 		EasyMock.expect(mockService.overloadedMethod(param1, param2)).andReturn(param1 + param2);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", param1, param2), byteArrayOutputStream);
-		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", param1, param2), byteArrayOutputStream);
+		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
@@ -157,8 +165,8 @@ public class JsonRpcServerTest {
 		final String result = (intParam1 + intParam2) + "";
 		EasyMock.expect(mockService.overloadedMethod(intParam1, intParam2)).andReturn(result);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", intParam1, intParam2), byteArrayOutputStream);
-		assertEquals(result, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", intParam1, intParam2), byteArrayOutputStream);
+		assertEquals(result, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
@@ -166,31 +174,31 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.overloadedMethod(param1, param2)).andReturn(param1 + param2);
 		EasyMock.replay(mockService);
 		jsonRpcServer.setAllowExtraParams(true);
-		jsonRpcServer.handle(messageWithListParams(1, "overloadedMethod", param1, param2, param3), byteArrayOutputStream);
-		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", param1, param2, param3), byteArrayOutputStream);
+		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
 
 	@Test
 	public void idIntegerType() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(intParam1, "testMethod", param1), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(intParam1, "testMethod", param1), byteArrayOutputStream);
 		assertTrue(decodeAnswer(byteArrayOutputStream).get("id").isIntegralNumber());
 	}
 
 	@Test
 	public void idStringType() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		jsonRpcServer.handle(messageWithListParams(param1, "testMethod", param1), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(param1, "testMethod", param1), byteArrayOutputStream);
 		assertTrue(decodeAnswer(byteArrayOutputStream).get("id").isTextual());
 	}
 
 	@Test
 	public void noId() throws Exception {
-		EasyMock.expect(mockService.testMethod(param1)).andReturn("success");
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
-		int ok_code = jsonRpcServer.handle(messageWithListParams(null, "testMethod", param1), byteArrayOutputStream);
+		int ok_code = jsonRpcServer.handleRequest(messageWithListParamsStream(null, "testMethod", param1), byteArrayOutputStream);
 		assertTrue(byteArrayOutputStream.toString(Util.JSON_ENCODING).isEmpty());
 		assertEquals(ok_code, JsonRpcBasicServer.CODE_OK);
 	}
@@ -209,20 +217,20 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.<Throwable>notNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.isNull(), EasyMock.<Throwable> notNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 
 		EasyMock.expect(mockService.throwsMethod(param1)).andThrow(new CustomTestException(param1));
 		EasyMock.replay(mockService, invocationListener);
 
-		jsonRpcServer.handle(messageWithListParams(1, "throwsMethod", param1), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "throwsMethod", param1), byteArrayOutputStream);
 
 		EasyMock.verify(invocationListener, mockService);
 
 		JsonNode json = decodeAnswer(byteArrayOutputStream);
-		assertNull(json.get("result"));
-		assertNotNull(json.get("error"));
+		assertNull(json.get(JsonRpcBasicServer.RESULT));
+		assertNotNull(json.get(JsonRpcBasicServer.ERROR));
 	}
 
 	/**
@@ -239,20 +247,55 @@ public class JsonRpcServerTest {
 		final InvocationListener invocationListener = EasyMock.niceMock(InvocationListener.class);
 		Method m = ServiceInterface.class.getMethod("throwsMethod", String.class);
 		invocationListener.willInvoke(eq(m), anyObject(List.class));
-		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.<Throwable>isNull(), EasyMock.geq(0L));
+		invocationListener.didInvoke(eq(m), anyObject(List.class), EasyMock.notNull(), EasyMock.<Throwable> isNull(), EasyMock.geq(0L));
 
 		jsonRpcServer.setInvocationListener(invocationListener);
 
 		EasyMock.expect(mockService.throwsMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService, invocationListener);
 
-		jsonRpcServer.handle(messageWithListParams(1, "throwsMethod", param1), byteArrayOutputStream);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "throwsMethod", param1), byteArrayOutputStream);
 
 		EasyMock.verify(invocationListener, mockService);
 
 		JsonNode json = decodeAnswer(byteArrayOutputStream);
-		assertEquals(param1, json.get("result").textValue());
-		assertNull(json.get("error"));
+		assertEquals(param1, json.get(JsonRpcBasicServer.RESULT).textValue());
+		assertNull(json.get(JsonRpcBasicServer.ERROR));
+	}
+
+	@Test
+	public void multiMessageSimple() throws IOException {
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param2);
+		EasyMock.expect(mockService.overloadedMethod(intParam1)).andReturn(param1);
+		EasyMock.replay(mockService);
+
+		InputStream input = multiMessageOfStream(messageWithListParams(1, "testMethod", param1),
+				messageWithListParams(2, "overloadedMethod", intParam1));
+		jsonRpcServer.handleRequest(input, byteArrayOutputStream);
+		JsonNode json = decodeAnswer(byteArrayOutputStream);
+		assertTrue(json.isArray());
+		assertEquals(getFromArrayWithId(json, 1).get(JsonRpcBasicServer.RESULT).asText(), param2);
+		assertEquals(getFromArrayWithId(json, 2).get(JsonRpcBasicServer.RESULT).asText(), param1);
+		EasyMock.verify(mockService);
+	}
+
+	@Test
+	public void multiMessageOneOkOneError() throws IOException {
+		EasyMock.expect(mockService.overloadedMethod(param1)).andReturn(param2);
+		EasyMock.expect(mockService.throwsMethod(param3)).andThrow(new CustomTestException(param4));
+		EasyMock.replay(mockService);
+
+		InputStream input = multiMessageOfStream(messageWithListParams(1, "overloadedMethod", param1),
+				messageWithListParams(2, "throwsMethod", param3),
+				messageWithListParams(3, "testMethod"));
+		jsonRpcServer.handleRequest(input, byteArrayOutputStream);
+		JsonNode json = decodeAnswer(byteArrayOutputStream);
+		assertTrue(json.isArray());
+		assertEquals(getFromArrayWithId(json, 1).get(JsonRpcBasicServer.RESULT).asText(), param2);
+		assertEquals(getFromArrayWithId(json, 2).get(JsonRpcBasicServer.RESULT), null);
+		assertFalse(getFromArrayWithId(json, 2).get(JsonRpcBasicServer.ERROR).isNull());
+		assertEquals(getFromArrayWithId(json, 2).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.DATA).get(JsonRpcBasicServer.ERROR_MESSAGE).asText(), param4);
+		EasyMock.verify(mockService);
 	}
 
 	// Service and service interfaces used in test
