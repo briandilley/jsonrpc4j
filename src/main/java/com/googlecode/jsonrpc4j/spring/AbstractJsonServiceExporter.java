@@ -51,7 +51,15 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 			objectMapper = new ObjectMapper();
 		}
 
-		jsonRpcServer = new JsonRpcServer(objectMapper, getProxyForService(), getServiceInterface());
+		// Create the server.  The 'handler' parameter here is either a proxy or the real instance depending on
+		// the presence or absence of the interface.  This is because it is not possible to create a proxy unless
+		// an interface is specified.
+
+		jsonRpcServer = new JsonRpcServer(
+			objectMapper,
+				null==getServiceInterface() ? getService() : getProxyForService(),
+				getServiceInterface()
+		);
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsCompatible(backwardsCompatible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
