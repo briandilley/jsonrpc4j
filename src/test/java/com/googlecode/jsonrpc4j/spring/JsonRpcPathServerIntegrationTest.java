@@ -11,8 +11,14 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+/**
+ * @deprecated this test should be removed (replaced by {@link JsonRpcPathServerIntegrationTestB})
+ * once the {@link AutoJsonRpcServiceExporter} is dropped.
+ */
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:serverApplicationContext.xml")
+@Deprecated
 public class JsonRpcPathServerIntegrationTest {
 
 	@Autowired
