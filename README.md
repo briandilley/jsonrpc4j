@@ -182,6 +182,7 @@ case of any other exception the code `-187` is returned with the value
 of `getMessage()` as returned by the exception itself.
 
 ### Auto Discovery With Annotations
+
 Spring can also be configured to auto-discover services and clients with annotations.
 
 To configure auto-discovery of annotated services first annotate the service interface:
@@ -193,14 +194,23 @@ interface MyService {
 }
 ```
 
-and use the following configuration to allow spring to find it:
+Next annotate the implementation of the service interface;
+
+```java
+@AutoJsonRpcServiceImpl
+class MyServiceImpl {
+... service methods' implementations ...
+}
+```
+
+and use the following configuration to allow spring to find the implementation that you would like to expose:
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-  <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter"/>
+  <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter"/>
 
   <bean class="com.mycompany.MyServiceImpl" />
 
