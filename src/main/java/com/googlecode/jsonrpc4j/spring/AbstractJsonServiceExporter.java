@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -33,6 +34,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private boolean allowLessParams = false;
 	private InvocationListener invocationListener = null;
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
+	private ConvertedParameterTransformer convertedParameterTransformer = null;
 
 	/**
 	 * {@inheritDoc}
@@ -61,6 +63,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		jsonRpcServer.setAllowLessParams(allowLessParams);
 		jsonRpcServer.setInvocationListener(invocationListener);
 		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
+		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
 
 		exportService();
 	}
@@ -156,5 +159,12 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	 */
 	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
 		this.httpStatusCodeProvider = httpStatusCodeProvider;
+	}
+	/**
+	 *
+	 * @param convertedParameterTransformer the convertedParameterTransformer to set
+	 */
+	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
+		this.convertedParameterTransformer = convertedParameterTransformer;
 	}
 }
