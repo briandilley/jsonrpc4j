@@ -23,7 +23,7 @@ public class JsonRpcPathServerIntegrationTest {
     assertNotNull(applicationContext);
 
     {
-      Object bean = applicationContext.getBean("/Service");
+      Object bean = applicationContext.getBean("/TestService");
       assertSame(JsonServiceExporter.class, bean.getClass());
     }
 
