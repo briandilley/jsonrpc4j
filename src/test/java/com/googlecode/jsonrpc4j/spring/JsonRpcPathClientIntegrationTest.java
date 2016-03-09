@@ -3,6 +3,7 @@ package com.googlecode.jsonrpc4j.spring;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 
+import com.googlecode.jsonrpc4j.spring.service.Service;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
