@@ -19,7 +19,16 @@ public class JsonRpcPathServerIntegrationTest {
   @Test
   public void shouldCreateServiceExporter() {
     assertNotNull(applicationContext);
-    Object bean = applicationContext.getBean("/Service");
-    assertSame(JsonServiceExporter.class, bean.getClass());
+
+    {
+      Object bean = applicationContext.getBean("/Service");
+      assertSame(JsonServiceExporter.class, bean.getClass());
+    }
+
+    {
+      Object bean = applicationContext.getBean("/ServiceSansInterface");
+      assertSame(JsonServiceExporter.class, bean.getClass());
+    }
+
   }
 }

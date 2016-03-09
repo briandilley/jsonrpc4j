@@ -91,9 +91,15 @@ public abstract class AbstractJsonServiceExporter
 			objectMapper = new ObjectMapper();
 		}
 
-		// create the server
+		// Create the server.  The 'handler' parameter here is either a proxy or the real instance depending on
+		// the presence or absence of the interface.  This is because it is not possible to create a proxy unless
+		// an interface is specified.
+
 		jsonRpcServer = new JsonRpcServer(
-			objectMapper, getProxyForService(), getServiceInterface());
+			objectMapper,
+				null==getServiceInterface() ? getService() : getProxyForService(),
+				getServiceInterface()
+		);
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsComaptible(backwardsComaptible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);

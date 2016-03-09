@@ -5,6 +5,6 @@
 
   <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcClientProxyCreator"
     p:baseUrl="http://localhost:8080/the-context/"
-    p:scanPackage="com.googlecode.jsonrpc4j.spring" />
+    p:scanPackage="com.googlecode.jsonrpc4j.spring.service" />
 
 </beans>
