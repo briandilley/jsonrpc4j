@@ -74,6 +74,7 @@ public class JsonRpcBasicServer {
 	private final ObjectMapper mapper;
 	private final Class<?> remoteInterface;
 	private final Object handler;
+	protected HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private boolean backwardsCompatible = true;
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
@@ -749,6 +750,16 @@ public class JsonRpcBasicServer {
 
 	public void setInvocationListener(InvocationListener invocationListener) {
 		this.invocationListener = invocationListener;
+	}
+
+	/**
+	 * Sets the {@link HttpStatusCodeProvider} instance to use for HTTP error results.
+	 *
+	 * @param httpStatusCodeProvider the status code provider to use for translating JSON-RPC error codes into
+	 *                               HTTP status messages.
+     */
+	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
+		this.httpStatusCodeProvider = httpStatusCodeProvider;
 	}
 
 	private static class ErrorObjectWithJsonError {

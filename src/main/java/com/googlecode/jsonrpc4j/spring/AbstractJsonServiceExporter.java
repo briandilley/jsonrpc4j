@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -31,6 +32,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
 	private InvocationListener invocationListener = null;
+	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 
 	/**
 	 * {@inheritDoc}
@@ -58,6 +60,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
 		jsonRpcServer.setInvocationListener(invocationListener);
+		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
 
 		exportService();
 	}
@@ -148,4 +151,10 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		this.invocationListener = invocationListener;
 	}
 
+	/**
+	 * @param httpStatusCodeProvider the HttpStatusCodeProvider to set
+	 */
+	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
+		this.httpStatusCodeProvider = httpStatusCodeProvider;
+	}
 }

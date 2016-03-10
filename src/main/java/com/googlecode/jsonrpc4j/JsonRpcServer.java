@@ -1,29 +1,15 @@
 package com.googlecode.jsonrpc4j;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_UPPER;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
-
-import org.apache.logging.log4j.LogManager;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
@@ -123,7 +109,9 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
 		int result = handleRequest(input, output);
-		response.setStatus(getHttpStatusCode(response, result));
+		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
+				: httpStatusCodeProvider.getHttpStatusCode(result);
+		response.setStatus(httpStatusCode);
 		output.flush();
 	}
 
@@ -139,27 +127,8 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		return input;
 	}
 
-	private int getHttpStatusCode(HttpServletResponse response, int result) {
-		if (result == 0) return HttpServletResponse.SC_OK;
-
-		if (isErrorCode(result)) {
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} else if (result == INVALID_REQUEST.code || result == PARSE_ERROR.code) {
-			return HttpServletResponse.SC_BAD_REQUEST;
-		} else if (result == METHOD_NOT_FOUND.code) { return HttpServletResponse.SC_NOT_FOUND; }
-
-		return HttpServletResponse.SC_OK;
-	}
-
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
 		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
-	}
-
-	private boolean isErrorCode(int result) {
-		for (ErrorResolver.JsonError error : Arrays.asList(INTERNAL_ERROR, METHOD_PARAMS_INVALID, ERROR_NOT_HANDLED, BULK_ERROR)) {
-			if (error.code == result) return true;
-		}
-		return CUSTOM_SERVER_ERROR_UPPER >= result && result >= CUSTOM_SERVER_ERROR_LOWER;
 	}
 
 }
