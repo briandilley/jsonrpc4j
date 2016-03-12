@@ -1,16 +1,21 @@
 package com.googlecode.jsonrpc4j;
 
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.Arrays;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.*;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_UPPER;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 
 /**
  * This default implementation of a {@link HttpStatusCodeProvider} follows the rules defined in the
  * <a href="http://www.jsonrpc.org/historical/json-rpc-over-http.html">JSON-RPC over HTTP</a> document.
- *
- *
  */
 public enum DefaultHttpStatusCodeProvider implements HttpStatusCodeProvider {
 	INSTANCE;

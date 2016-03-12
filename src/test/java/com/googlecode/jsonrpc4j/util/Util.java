@@ -27,12 +27,17 @@ public class Util {
 	public static final ObjectMapper mapper = new ObjectMapper();
 	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 	public static final String DEFAULT_LOCAL_HOSTNAME = "127.0.0.1";
+	private static final String invalidJsonRpcRequest = "{\"method\": \"subtract\", \"params\": [], \"id\": 1}";
 	private static final String invalidJson = "{\"jsonrpc\": \"2.0,\n" +
 			" \"method\": \"testMethod\",\n" +
 			" \"params\": {},\n" +
 			" \"id\": \n" +
 			" }\n" +
 			" ";
+
+	public static InputStream invalidJsonRpcRequestStream() {
+		return new ByteArrayInputStream(invalidJsonRpcRequest.getBytes(StandardCharsets.UTF_8));
+	}
 
 	public static InputStream invalidJsonStream() {
 		return new ByteArrayInputStream(invalidJson.getBytes(StandardCharsets.UTF_8));
@@ -93,5 +98,26 @@ public class Util {
 			if (n.get(JsonRpcBasicServer.ID).asInt() == id) { return n; }
 		}
 		throw new IllegalStateException("could not find in " + node + " id " + id);
+	}
+
+	/**
+	 * Simple input stream to byte array converter.
+	 *
+	 * @param inputStream the input stream that will be converted.
+	 * @return the content of the input stream in form of a byte array.
+	 * @throws IOException thrown if there was an IO error while converting data.
+	 */
+	public static byte[] convertInputStreamToByteArray(InputStream inputStream) throws IOException {
+
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+		int read;
+		byte[] data = new byte[512];
+		while ((read = inputStream.read(data, 0, data.length)) != -1) {
+			buffer.write(data, 0, read);
+		}
+
+		buffer.flush();
+		return buffer.toByteArray();
 	}
 }
