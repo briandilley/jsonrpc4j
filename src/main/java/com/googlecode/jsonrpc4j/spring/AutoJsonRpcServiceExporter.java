@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.forName;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import org.apache.logging.log4j.LogManager;
 
 import org.springframework.beans.BeansException;
@@ -28,10 +29,10 @@ import java.util.Map.Entry;
  * Auto exports {@link JsonRpcService} annotated beans as JSON-RPC services.
  * <p>
  * Minimizes the configuration necessary to export beans as JSON-RPC services to:
- * 
+ *
  * <pre>
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter&quot;/&gt;
- * 
+ *
  * &lt;bean class="MyServiceBean"/&gt;
  * </pre>
  */
@@ -50,6 +51,7 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
 	private InvocationListener invocationListener = null;
+	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 
 	/**
 	 * Finds the beans to expose
@@ -141,6 +143,10 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 			builder.addPropertyValue("registerTraceInterceptor", registerTraceInterceptor);
 		}
 
+		if (httpStatusCodeProvider != null) {
+			builder.addPropertyValue("httpStatusCodeProvider", httpStatusCodeProvider);
+		}
+
 		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
 		builder.addPropertyValue("allowExtraParams", allowExtraParams);
@@ -225,5 +231,12 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	 */
 	public void setInvocationListener(InvocationListener invocationListener) {
 		this.invocationListener = invocationListener;
+	}
+
+	/**
+	 * @param httpStatusCodeProvider the HttpStatusCodeProvider to set
+	 */
+	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
+		this.httpStatusCodeProvider = httpStatusCodeProvider;
 	}
 }
