@@ -1,13 +1,12 @@
 package com.googlecode.jsonrpc4j.server;
 
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
 import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static org.junit.Assert.assertEquals;
 
-import com.googlecode.jsonrpc4j.JsonRpcMultiServer;
-import com.googlecode.jsonrpc4j.JsonRpcParam;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +15,9 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
 import org.easymock.MockType;
+
+import com.googlecode.jsonrpc4j.JsonRpcMultiServer;
+import com.googlecode.jsonrpc4j.JsonRpcParam;
 
 import java.io.ByteArrayOutputStream;
 
@@ -42,7 +44,7 @@ public class MultiServiceTest {
 
 		multiServer.handleRequest(messageWithMapParamsStream(serviceName + JsonRpcMultiServer.DEFAULT_SEPARATOR + "testMethod", param1, param2), byteArrayOutputStream);
 
-		assertEquals("success", decodeAnswer(byteArrayOutputStream).get("result").textValue());
+		assertEquals("success", decodeAnswer(byteArrayOutputStream).get(RESULT).textValue());
 	}
 
 	public interface ServiceInterfaceWithParamNameAnnotation {

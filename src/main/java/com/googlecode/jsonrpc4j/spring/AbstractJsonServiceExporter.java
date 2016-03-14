@@ -1,14 +1,14 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
-import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
 
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 
@@ -55,15 +55,14 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 			objectMapper = new ObjectMapper();
 		}
 
-		// Create the server.  The 'handler' parameter here is either a proxy or the real instance depending on
-		// the presence or absence of the interface.  This is because it is not possible to create a proxy unless
+		// Create the server. The 'handler' parameter here is either a proxy or the real instance depending on
+		// the presence or absence of the interface. This is because it is not possible to create a proxy unless
 		// an interface is specified.
 
 		jsonRpcServer = new JsonRpcServer(
-			objectMapper,
-				null==getServiceInterface() ? getService() : getProxyForService(),
-				getServiceInterface()
-		);
+				objectMapper,
+				null == getServiceInterface() ? getService() : getProxyForService(),
+				getServiceInterface());
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsCompatible(backwardsCompatible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
@@ -168,6 +167,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
 		this.httpStatusCodeProvider = httpStatusCodeProvider;
 	}
+
 	/**
 	 *
 	 * @param convertedParameterTransformer the convertedParameterTransformer to set

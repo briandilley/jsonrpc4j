@@ -1,6 +1,11 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ERROR;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.METHOD;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -94,7 +99,6 @@ public class JsonRpcHttpAsyncClient {
 
 	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
-	private static final String JSON_RPC_VERSION = "2.0";
 	private static final AtomicBoolean initialized = new AtomicBoolean();
 	private static final AtomicLong nextId = new AtomicLong();
 	private static HttpAsyncRequester requester;
@@ -248,9 +252,9 @@ public class JsonRpcHttpAsyncClient {
 	private void writeRequest(String methodName, Object arguments, HttpRequest httpRequest) throws IOException {
 
 		ObjectNode request = mapper.createObjectNode();
-		request.put("id", nextId.getAndIncrement());
-		request.put("jsonrpc", JSON_RPC_VERSION);
-		request.put("method", methodName);
+		request.put(ID, nextId.getAndIncrement());
+		request.put(JSONRPC, JsonRpcBasicServer.VERSION);
+		request.put(METHOD, methodName);
 
 		if (arguments != null && arguments.getClass().isArray()) {
 			Object[] args = Object[].class.cast(arguments);
@@ -357,7 +361,7 @@ public class JsonRpcHttpAsyncClient {
 		if (!response.isObject()) { throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response); }
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
 
-		if (jsonObject.has("error") && jsonObject.get("error") != null && !jsonObject.get("error").isNull()) {
+		if (jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull()) {
 
 			if (exceptionResolver == null) {
 				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
@@ -365,9 +369,9 @@ public class JsonRpcHttpAsyncClient {
 				throw exceptionResolver.resolveException(jsonObject);
 			}
 		}
-		if (jsonObject.has("result") && !jsonObject.get("result").isNull() && jsonObject.get("result") != null) {
+		if (jsonObject.has(RESULT) && !jsonObject.get(RESULT).isNull() && jsonObject.get(RESULT) != null) {
 
-			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
+			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get(RESULT));
 			JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
 
 			return mapper.readValue(returnJsonParser, returnJavaType);
@@ -439,54 +443,6 @@ public class JsonRpcHttpAsyncClient {
 		}
 	}
 
-	/**
-	 * Private class to handleRequest the HttpResponse callback.
-	 * 
-	 * @param <T>
-	 */
-	private class RequestAsyncFuture<T> implements FutureCallback<HttpResponse> {
-		private final JsonRpcCallback<T> callBack;
-		private final Class<T> type;
-
-		RequestAsyncFuture(Class<T> type, JsonRpcCallback<T> callBack) {
-			this.type = type;
-			this.callBack = callBack;
-		}
-
-		public void completed(final HttpResponse response) {
-			try {
-				StatusLine statusLine = response.getStatusLine();
-				int statusCode = statusLine.getStatusCode();
-
-				InputStream stream;
-				if (statusCode == 200) {
-					HttpEntity entity = response.getEntity();
-					try {
-						stream = entity.getContent();
-					} catch (Exception e) {
-						failed(e);
-						return;
-					}
-
-					callBack.onComplete(type.cast(readResponse(type, stream)));
-				} else {
-					callBack.onError(new RuntimeException(
-							"Unexpected response code: " + statusCode));
-				}
-			} catch (Throwable t) {
-				callBack.onError(t);
-			}
-		}
-
-		public void failed(final Exception ex) {
-			callBack.onError(ex);
-		}
-
-		public void cancelled() {
-			callBack.onError(new RuntimeException("HTTP Request was cancelled"));
-		}
-	}
-
 	private static class JsonRpcFuture<T> implements Future<T>, JsonRpcCallback<T> {
 
 		private T object;
@@ -538,6 +494,54 @@ public class JsonRpcHttpAsyncClient {
 			exception = new ExecutionException(t);
 			done = true;
 			this.notify();
+		}
+	}
+
+	/**
+	 * Private class to handleRequest the HttpResponse callback.
+	 *
+	 * @param <T>
+	 */
+	private class RequestAsyncFuture<T> implements FutureCallback<HttpResponse> {
+		private final JsonRpcCallback<T> callBack;
+		private final Class<T> type;
+
+		RequestAsyncFuture(Class<T> type, JsonRpcCallback<T> callBack) {
+			this.type = type;
+			this.callBack = callBack;
+		}
+
+		public void completed(final HttpResponse response) {
+			try {
+				StatusLine statusLine = response.getStatusLine();
+				int statusCode = statusLine.getStatusCode();
+
+				InputStream stream;
+				if (statusCode == 200) {
+					HttpEntity entity = response.getEntity();
+					try {
+						stream = entity.getContent();
+					} catch (Exception e) {
+						failed(e);
+						return;
+					}
+
+					callBack.onComplete(type.cast(readResponse(type, stream)));
+				} else {
+					callBack.onError(new RuntimeException(
+							"Unexpected response code: " + statusCode));
+				}
+			} catch (Throwable t) {
+				callBack.onError(t);
+			}
+		}
+
+		public void failed(final Exception ex) {
+			callBack.onError(ex);
+		}
+
+		public void cancelled() {
+			callBack.onError(new RuntimeException("HTTP Request was cancelled"));
 		}
 	}
 }

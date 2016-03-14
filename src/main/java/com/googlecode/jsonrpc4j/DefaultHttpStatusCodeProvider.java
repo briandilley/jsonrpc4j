@@ -1,8 +1,5 @@
 package com.googlecode.jsonrpc4j;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_UPPER;
@@ -13,10 +10,15 @@ import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 
+import java.util.Arrays;
+
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * This default implementation of a {@link HttpStatusCodeProvider} follows the rules defined in the
  * <a href="http://www.jsonrpc.org/historical/json-rpc-over-http.html">JSON-RPC over HTTP</a> document.
  */
+@SuppressWarnings("WeakerAccess")
 public enum DefaultHttpStatusCodeProvider implements HttpStatusCodeProvider {
 	INSTANCE;
 
@@ -28,9 +30,7 @@ public enum DefaultHttpStatusCodeProvider implements HttpStatusCodeProvider {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} else if (resultCode == INVALID_REQUEST.code || resultCode == PARSE_ERROR.code) {
 			return HttpServletResponse.SC_BAD_REQUEST;
-		} else if (resultCode == METHOD_NOT_FOUND.code) {
-			return HttpServletResponse.SC_NOT_FOUND;
-		}
+		} else if (resultCode == METHOD_NOT_FOUND.code) { return HttpServletResponse.SC_NOT_FOUND; }
 
 		return HttpServletResponse.SC_OK;
 	}

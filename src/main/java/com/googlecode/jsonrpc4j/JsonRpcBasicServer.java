@@ -60,10 +60,16 @@ public class JsonRpcBasicServer {
 	public static final String ERROR_CODE = "code";
 	public static final String DATA = "data";
 	public static final String RESULT = "result";
+	public static final String EXCEPTION_TYPE_NAME = "exceptionTypeName";
+
 	public static final String VERSION = "2.0";
+
 	public static final int CODE_OK = 0;
 	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
+	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER = "javax.jws.WebParam";
+	public static final String NAME = "name";
+	public static final String NULL = "null";
 	private static Class<?> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
 
@@ -136,8 +142,8 @@ public class JsonRpcBasicServer {
 	private static void loadAnnotationSupportEngine() {
 		final ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
 		try {
-			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass("javax.jws.WebParam");
-			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod("name");
+			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER);
+			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
 			logger.error(e);
 		}
@@ -185,7 +191,7 @@ public class JsonRpcBasicServer {
 			final JsonNode jsonNode = readContext.nextValue();
 			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
-			return writeAndFlushValueError(output, createResponseError("jsonrpc", "null", JsonError.PARSE_ERROR)).code;
+			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, JsonError.PARSE_ERROR)).code;
 		}
 	}
 
@@ -216,7 +222,7 @@ public class JsonRpcBasicServer {
 	private JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
-		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
+		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
 	}
 
 	/**
@@ -264,11 +270,11 @@ public class JsonRpcBasicServer {
 		logger.debug("Request: {}", node);
 
 		if (!isValidRequest(node))
-			return writeAndFlushValueError(output, createResponseError(VERSION, "null", JsonError.INVALID_REQUEST));
+			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
 		Object id = parseId(node.get(ID));
 
-		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get("jsonrpc").asText() : VERSION;
-		if (!hasNonNullData(node, "method"))
+		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get(JSONRPC).asText() : VERSION;
+		if (!hasNonNullData(node, METHOD))
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
 
 		final String fullMethodName = node.get(METHOD).asText();
@@ -337,7 +343,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private boolean hasMethodAndVersion(ObjectNode node) {
-		return node.has("jsonrpc") && node.has("method");
+		return node.has(JSONRPC) && node.has(METHOD);
 	}
 
 	/**
@@ -761,7 +767,7 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param httpStatusCodeProvider the status code provider to use for translating JSON-RPC error codes into
 	 *                               HTTP status messages.
-     */
+	 */
 	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
 		this.httpStatusCodeProvider = httpStatusCodeProvider;
 	}

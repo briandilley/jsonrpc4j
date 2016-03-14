@@ -1,6 +1,11 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ERROR;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.METHOD;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.VERSION;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
 
@@ -247,7 +252,7 @@ public class JsonRpcClient {
 	}
 
 	private boolean hasResult(ObjectNode jsonObject) {
-		return hasNonNullData(jsonObject, "result");
+		return hasNonNullData(jsonObject, RESULT);
 	}
 
 	private boolean isReturnTypeInvalid(Type returnType) {
@@ -259,7 +264,7 @@ public class JsonRpcClient {
 	}
 
 	private Object constructResponseObject(Type returnType, ObjectNode jsonObject) throws IOException {
-		JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
+		JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get(RESULT));
 		JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
 		return mapper.readValue(returnJsonParser, returnJavaType);
 	}
@@ -290,11 +295,11 @@ public class JsonRpcClient {
 	}
 
 	private boolean isIdValueNotCorrect(String id, ObjectNode jsonObject) {
-		return !jsonObject.has("id") || jsonObject.get("id") == null || !jsonObject.get("id").asText().equals(id);
+		return !jsonObject.has(ID) || jsonObject.get(ID) == null || !jsonObject.get(ID).asText().equals(id);
 	}
 
 	private boolean hasError(ObjectNode jsonObject) {
-		return jsonObject.has("error") && jsonObject.get("error") != null && !jsonObject.get("error").isNull();
+		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull();
 	}
 
 	/**
@@ -333,13 +338,13 @@ public class JsonRpcClient {
 
 	private void addId(String id, ObjectNode request) {
 		if (id != null) {
-			request.put("id", id);
+			request.put(ID, id);
 		}
 	}
 
 	private void addProtocolAndMethod(String methodName, ObjectNode request) {
-		request.put("jsonrpc", VERSION);
-		request.put("method", methodName);
+		request.put(JSONRPC, VERSION);
+		request.put(METHOD, methodName);
 	}
 
 	private void addParameters(Object arguments, ObjectNode request) {

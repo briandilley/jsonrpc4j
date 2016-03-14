@@ -23,15 +23,15 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 	 * {@inheritDoc}
 	 */
 	public Throwable resolveException(ObjectNode response) {
-		ObjectNode errorObject = ObjectNode.class.cast(response.get("error"));
-		if (!hasNonNullObjectData(errorObject, "data")) return createJsonRpcClientException(errorObject);
+		ObjectNode errorObject = ObjectNode.class.cast(response.get(JsonRpcBasicServer.ERROR));
+		if (!hasNonNullObjectData(errorObject, JsonRpcBasicServer.DATA)) return createJsonRpcClientException(errorObject);
 
-		ObjectNode dataObject = ObjectNode.class.cast(errorObject.get("data"));
-		if (!hasNonNullTextualData(dataObject, "exceptionTypeName")) return createJsonRpcClientException(errorObject);
+		ObjectNode dataObject = ObjectNode.class.cast(errorObject.get(JsonRpcBasicServer.DATA));
+		if (!hasNonNullTextualData(dataObject, JsonRpcBasicServer.EXCEPTION_TYPE_NAME)) return createJsonRpcClientException(errorObject);
 
 		try {
-			String exceptionTypeName = dataObject.get("exceptionTypeName").asText();
-			String message = hasNonNullTextualData(dataObject, "message") ? dataObject.get("message").asText() : null;
+			String exceptionTypeName = dataObject.get(JsonRpcBasicServer.EXCEPTION_TYPE_NAME).asText();
+			String message = hasNonNullTextualData(dataObject, JsonRpcBasicServer.ERROR_MESSAGE) ? dataObject.get(JsonRpcBasicServer.ERROR_MESSAGE).asText() : null;
 			return createThrowable(exceptionTypeName, message);
 		} catch (Exception e) {
 			logger.warn("Unable to create throwable", e);
@@ -47,8 +47,8 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 	 * @return the exception
 	 */
 	private JsonRpcClientException createJsonRpcClientException(ObjectNode errorObject) {
-		int code = errorObject.has("code") ? errorObject.get("code").asInt() : 0;
-		return new JsonRpcClientException(code, errorObject.get("message").asText(), errorObject.get("data"));
+		int code = errorObject.has(JsonRpcBasicServer.ERROR_CODE) ? errorObject.get(JsonRpcBasicServer.ERROR_CODE).asInt() : 0;
+		return new JsonRpcClientException(code, errorObject.get(JsonRpcBasicServer.ERROR_MESSAGE).asText(), errorObject.get(JsonRpcBasicServer.DATA));
 	}
 
 	/**

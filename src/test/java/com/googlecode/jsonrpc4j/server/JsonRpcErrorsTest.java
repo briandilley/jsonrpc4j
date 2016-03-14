@@ -1,15 +1,19 @@
 package com.googlecode.jsonrpc4j.server;
 
-import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
+import static com.googlecode.jsonrpc4j.util.Util.error;
+import static com.googlecode.jsonrpc4j.util.Util.errorCode;
+import static com.googlecode.jsonrpc4j.util.Util.errorData;
+import static com.googlecode.jsonrpc4j.util.Util.errorMessage;
+import static com.googlecode.jsonrpc4j.util.Util.exceptionType;
 import static com.googlecode.jsonrpc4j.util.Util.mapper;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.googlecode.jsonrpc4j.ErrorResolver;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcError;
 import com.googlecode.jsonrpc4j.JsonRpcErrors;
@@ -39,9 +43,9 @@ public class JsonRpcErrorsTest {
 	public void exceptionWithoutAnnotatedServiceInterface() throws Exception {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
-		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
+		JsonNode error = error(byteArrayOutputStream);
 		assertNotNull(error);
-		assertEquals(ErrorResolver.JsonError.ERROR_NOT_HANDLED.code, error.get("code").intValue());
+		assertEquals(ErrorResolver.JsonError.ERROR_NOT_HANDLED.code, errorCode(error).intValue());
 	}
 
 	@Test
@@ -49,15 +53,14 @@ public class JsonRpcErrorsTest {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
-		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
-
+		JsonNode error = error(byteArrayOutputStream);
 		assertNotNull(error);
-		assertEquals(1234, error.get("code").intValue());
-		assertEquals(null, error.get("message").textValue());
-		assertNotNull(error.get("data"));
-		JsonNode data = error.get("data");
-		assertEquals(null, data.get("message").textValue());
-		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(1234, errorCode(error).intValue());
+		assertEquals(null, errorMessage(error).textValue());
+		JsonNode data = errorData(error);
+		assertNotNull(data);
+		assertEquals(null, errorMessage(data).textValue());
+		assertEquals(CustomTestException.class.getName(), exceptionType(data).textValue());
 	}
 
 	@Test
@@ -65,15 +68,15 @@ public class JsonRpcErrorsTest {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new Service(), ServiceInterfaceWithAnnotationMessageAndData.class);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
-		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
+		JsonNode error = error(byteArrayOutputStream);
 
 		assertNotNull(error);
-		assertEquals(-5678, error.get("code").intValue());
-		assertEquals("The message", error.get("message").textValue());
-		assertNotNull(error.get("data"));
-		JsonNode data = error.get("data");
-		assertEquals("The message", data.get("message").textValue());
-		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(-5678, errorCode(error).intValue());
+		assertEquals("The message", errorMessage(error).textValue());
+		JsonNode data = errorData(error);
+		assertNotNull(data);
+		assertEquals("The message", errorMessage(data).textValue());
+		assertEquals(CustomTestException.class.getName(), exceptionType(data).textValue());
 	}
 
 	@Test
@@ -81,15 +84,15 @@ public class JsonRpcErrorsTest {
 		JsonRpcBasicServer jsonRpcServer = new JsonRpcBasicServer(mapper, new ServiceWithExceptionMsg(), ServiceInterfaceWithAnnotation.class);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod"), byteArrayOutputStream);
 
-		JsonNode error = decodeAnswer(byteArrayOutputStream).get("error");
+		JsonNode error = error(byteArrayOutputStream);
 
 		assertNotNull(error);
-		assertEquals(1234, error.get("code").intValue());
-		assertEquals(testExceptionWithMessage.getMessage(), error.get("message").textValue());
-		assertNotNull(error.get("data"));
-		JsonNode data = error.get("data");
-		assertEquals(testExceptionWithMessage.getMessage(), data.get("message").textValue());
-		assertEquals(CustomTestException.class.getName(), data.get("exceptionTypeName").textValue());
+		assertEquals(1234, errorCode(error).intValue());
+		assertEquals(testExceptionWithMessage.getMessage(), errorMessage(error).textValue());
+		JsonNode data = errorData(error);
+		assertNotNull(data);
+		assertEquals(testExceptionWithMessage.getMessage(), errorMessage(data).textValue());
+		assertEquals(CustomTestException.class.getName(), exceptionType(data).textValue());
 	}
 
 	@SuppressWarnings({ "unused", "WeakerAccess" })

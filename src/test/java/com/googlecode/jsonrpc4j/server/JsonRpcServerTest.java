@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.server;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.util.Util.createStream;
 import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.getFromArrayWithId;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +33,7 @@ import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
 import org.easymock.MockType;
 
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.util.CustomTestException;
@@ -184,7 +185,7 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(intParam1, "testMethod", param1), byteArrayOutputStream);
-		assertTrue(decodeAnswer(byteArrayOutputStream).get("id").isIntegralNumber());
+		assertTrue(decodeAnswer(byteArrayOutputStream).get(ID).isIntegralNumber());
 	}
 
 	@Test
@@ -192,7 +193,7 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		EasyMock.replay(mockService);
 		jsonRpcServer.handleRequest(messageWithListParamsStream(param1, "testMethod", param1), byteArrayOutputStream);
-		assertTrue(decodeAnswer(byteArrayOutputStream).get("id").isTextual());
+		assertTrue(decodeAnswer(byteArrayOutputStream).get(ID).isTextual());
 	}
 
 	@Test
@@ -272,7 +273,7 @@ public class JsonRpcServerTest {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
 		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
 
-		EasyMock.expect(convertedParameterTransformer.transformConvertedParameters(anyObject(), anyObject(Object[].class))).andReturn(new Object[]{param1});
+		EasyMock.expect(convertedParameterTransformer.transformConvertedParameters(anyObject(), anyObject(Object[].class))).andReturn(new Object[] { param1 });
 		EasyMock.replay(convertedParameterTransformer);
 
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1), byteArrayOutputStream);
@@ -285,8 +286,8 @@ public class JsonRpcServerTest {
 	public void callConvertedParameterTransformerShouldTransformTheParameters() throws Exception {
 		final ConvertedParameterTransformer convertedParameterTransformer = EasyMock.niceMock(ConvertedParameterTransformer.class);
 
-		String[] parameters = {param1, param2};
-		String[] expectedConvertedParameters = {param2, param1};
+		String[] parameters = { param1, param2 };
+		String[] expectedConvertedParameters = { param2, param1 };
 
 		EasyMock.expect(mockService.overloadedMethod(param2, param1)).andReturn("converted");
 		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);

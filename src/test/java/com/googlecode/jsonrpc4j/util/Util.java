@@ -93,6 +93,28 @@ public class Util {
 		return mapper.readTree(byteArrayOutputStream.toString(JSON_ENCODING));
 	}
 
+	public static JsonNode error(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
+		return decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.ERROR);
+	}
+
+
+	public static JsonNode errorCode(JsonNode error){
+		return error.get(JsonRpcBasicServer.ERROR_CODE);
+	}
+
+	public static JsonNode errorMessage(JsonNode error){
+		return error.get(JsonRpcBasicServer.ERROR_MESSAGE);
+	}
+
+	public static JsonNode errorData(JsonNode error){
+		return error.get(JsonRpcBasicServer.DATA);
+	}
+
+	public static JsonNode exceptionType(JsonNode error){
+		return error.get(JsonRpcBasicServer.EXCEPTION_TYPE_NAME);
+	}
+
+
 	public static JsonNode getFromArrayWithId(final JsonNode node, final int id) {
 		for (JsonNode n : node) {
 			if (n.get(JsonRpcBasicServer.ID).asInt() == id) { return n; }

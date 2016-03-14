@@ -1,11 +1,11 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.lang.reflect.Method;
 import java.util.List;
-
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
 
 /**
  * An {@link ErrorResolver} that puts type information into the
