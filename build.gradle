@@ -4,18 +4,19 @@ plugins {
     id 'pmd'
     id 'jacoco'
     id 'build-announcements'
-    id "nebula.optional-base" version "3.0.3"
-    id "nebula.provided-base" version "3.0.3"
-    id "nebula.info" version "3.0.3"
-    id "nebula.nebula-javadoc-jar" version "2.2.2"
-    id "nebula.nebula-source-jar" version "2.2.2"
-    id "com.github.ben-manes.versions" version "0.12.0"
+    id 'nebula.optional-base' version '3.0.3'
+    id 'nebula.provided-base' version '3.0.3'
+    id 'nebula.info' version '3.0.3'
+    id 'nebula.nebula-javadoc-jar' version '2.2.2'
+    id 'nebula.nebula-source-jar' version '2.2.2'
+    // id 'nebula-publishing-plugin' version '4.4.4'
+    id 'com.github.ben-manes.versions' version '0.12.0'
     id 'maven-publish'
-    id "com.jfrog.bintray" version "1.6"
+    id 'com.jfrog.bintray' version '1.6'
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
-version = '1.3.0-rc2'
+version = '1.3.0'
 group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.7
@@ -27,10 +28,10 @@ repositories {
 
 dependencies {
     ext {
-        jacksonVersion = '2.6.5'
-        springVersion = '4.2.4.RELEASE'
-        springBotVersion = '1.3.2.RELEASE'
-        jettyVersion = '9.3.7.v20160115'
+        jacksonVersion = '2.7.2'
+        springVersion = '4.2.5.RELEASE'
+        springBotVersion = '1.3.3.RELEASE'
+        jettyVersion = '9.3.8.RC0'
     }
 
     compile 'net.iharder:base64:2.3.9'
@@ -94,7 +95,7 @@ publishing {
 
 bintray {
     user = project.hasProperty('user') ? project.property('user') : 'not_set'
-    key = project.hasProperty('key') ? project.property('keye') : 'not_set'
+    key = project.hasProperty('key') ? project.property('key') : 'not_set'
     dryRun = false
     publish = true
     pkg {
