@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.forName;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import org.apache.logging.log4j.LogManager;
 
@@ -52,6 +53,7 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	private boolean allowLessParams = false;
 	private InvocationListener invocationListener = null;
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
+	private ConvertedParameterTransformer convertedParameterTransformer = null;
 
 	/**
 	 * Finds the beans to expose
@@ -147,6 +149,10 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 			builder.addPropertyValue("httpStatusCodeProvider", httpStatusCodeProvider);
 		}
 
+		if (convertedParameterTransformer != null) {
+			builder.addPropertyValue("convertedParameterTransformer", convertedParameterTransformer);
+		}
+
 		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
 		builder.addPropertyValue("allowExtraParams", allowExtraParams);
@@ -238,5 +244,13 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	 */
 	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
 		this.httpStatusCodeProvider = httpStatusCodeProvider;
+	}
+
+	/**
+	 *
+	 * @param convertedParameterTransformer the convertedParameterTransformer to set
+	 */
+	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
+		this.convertedParameterTransformer = convertedParameterTransformer;
 	}
 }

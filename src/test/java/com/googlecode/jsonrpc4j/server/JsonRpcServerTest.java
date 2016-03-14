@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -260,6 +261,43 @@ public class JsonRpcServerTest {
 
 		JsonNode json = decodeAnswer(byteArrayOutputStream);
 		assertEquals(param1, json.get(JsonRpcBasicServer.RESULT).textValue());
+		assertNull(json.get(JsonRpcBasicServer.ERROR));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void callConvertedParameterTransformerShouldBeCalledIfSet() throws Exception {
+		final ConvertedParameterTransformer convertedParameterTransformer = EasyMock.niceMock(ConvertedParameterTransformer.class);
+
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
+		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
+
+		EasyMock.expect(convertedParameterTransformer.transformConvertedParameters(anyObject(), anyObject(Object[].class))).andReturn(new Object[]{param1});
+		EasyMock.replay(convertedParameterTransformer);
+
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "testMethod", param1), byteArrayOutputStream);
+
+		EasyMock.verify(convertedParameterTransformer);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void callConvertedParameterTransformerShouldTransformTheParameters() throws Exception {
+		final ConvertedParameterTransformer convertedParameterTransformer = EasyMock.niceMock(ConvertedParameterTransformer.class);
+
+		String[] parameters = {param1, param2};
+		String[] expectedConvertedParameters = {param2, param1};
+
+		EasyMock.expect(mockService.overloadedMethod(param2, param1)).andReturn("converted");
+		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
+
+		EasyMock.expect(convertedParameterTransformer.transformConvertedParameters(anyObject(), anyObject(Object[].class))).andReturn(expectedConvertedParameters);
+		EasyMock.replay(mockService, convertedParameterTransformer);
+
+		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", (Object[]) parameters), byteArrayOutputStream);
+
+		JsonNode json = decodeAnswer(byteArrayOutputStream);
+		assertEquals("converted", json.get(JsonRpcBasicServer.RESULT).textValue());
 		assertNull(json.get(JsonRpcBasicServer.ERROR));
 	}
 

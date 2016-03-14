@@ -82,6 +82,7 @@ public class JsonRpcBasicServer {
 	private RequestInterceptor requestInterceptor = null;
 	private ErrorResolver errorResolver = null;
 	private InvocationListener invocationListener = null;
+	private ConvertedParameterTransformer convertedParameterTransformer = null;
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -388,6 +389,9 @@ public class JsonRpcBasicServer {
 	private JsonNode invoke(Object target, Method method, List<JsonNode> params) throws IOException, IllegalAccessException, InvocationTargetException {
 		logger.debug("Invoking method: {} with args {}", method.getName(), params);
 		Object[] convertedParams = convertJsonToParameters(method, params);
+		if (convertedParameterTransformer != null) {
+			convertedParams = convertedParameterTransformer.transformConvertedParameters(target, convertedParams);
+		}
 		Object result = method.invoke(target, convertedParams);
 		logger.debug("Invoked method: {}, result {}", method.getName(), result);
 		return hasReturnValue(method) ? mapper.valueToTree(result) : null;
@@ -760,6 +764,16 @@ public class JsonRpcBasicServer {
      */
 	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
 		this.httpStatusCodeProvider = httpStatusCodeProvider;
+	}
+
+	/**
+	 * Sets the {@link ConvertedParameterTransformer} instance that can be
+	 * used to mutate the deserialized arguments passed to the service method during invocation.
+	 *
+	 * @param convertedParameterTransformer the transformer to set
+	 */
+	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
+		this.convertedParameterTransformer = convertedParameterTransformer;
 	}
 
 	private static class ErrorObjectWithJsonError {
