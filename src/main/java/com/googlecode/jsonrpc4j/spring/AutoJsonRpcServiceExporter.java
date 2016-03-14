@@ -27,16 +27,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Auto exports {@link JsonRpcService} annotated beans as JSON-RPC services.
- * <p>
- * Minimizes the configuration necessary to export beans as JSON-RPC services to:
- *
- * <pre>
- * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter&quot;/&gt;
- *
- * &lt;bean class="MyServiceBean"/&gt;
- * </pre>
+ * <p>This exporter class is deprecated because it exposes all beans from a spring context that has the
+ * {@link JsonRpcService} annotation.  If that context is also consuming JSON-RPC services from a remote
+ * system and has proxy clients instantiated in the same context then those proxy clients will also
+ * be (inadvertently) exposed by {@link AutoJsonRpcServiceExporter}.  To avoid this, switch over to use
+ * {@link AutoJsonRpcServiceImplExporter} which exposes specific implementations of the JSON-RPC services'
+ * interfaces rather than all beans that implement {@link JsonRpcService}.</p>
+ * @deprecated use {@link AutoJsonRpcServiceImplExporter} instead.
  */
+@Deprecated
 @SuppressWarnings("unused")
 public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 
