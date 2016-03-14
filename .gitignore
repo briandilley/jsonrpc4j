@@ -1,0 +1,20 @@
+### Java template
+# Mobile Tools for Java (J2ME)
+# Package Files #
+*.jar
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+### NetBeans template
+build/
+### Maven template
+### Eclipse template
+.gradle
+tmp/
+# Eclipse Core
+# External tool builders
+# Locally stored "Eclipse launch configurations"
+# CDT-specific
+# JDT-specific (Eclipse Java Development Tools)
+# Java annotation processor (APT)
+### JetBrains template
+*.iml
+.idea/
