@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'nebula.optional-base' version '3.0.3'
     id 'nebula.provided-base' version '3.0.3'
-id 'findbugs'
+    id 'findbugs'
     id 'pmd'
     id 'jacoco'
     id 'build-announcements'
