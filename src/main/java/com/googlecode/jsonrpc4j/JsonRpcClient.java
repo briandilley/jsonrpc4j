@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -265,7 +264,7 @@ public class JsonRpcClient {
 
 	private Object constructResponseObject(Type returnType, ObjectNode jsonObject) throws IOException {
 		JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get(RESULT));
-		JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
+		JavaType returnJavaType = mapper.getTypeFactory().constructType(returnType);
 		return mapper.readValue(returnJsonParser, returnJavaType);
 	}
 

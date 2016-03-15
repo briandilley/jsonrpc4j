@@ -21,8 +21,7 @@ public class ReadContext {
 		return new ReadContext(input, mapper);
 	}
 
-	public JsonNode nextValue()
-			throws IOException {
+	public JsonNode nextValue() throws IOException {
 		return mapper.readValue(input, JsonNode.class);
 	}
 

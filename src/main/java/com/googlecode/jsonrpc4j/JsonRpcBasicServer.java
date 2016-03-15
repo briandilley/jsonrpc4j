@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -65,11 +64,11 @@ public class JsonRpcBasicServer {
 	public static final String VERSION = "2.0";
 
 	public static final int CODE_OK = 0;
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
-	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
 	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER = "javax.jws.WebParam";
 	public static final String NAME = "name";
 	public static final String NULL = "null";
+	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
 	private static Class<?> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
 
@@ -413,7 +412,7 @@ public class JsonRpcBasicServer {
 
 		for (int i = 0; i < parameterTypes.length; i++) {
 			JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
-			JavaType paramJavaType = TypeFactory.defaultInstance().constructType(parameterTypes[i]);
+			JavaType paramJavaType = mapper.getTypeFactory().constructType(parameterTypes[i]);
 			convertedParams[i] = mapper.readValue(paramJsonParser, paramJavaType);
 		}
 		return convertedParams;

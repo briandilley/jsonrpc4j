@@ -46,7 +46,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -372,7 +371,7 @@ public class JsonRpcHttpAsyncClient {
 		if (jsonObject.has(RESULT) && !jsonObject.get(RESULT).isNull() && jsonObject.get(RESULT) != null) {
 
 			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get(RESULT));
-			JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
+			JavaType returnJavaType = mapper.getTypeFactory().constructType(returnType);
 
 			return mapper.readValue(returnJsonParser, returnJavaType);
 		}
