@@ -74,6 +74,19 @@ dependencies {
     }
 }
 
+jar {
+    manifest {
+        instruction 'Import-Package', 
+            'org.aopalliance.intercept;resolution:="optional"',
+            'org.apache.http.*;resolution:="optional"',
+            'org.springframework.*;resolution:="optional"',
+            'org.apache.commons.logging;resolution:="optional"',
+            'javax.portlet;resolution:="optional"',
+            'javax.servlet*;version=0.0.0',
+            '*'
+  }
+}
+
 jacoco {
     toolVersion = '0.7.6.201602180812'
     reportsDir = file("$buildDir/customJacocoReportDir")
