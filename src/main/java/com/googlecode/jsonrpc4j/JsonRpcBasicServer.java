@@ -69,7 +69,7 @@ public class JsonRpcBasicServer {
 	public static final String NULL = "null";
 	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
-	private static Class<?> WEB_PARAM_ANNOTATION_CLASS;
+	private static Class<? extends Annotation> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
 
 	static {
@@ -141,7 +141,7 @@ public class JsonRpcBasicServer {
 	private static void loadAnnotationSupportEngine() {
 		final ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
 		try {
-			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER);
+			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
 			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
 			logger.error(e);
@@ -896,7 +896,7 @@ public class JsonRpcBasicServer {
 		@SuppressWarnings("Convert2streamapi")
 		private List<JsonRpcParam> getAnnotatedParameterNames(Method method) {
 			List<JsonRpcParam> parameterNames = new ArrayList<>();
-			for (List<Annotation> webParamAnnotation : getWebParameterAnnotations(method)) {
+			for (List<? extends Annotation> webParamAnnotation : getWebParameterAnnotations(method)) {
 				if (!webParamAnnotation.isEmpty()) parameterNames.add(createNewJsonRcpParamType(webParamAnnotation.get(0)));
 			}
 			for (List<JsonRpcParam> annotation : getJsonRpcParamAnnotations(method)) {
@@ -905,10 +905,9 @@ public class JsonRpcBasicServer {
 			return parameterNames;
 		}
 
-		private List<List<Annotation>> getWebParameterAnnotations(Method method) {
+		private List<? extends List<? extends Annotation>> getWebParameterAnnotations(Method method) {
 			if (WEB_PARAM_ANNOTATION_CLASS == null) return new ArrayList<>();
-			// noinspection unchecked
-			return ReflectionUtil.getParameterAnnotations(method, (Class<Annotation>) WEB_PARAM_ANNOTATION_CLASS);
+			return ReflectionUtil.getParameterAnnotations(method, WEB_PARAM_ANNOTATION_CLASS);
 		}
 
 		private JsonRpcParam createNewJsonRcpParamType(final Annotation annotation) {

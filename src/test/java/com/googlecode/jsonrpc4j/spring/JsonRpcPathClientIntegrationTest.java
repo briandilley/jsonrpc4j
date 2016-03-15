@@ -1,9 +1,8 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import com.googlecode.jsonrpc4j.spring.service.Service;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -11,6 +10,8 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.googlecode.jsonrpc4j.spring.service.Service;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:clientApplicationContext.xml")

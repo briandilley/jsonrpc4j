@@ -22,6 +22,15 @@ group = 'com.github.briandilley.jsonrpc4j'
 sourceCompatibility = 1.7
 targetCompatibility = 1.8
 
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+compileTestJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
 repositories {
     mavenCentral()
 }

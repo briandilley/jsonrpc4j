@@ -64,10 +64,9 @@ public class JettyServer implements AutoCloseable {
 		@Override
 		public void init() {
 			try {
-				// noinspection unchecked
-				final Class aClass = Class.forName(getInitParameter("class"));
-				// noinspection unchecked
-				jsonRpcServer = new JsonRpcServer(aClass.getConstructor().newInstance());
+				final Class<?> aClass = Class.forName(getInitParameter("class"));
+				final Object instance = aClass.getConstructor().newInstance();
+				jsonRpcServer = new JsonRpcServer(instance);
 				jsonRpcServer.setErrorResolver(AnnotationsErrorResolver.INSTANCE);
 			} catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
 				e.printStackTrace();

@@ -94,8 +94,7 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 			if (!Throwable.class.isAssignableFrom(clazz)) {
 				logger.warn("Type does not inherit from Throwable {}", clazz.getName());
 			} else {
-				// noinspection unchecked
-				return (Class<? extends Throwable>) clazz;
+				return clazz.asSubclass(Throwable.class);
 			}
 		} catch (Exception e) {
 			logger.warn("Unable to load Throwable class {}", typeName);
