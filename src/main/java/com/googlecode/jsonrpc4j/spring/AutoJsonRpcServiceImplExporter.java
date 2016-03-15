@@ -4,7 +4,6 @@ import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.forName;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
-import com.googlecode.jsonrpc4j.*;
 import org.apache.logging.log4j.LogManager;
 
 import org.springframework.beans.BeansException;
@@ -15,13 +14,19 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -54,7 +59,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 
 	private static final String PATH_PREFIX = "/";
 
-	public final static Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
+	private final static Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
@@ -81,25 +86,21 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 
 			if (null != autoJsonRpcServiceImplAnnotation) {
 
-				if(null == jsonRpcServiceAnnotation) {
-					throw new IllegalStateException("on the bean [" + beanName + "], @" +
-							AutoJsonRpcServiceImpl.class.getSimpleName() + " was found, but not @" +
-							JsonRpcService.class.getSimpleName() + " -- both are required");
-				}
+				if (null == jsonRpcServiceAnnotation) { throw new IllegalStateException("on the bean [" + beanName + "], @" +
+						AutoJsonRpcServiceImpl.class.getSimpleName() + " was found, but not @" +
+						JsonRpcService.class.getSimpleName() + " -- both are required"); }
 
 				List<String> paths = new ArrayList<>();
 				Collections.addAll(paths, autoJsonRpcServiceImplAnnotation.additionalPaths());
 				paths.add(jsonRpcServiceAnnotation.value());
 
-				for(String path : paths) {
-					if(!PATTERN_JSONRPC_PATH.matcher(path).matches()) {
-						throw new RuntimeException("the path [" + path + "] for the bean [" + beanName + "] is not valid");
-					}
+				for (String path : paths) {
+					if (!PATTERN_JSONRPC_PATH.matcher(path).matches()) { throw new RuntimeException("the path [" + path + "] for the bean [" + beanName + "] is not valid"); }
 
 					logger.info(String.format("exporting bean [%s] ---> [%s]", beanName, path));
 					if (isNotDuplicateService(serviceBeanNames, beanName, path))
 						serviceBeanNames.put(path, beanName);
-				};
+				}
 
 			}
 		}
@@ -145,13 +146,9 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	 * export a bean automatically, the name should start with a '/'.
 	 */
 	private String makeUrlPath(String servicePath) {
-		if (null==servicePath || 0==servicePath.length()) {
-			throw new IllegalArgumentException("the service path must be provided");
-		}
+		if (null == servicePath || 0 == servicePath.length()) { throw new IllegalArgumentException("the service path must be provided"); }
 
-		if ('/' == servicePath.charAt(0)) {
-			return servicePath;
-		}
+		if ('/' == servicePath.charAt(0)) { return servicePath; }
 
 		return PATH_PREFIX.concat(servicePath);
 	}

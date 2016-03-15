@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class Util {
 	public static final String param1 = "param1";
-	public static final String nonAsciiCharachters = "PñA&s<>k ;";
+	public static final String nonAsciiCharacters = "PñA&s<>k ;";
 	public static final String param2 = "param2";
 	public static final String param3 = "param3";
 	public static final String param4 = "param4";
@@ -57,7 +57,7 @@ public class Util {
 		return messageOfStream(id, methodName, Arrays.asList(args));
 	}
 
-	public static HashMap<String, Object> messageOfStream(final Object id, final String methodName, final Object params) throws JsonProcessingException {
+	public static HashMap<String, Object> messageOfStream(final Object id, final String methodName, final Object params) {
 		return makeJsonRpcRequestObject(id, methodName, params);
 	}
 

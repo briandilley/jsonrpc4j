@@ -26,7 +26,7 @@ public interface ErrorResolver {
 	/**
 	 * A JSON error.
 	 */
-	@SuppressWarnings({"WeakerAccess", "unused"})
+	@SuppressWarnings({ "WeakerAccess", "unused" })
 	class JsonError {
 
 		public static final JsonError OK = new JsonError(0, "ok", null);
