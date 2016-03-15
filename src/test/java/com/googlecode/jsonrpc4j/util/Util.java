@@ -18,6 +18,7 @@ import java.util.Map;
 
 public class Util {
 	public static final String param1 = "param1";
+	public static final String nonAsciiCharachters = "PñA&s<>k ;";
 	public static final String param2 = "param2";
 	public static final String param3 = "param3";
 	public static final String param4 = "param4";

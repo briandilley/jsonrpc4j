@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.integration;
 
+import static com.googlecode.jsonrpc4j.util.Util.nonAsciiCharachters;
 import static com.googlecode.jsonrpc4j.util.Util.param1;
 import static com.googlecode.jsonrpc4j.util.Util.param3;
 import static org.junit.Assert.assertEquals;
@@ -54,15 +55,13 @@ public class ServerClientTest {
 
 	private void testCommon(Service client) throws Throwable {
 		client.noOp();
-		final String defaultName = "world";
-		EasyMock.expect(mockService.hello()).andReturn(defaultName);
-		final String name = "uranus";
-		EasyMock.expect(mockService.hello(name)).andReturn(name);
+		EasyMock.expect(mockService.hello()).andReturn(param1);
+		EasyMock.expect(mockService.hello(nonAsciiCharachters)).andReturn(nonAsciiCharachters);
 
 		EasyMock.replay(mockService);
 		client.noOp();
-		assertEquals(defaultName, client.hello());
-		assertEquals(name, client.hello(name));
+		assertEquals(param1, client.hello());
+		assertEquals(nonAsciiCharachters, client.hello(nonAsciiCharachters));
 		assertNotNull(client.toString());
 		// noinspection ResultOfMethodCallIgnored
 		client.hashCode();
