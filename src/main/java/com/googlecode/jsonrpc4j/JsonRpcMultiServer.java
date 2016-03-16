@@ -136,7 +136,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	 * @return the handler to invoke the RPC call against
 	 */
 	@Override
-	Object getHandler(String serviceName) {
+	protected Object getHandler(String serviceName) {
 		Object handler = handlerMap.get(serviceName);
 		if (handler == null) {
 			logger.error("Service '{}' is not registered in this multi-server", serviceName);
