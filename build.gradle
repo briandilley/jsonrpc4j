@@ -13,6 +13,7 @@ plugins {
     id 'nebula.nebula-javadoc-jar' version '2.2.2'
     id 'nebula.nebula-source-jar' version '2.2.2'
     id 'com.jfrog.bintray' version '1.6'
+    id 'ru.vyarus.animalsniffer' version '1.0.0'
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
@@ -20,7 +21,7 @@ version = '1.3.3'
 group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.7
-targetCompatibility = 1.8
+targetCompatibility = 1.7
 
 compileJava {
     options.encoding = 'UTF-8'
@@ -48,7 +49,6 @@ dependencies {
     provided 'javax.portlet:portlet-api:2.0'
     provided 'javax.servlet:javax.servlet-api:3.1.0'
 
-
     compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     compile "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
@@ -57,7 +57,6 @@ dependencies {
     compile "org.springframework:spring-context:${springVersion}", optional
     compile "org.springframework:spring-web:${springVersion}", optional
     compile "org.springframework:spring-webmvc:${springVersion}", optional
-
 
     compile 'commons-codec:commons-codec:1.10', optional
     compile 'org.apache.httpcomponents:httpcore-nio:4.4.4', optional
@@ -72,6 +71,8 @@ dependencies {
     testCompile("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
+
+    signature 'org.codehaus.mojo.signature:java17:1.0@signature'
 }
 
 jacoco {

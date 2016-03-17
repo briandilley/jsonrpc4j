@@ -18,3 +18,8 @@ tmp/
 ### JetBrains template
 *.iml
 .idea/
+# Ignore Eclipse generated files
+.classpath
+.project
+.settings/
+/bin/
