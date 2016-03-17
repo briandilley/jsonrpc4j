@@ -4,8 +4,8 @@ import static com.googlecode.jsonrpc4j.util.Util.DEFAULT_LOCAL_HOSTNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import org.apache.logging.log4j.LogManager;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +26,7 @@ import javax.net.ServerSocketFactory;
 
 public class StreamServerTest {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(StreamServerTest.class);
 	private ServerSocket serverSocket;
 	private JsonRpcBasicServer jsonRpcServer;
 	private JsonRpcClient jsonRpcClient;

@@ -24,11 +24,11 @@ public class JettyServer implements AutoCloseable {
 	public static final String SERVLET = "someSunnyServlet";
 	private static final String PROTOCOL = "http";
 
-	private final Class service;
+	private final Class<?> service;
 	private Server jetty;
 	private int port;
 
-	JettyServer(Class service) {
+	JettyServer(Class<?> service) {
 		this.service = service;
 	}
 

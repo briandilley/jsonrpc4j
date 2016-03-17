@@ -9,7 +9,8 @@ import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.VERSION;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
@@ -33,7 +34,7 @@ import java.util.Random;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 public class JsonRpcClient {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcClient.class);
 
 	private final ObjectMapper mapper;
 	private final Random random;

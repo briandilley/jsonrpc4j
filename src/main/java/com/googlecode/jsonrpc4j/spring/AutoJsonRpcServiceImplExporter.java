@@ -4,8 +4,8 @@ import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.forName;
 import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
-import org.apache.logging.log4j.LogManager;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -55,7 +55,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(AutoJsonRpcServiceImplExporter.class);
 
 	private static final String PATH_PREFIX = "/";
 

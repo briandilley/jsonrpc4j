@@ -5,7 +5,8 @@ import static com.googlecode.jsonrpc4j.ReflectionUtil.findCandidateMethods;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 
@@ -67,7 +68,7 @@ public class JsonRpcBasicServer {
 	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER = "javax.jws.WebParam";
 	public static final String NAME = "name";
 	public static final String NULL = "null";
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcBasicServer.class);
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
 	private static Class<? extends Annotation> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
@@ -144,7 +145,7 @@ public class JsonRpcBasicServer {
 			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
 			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
-			logger.error(e);
+			logger.error("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME, e);
 		}
 	}
 

@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
 
@@ -23,7 +24,7 @@ import java.util.Set;
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public abstract class ProxyUtil {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(ProxyUtil.class);
 
 	/**
 	 * Creates a composite service using all of the given

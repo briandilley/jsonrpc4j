@@ -39,7 +39,8 @@ import org.apache.http.protocol.RequestContent;
 import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
@@ -96,7 +97,7 @@ import javax.net.ssl.SSLContext;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 public class JsonRpcHttpAsyncClient {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcHttpAsyncClient.class);
 
 	private static final AtomicBoolean initialized = new AtomicBoolean();
 	private static final AtomicLong nextId = new AtomicLong();
