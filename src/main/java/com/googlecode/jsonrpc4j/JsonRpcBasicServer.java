@@ -200,7 +200,7 @@ public class JsonRpcBasicServer {
 	 * @param serviceName the optional name of a service
 	 * @return the class
 	 */
-	Class<?>[] getHandlerInterfaces(final String serviceName) {
+	protected Class<?>[] getHandlerInterfaces(final String serviceName) {
 		if (remoteInterface != null) {
 			return new Class<?>[] { remoteInterface };
 		} else if (Proxy.isProxyClass(handler.getClass())) {
@@ -218,7 +218,7 @@ public class JsonRpcBasicServer {
 	 * @return the error code, or {@code 0} if none
 	 * @throws IOException on error
 	 */
-	private JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
+	protected JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
 		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
 		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
 		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
@@ -352,7 +352,7 @@ public class JsonRpcBasicServer {
 	 * @param methodName the JsonNode for the method
 	 * @return the name of the service, or <code>null</code>
 	 */
-	String getServiceName(final String methodName) {
+	protected String getServiceName(final String methodName) {
 		return null;
 	}
 
@@ -362,7 +362,7 @@ public class JsonRpcBasicServer {
 	 * @param methodName the JsonNode for the method
 	 * @return the name of the method that should be invoked
 	 */
-	String getMethodName(final String methodName) {
+	protected String getMethodName(final String methodName) {
 		return methodName;
 	}
 
@@ -373,7 +373,7 @@ public class JsonRpcBasicServer {
 	 * @param serviceName an optional service name
 	 * @return the handler to invoke the RPC call against
 	 */
-	Object getHandler(String serviceName) {
+	protected Object getHandler(String serviceName) {
 		return handler;
 	}
 

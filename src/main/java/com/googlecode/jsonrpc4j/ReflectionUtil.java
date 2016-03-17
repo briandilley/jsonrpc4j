@@ -125,7 +125,7 @@ public abstract class ReflectionUtil {
 	 * @param type the type of annotation
 	 * @return the annotation or null
 	 */
-	static <T extends Annotation> T getAnnotation(Method method, Class<T> type) {
+	public static <T extends Annotation> T getAnnotation(Method method, Class<T> type) {
 		for (Annotation a : getAnnotations(method)) {
 			if (type.isInstance(a)) { return type.cast(a); }
 		}
