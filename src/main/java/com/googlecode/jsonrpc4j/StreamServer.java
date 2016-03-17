@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.Closeable;
@@ -29,7 +30,7 @@ import javax.net.ssl.SSLException;
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public class StreamServer {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(StreamServer.class);
 
 	private static final long SERVER_SOCKET_SO_TIMEOUT = 5000;
 
@@ -128,7 +129,7 @@ public class StreamServer {
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			logger.debug(e);
+			logger.debug("Failed to close socket", e);
 		}
 	}
 

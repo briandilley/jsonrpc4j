@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,7 +21,7 @@ import javax.portlet.ResourceResponse;
  */
 @SuppressWarnings("unused")
 public class JsonRpcServer extends JsonRpcBasicServer {
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating

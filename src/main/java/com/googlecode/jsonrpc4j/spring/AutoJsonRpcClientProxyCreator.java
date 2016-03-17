@@ -4,8 +4,8 @@ import static java.lang.String.format;
 import static org.springframework.util.ClassUtils.convertClassNameToResourcePath;
 import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
 
-import org.apache.logging.log4j.LogManager;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -33,7 +33,7 @@ import java.net.URL;
 @SuppressWarnings("unused")
 public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, ApplicationContextAware {
 
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(AutoJsonRpcClientProxyCreator.class);
 	private ApplicationContext applicationContext;
 	private String scanPackage;
 	private URL baseUrl;

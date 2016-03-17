@@ -3,7 +3,8 @@ package com.googlecode.jsonrpc4j;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullObjectData;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullTextualData;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -17,7 +18,7 @@ import java.lang.reflect.InvocationTargetException;
 @SuppressWarnings("WeakerAccess")
 public enum DefaultExceptionResolver implements ExceptionResolver {
 	INSTANCE;
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(DefaultExceptionResolver.class);
 
 	/**
 	 * {@inheritDoc}

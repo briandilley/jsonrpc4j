@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.util;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
@@ -17,7 +18,7 @@ import java.io.PipedOutputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LocalThreadServer<T> extends Thread implements AutoCloseable {
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(LocalThreadServer.class);
 
 	private final InputStream serverInput = new PipedInputStream();
 	private final OutputStream serverOutput = new PipedOutputStream();

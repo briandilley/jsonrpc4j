@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,7 +41,7 @@ import java.util.Map;
 public class JsonRpcMultiServer extends JsonRpcServer {
 
 	public static final char DEFAULT_SEPARATOR = '.';
-	private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcMultiServer.class);
 
 	private final Map<String, Object> handlerMap;
 	private final Map<String, Class<?>> interfaceMap;

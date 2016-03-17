@@ -61,6 +61,7 @@ public class Util {
 		return makeJsonRpcRequestObject(id, methodName, params);
 	}
 
+	@SuppressWarnings("serial")
 	private static HashMap<String, Object> makeJsonRpcRequestObject(final Object id, final String methodName, final Object params) {
 		return new HashMap<String, Object>() {
 			{
