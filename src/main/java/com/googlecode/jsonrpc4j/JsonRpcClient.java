@@ -239,7 +239,7 @@ public class JsonRpcClient {
 		}
 	}
 
-	private void handleErrorResponse(ObjectNode jsonObject) throws Throwable {
+	protected void handleErrorResponse(ObjectNode jsonObject) throws Throwable {
 		if (hasError(jsonObject)) {
 			// resolve and throw the exception
 			if (exceptionResolver == null) {
@@ -297,7 +297,7 @@ public class JsonRpcClient {
 		return !jsonObject.has(ID) || jsonObject.get(ID) == null || !jsonObject.get(ID).asText().equals(id);
 	}
 
-	private boolean hasError(ObjectNode jsonObject) {
+	protected boolean hasError(ObjectNode jsonObject) {
 		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull();
 	}
 

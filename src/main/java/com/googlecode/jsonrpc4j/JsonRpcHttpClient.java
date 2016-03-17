@@ -103,14 +103,18 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 			try (OutputStream send = connection.getOutputStream()) {
 				super.invoke(methodName, argument, send);
 			}
+			final boolean useGzip = useGzip(connection);
 			// read and return value
 			try {
-				try (InputStream answer = getAnswerStream(connection, useGzip(connection))) {
+				try (InputStream answer = getStream(connection.getInputStream(), useGzip)) {
 					return super.readResponse(returnType, answer);
 				}
 			} catch (IOException e) {
-				// in case of error try to read response body and return it in exception
-				throw new HttpException(readErrorString(connection), e);
+				try (InputStream answer = getStream(connection.getErrorStream(), useGzip)) {
+					return super.readResponse(returnType, answer);
+				} catch (IOException ef) {
+					throw new HttpException(readErrorString(connection), ef);
+				}
 			}
 		} finally {
 			connection.disconnect();
@@ -162,10 +166,8 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 		return connection;
 	}
 
-	private InputStream getAnswerStream(final HttpURLConnection connection, final boolean useGzip) throws IOException {
-		InputStream inputStream = connection.getInputStream();
-		if (useGzip) return new GZIPInputStream(inputStream);
-		return inputStream;
+	private InputStream getStream(final InputStream inputStream, final boolean useGzip) throws IOException {
+		return useGzip ? new GZIPInputStream(inputStream) : inputStream;
 	}
 
 	private boolean useGzip(final HttpURLConnection connection) {

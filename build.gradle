@@ -16,7 +16,7 @@ plugins {
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
-version = '1.3.3-RC0'
+version = '1.3.3'
 group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.7
