@@ -496,7 +496,7 @@ public class JsonRpcClient {
 	 * @return the object returned by the JSON-RPC response
 	 * @throws Throwable on error
 	 */
-	Object readResponse(Type returnType, InputStream input) throws Throwable {
+	public Object readResponse(Type returnType, InputStream input) throws Throwable {
 		return readResponse(returnType, input, null);
 	}
 
