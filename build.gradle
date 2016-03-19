@@ -13,7 +13,6 @@ plugins {
     id 'nebula.nebula-javadoc-jar' version '2.2.2'
     id 'nebula.nebula-source-jar' version '2.2.2'
     id 'com.jfrog.bintray' version '1.6'
-    id 'ru.vyarus.animalsniffer' version '1.0.0'
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
@@ -77,7 +76,6 @@ dependencies {
     testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.5'
     testRuntime 'org.apache.logging.log4j:log4j-core:2.5'
 
-    signature 'org.codehaus.mojo.signature:java17:1.0@signature'
 }
 
 jar {
