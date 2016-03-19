@@ -6,10 +6,10 @@ JSON-RPC for the java programming language.  jsonrpc4j uses the
 objects to and from json objects (and other things related to
 JSON-RPC). 
 
-[![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.4.1/)
+[![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.4.2/)
 [ ![Download](https://api.bintray.com/packages/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/images/download.svg) ](https://bintray.com/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/_latestVersion)
 [![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
-[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.4.1.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.4.1...master)
+[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.4.2.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.4.2...master)
 [![Maintenance](https://img.shields.io/maintenance/yes/2016.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
 
 ## Features Include:
@@ -43,7 +43,7 @@ In `<dependencies>`:
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.4.1</version>
+		<version>1.4.2</version>
 	</dependency>
 
 ```
