@@ -9,7 +9,7 @@ package com.googlecode.jsonrpc4j;
  *
  * @param <T> the return type of the JSON-RPC call
  */
-interface JsonRpcCallback<T> {
+public interface JsonRpcCallback<T> {
 
 	/**
 	 * Called if the remote invocation was successful.
