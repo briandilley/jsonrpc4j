@@ -118,7 +118,7 @@ public class JsonRpcHttpAsyncClient {
 	 * 
 	 * @param serviceUrl the service end-point URL
 	 */
-	private JsonRpcHttpAsyncClient(URL serviceUrl) {
+	public JsonRpcHttpAsyncClient(URL serviceUrl) {
 		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
 	}
 
@@ -127,11 +127,11 @@ public class JsonRpcHttpAsyncClient {
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
 	 *
-	 * @param mapper the {@link ObjectMapper} to use for json<->java conversion
+	 * @param mapper the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
 	 * @param serviceUrl the service end-point URL
 	 * @param headers the headers
 	 */
-	private JsonRpcHttpAsyncClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
+	public JsonRpcHttpAsyncClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
 		this.mapper = mapper;
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
@@ -145,7 +145,7 @@ public class JsonRpcHttpAsyncClient {
 	 * @param serviceUrl the service end-point URL
 	 * @param headers the headers
 	 */
-	private JsonRpcHttpAsyncClient(URL serviceUrl, Map<String, String> headers) {
+	public JsonRpcHttpAsyncClient(URL serviceUrl, Map<String, String> headers) {
 		this(new ObjectMapper(), serviceUrl, headers);
 	}
 
