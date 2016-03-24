@@ -127,7 +127,7 @@ public class JsonRpcHttpAsyncClient {
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
 	 *
-	 * @param mapper the {@link ObjectMapper} to use for json<->java conversion
+	 * @param mapper the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
 	 * @param serviceUrl the service end-point URL
 	 * @param headers the headers
 	 */
