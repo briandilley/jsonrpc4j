@@ -79,8 +79,8 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	public void handle(ResourceRequest request, ResourceResponse response) throws IOException {
 		logger.debug("Handing ResourceRequest {}", request.getMethod());
 		response.setContentType(JSONRPC_CONTENT_TYPE);
-		OutputStream output = response.getPortletOutputStream();
 		InputStream input = getRequestStream(request);
+		OutputStream output = response.getPortletOutputStream();
 		handleRequest(input, output);
 		// fix to not flush within handleRequest() but outside so http status code can be set
 		output.flush();
