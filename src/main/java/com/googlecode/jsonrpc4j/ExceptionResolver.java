@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * Resolves client {@link Throwable}s from server generated {@link ObjectNode}.
  *
  */
-interface ExceptionResolver {
+public interface ExceptionResolver {
 
 	/**
 	 * Resolves the exception from the given json-rpc
