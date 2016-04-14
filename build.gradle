@@ -16,7 +16,7 @@ plugins {
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
-version = '1.4.3'
+version = '1.4.4'
 group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.7
@@ -167,4 +167,8 @@ bintray {
             released = new Date()
         }
     }
+}
+
+bintrayUpload {
+    dependsOn "publishToMavenLocal"
 }
