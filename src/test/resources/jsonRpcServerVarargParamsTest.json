@@ -1,0 +1,16 @@
+{
+  "jsonrpc": "2.0",
+  "method": "testMethodVararg",
+  "params": {
+    "one":"param one",
+    "two":"param two",
+    "three":3,
+    "four": {
+      "innerValueString": "four string",
+      "innerValueNumber": 44
+    },
+    "theNull": null
+  },
+  "id": 1
+}
+ 

@@ -307,7 +307,7 @@ public class JsonRpcBasicServer {
 		Object id			= parseId(idNode);
 
 		// find methods
-		Set<Method> methods = new HashSet<Method>();
+		Set<Method> methods = new HashSet<>();
 		methods.addAll(findMethods(getHandlerInterfaces(serviceName), methodName));
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
@@ -442,7 +442,7 @@ public class JsonRpcBasicServer {
 		return handler;
 	}
 
-    private static Class getJavaTypeforJsonType(JsonNodeType jsonType) {
+    private static Class getJavaTypeForJsonType(JsonNodeType jsonType) {
         switch (jsonType) {
             case ARRAY:
                 return List.class;
@@ -451,9 +451,9 @@ public class JsonRpcBasicServer {
             case BOOLEAN:
                 return Boolean.class;
             case MISSING:
-                return Void.TYPE;
+                return Object.class;
             case NULL:
-                return Void.TYPE;
+                return Object.class;
             case NUMBER:
                 return Double.class;
             case OBJECT:
@@ -495,15 +495,20 @@ public class JsonRpcBasicServer {
 		Object[] convertedParams;
         Type[] parameterTypes = m.getGenericParameterTypes();
         Object result;
-
-        if(m.getParameters().length==1 && m.getParameters()[0].isVarArgs()) {
+		if(m.getParameterTypes().length == 1 && m.isVarArgs()) {
+        // when move to java 8
+        // if(m.getParameters().length==1 && m.getParameters()[0].isVarArgs()) {
             convertedParams = new Object[params.size()];
             ObjectMapper mapper = new ObjectMapper();
 
             for (int i = 0; i < params.size(); i++) {
                 JsonNode jsonNode = params.get(i);
-                Class type = getJavaTypeforJsonType(jsonNode.getNodeType());
+                Class type = getJavaTypeForJsonType(jsonNode.getNodeType());
                 Object object = mapper.convertValue(jsonNode, type);
+                LOGGER.log(Level.FINEST,String.format(
+                        "[%s] param: %s -> %s",
+                        m.getName(), i, type.getName()
+                ));
                 convertedParams[i] = object;
             }
 
@@ -626,11 +631,8 @@ public class JsonRpcBasicServer {
         if(matchedMethod==null) {
             // map dynamic method
             for (Method method : methods) {
-                Parameter[] parameters = method.getParameters();
-                if(parameters.length!=1) {
-                    continue;
-                }
-                if(parameters[0].isVarArgs()) {
+                Class[] parameters = method.getParameterTypes();
+                if(parameters.length==1 && method.isVarArgs()) {
                     matchedMethod = new MethodAndArgs();
                     matchedMethod.method = method;
 

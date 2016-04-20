@@ -3,16 +3,23 @@ package com.googlecode.jsonrpc4j;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
+import junit.framework.Assert;
 import org.hamcrest.Matchers;
 import org.jmock.Expectations;
 import org.jmock.Mockery;
 import org.jmock.Sequence;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import static org.junit.Assert.*;
 
@@ -35,6 +42,15 @@ public class JsonRpcServerTest {
 
     private JsonRpcBasicServer jsonRpcServerAnnotatedMethod;
 
+    @BeforeClass
+    public static void init() {
+        Logger log = Logger.getLogger(JsonRpcBasicServer.class.getName());
+        log.setLevel(Level.ALL);
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new SimpleFormatter());
+        log.addHandler(handler);
+    }
+
 	@Before
 	public void setup() {
 		mapper = new ObjectMapper();
@@ -54,6 +70,17 @@ public class JsonRpcServerTest {
 	/////
 	/// INDEXED PARAMETER TESTS BELOW
 	/////
+
+	@Test
+	public void callMethodWithVarArgParameters() throws Exception {
+        jsonRpcServerAnnotatedMethod.handle(new ClassPathResource("jsonRpcServerVarargParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+        System.out.println(json);
+        Assert.assertTrue(json.has("result"));
+
+	}
 	
 	@Test
 	public void callMethodWithTooFewParameters() throws Exception {		
@@ -562,47 +589,71 @@ public class JsonRpcServerTest {
 
     private interface ServiceInterfaceWithCustomMethodNameAnnotation {
         @JsonRpcMethod("Test.custom")
-        public String customMethod();
+        String customMethod();
 
         @JsonRpcMethod("Test.custom2")
-        public String customMethod2(String stringParam1);
+        String customMethod2(String stringParam1);
+
+        @JsonRpcMethod("testMethodVararg")
+        String testMethodVararg(Object... params);
     }
 
 	private class Service implements ServiceInterface, ServiceInterfaceWithParamNameAnnotation,
             ServiceInterfaceWithCustomMethodNameAnnotation {
+        @Override
 		public String testMethod(String param1) {
 			return "success";
 		}
+        @Override
         public String customMethod() {
             return "custom";
         }
-
+        @Override
         public String customMethod2(String stringParam1) {
             return "custom2";
         }
-
+        @Override
 		public String overloadedMethod() {
 			return "noParam";
 		}
+        @Override
 		public String overloadedMethod(String stringParam1) {
 			return stringParam1;
 		}
+        @Override
 		public String overloadedMethod(String stringParam1, String stringParam2) {
 			return stringParam1+", "+stringParam2;
 		}
+        @Override
 		public String overloadedMethod(int intParam1) {
 			return "intParam"+intParam1;
 		}
+        @Override
 		public String overloadedMethod(int intParam1, int intParam2) {
 			return "intParam"+intParam1+", intParam"+intParam2;
 		}
-
+        @Override
 		public String methodWithoutRequiredParam(String stringParam1, String stringParam2) {
 			return stringParam1+", "+stringParam2;
 		}
-
+        @Override
         public String throwsMethod(String param1) throws TestException {
             throw new TestException("throwsMethod");
+        }
+
+        @Override
+        public String testMethodVararg(Object... params) {
+            Map<String, Object> paramsMap = VarArgsUtil.convertArgs(params);
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, Object> entry : paramsMap.entrySet()) {
+                sb.append(entry.getKey()).append(" -> ").append(entry.getValue());
+                sb.append("(").append(
+                        entry.getValue()==null?null:
+                        entry.getValue().getClass().getName()
+                ).append(")");
+                sb.append(";");
+            }
+            return sb.toString();
         }
 
     }
