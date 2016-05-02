@@ -33,12 +33,12 @@ import static com.googlecode.jsonrpc4j.util.Util.param2;
 public class DefaultHttpStatusCodeProviderTest {
 
 	@Mock(type = MockType.NICE)
-	private JsonRpcServerTest.ServiceInterface mockService;
+	private JsonRpcBasicServerTest.ServiceInterface mockService;
 	private JsonRpcServer jsonRpcServer;
 
 	@Before
 	public void setUp() throws Exception {
-		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcServerTest.ServiceInterface.class);
+		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcBasicServerTest.ServiceInterface.class);
 	}
 
 	@Test
