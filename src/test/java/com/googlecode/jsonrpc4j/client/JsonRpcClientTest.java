@@ -41,10 +41,6 @@ public class JsonRpcClientTest {
 		client.invoke("test", new Object[0], byteArrayOutputStream);
 		JsonNode node = readJSON(byteArrayOutputStream);
 		assertFalse(node.has(PARAMS));
-
-		client.invoke("test", null, byteArrayOutputStream);
-		node = readJSON(byteArrayOutputStream);
-		assertFalse(node.has(PARAMS));
 	}
 
 	private JsonNode readJSON(ByteArrayOutputStream byteArrayOutputStream) throws IOException {
