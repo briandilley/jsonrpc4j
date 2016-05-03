@@ -30,7 +30,6 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
-import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +37,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import net.iharder.Base64;
 
@@ -47,6 +47,8 @@ import net.iharder.Base64;
  */
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public class JsonRpcBasicServer {
+
+	private static Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
 
 	public static final String JSONRPC_CONTENT_TYPE = "application/json-rpc";
 
@@ -159,10 +161,75 @@ public class JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	static InputStream createInputStream(String method, String id, String params) throws IOException {
-		final String base64Encoded = new String(Base64.decode(params), StandardCharsets.UTF_8);
-		final String decodedParams = URLDecoder.decode(base64Encoded, StandardCharsets.UTF_8.name());
-		final String request = String.format("{'id': %s, 'method': '%s', 'params': '%s'}", id, method, decodedParams);
-		return new ByteArrayInputStream(request.getBytes(StandardCharsets.UTF_8));
+
+		StringBuilder envelope = new StringBuilder();
+
+		envelope.append("{\"");
+		envelope.append(JSONRPC);
+		envelope.append("\":\"");
+		envelope.append(VERSION);
+		envelope.append("\",\"");
+		envelope.append(ID);
+		envelope.append("\":");
+
+		// the 'id' value is assumed to be numerical.
+
+		if (null != id && 0 != id.length()) {
+			envelope.append(id);
+		}
+		else {
+			envelope.append("null");
+		}
+
+		envelope.append(",\"");
+		envelope.append(METHOD);
+		envelope.append("\":");
+
+		if (null!=method && 0!=method.length()) {
+			envelope.append('"');
+			envelope.append(method);
+			envelope.append('"');
+		}
+		else {
+			envelope.append("null");
+		}
+		envelope.append(",\"");
+		envelope.append(PARAMS);
+		envelope.append("\":");
+
+		if (null!=params && 0!=params.length()) {
+			String decodedParams;
+
+			// some specifications suggest that the GET "params" query parameter should be Base64 encoded and
+			// some suggest not.  Try to deal with both scenarios -- the code here was previously only doing
+			// Base64 decoding.
+			// http://www.simple-is-better.org/json-rpc/transport_http.html
+			// http://www.jsonrpc.org/historical/json-rpc-over-http.html#encoded-parameters
+
+			if(BASE64_PATTERN.matcher(params).matches()) {
+				decodedParams = new String(Base64.decode(params), StandardCharsets.UTF_8);
+			}
+			else {
+				switch(params.charAt(0)) {
+					case '[':
+					case '{':
+						decodedParams = params;
+						break;
+
+					default:
+						throw new IOException("badly formed 'param' parameter starting with; [" + params.charAt(0) + "]");
+				}
+			}
+
+			envelope.append(decodedParams);
+		}
+		else {
+			envelope.append("[]");
+		}
+
+		envelope.append('}');
+
+		return new ByteArrayInputStream(envelope.toString().getBytes(StandardCharsets.UTF_8));
 	}
 
 	public RequestInterceptor getRequestInterceptor() {
