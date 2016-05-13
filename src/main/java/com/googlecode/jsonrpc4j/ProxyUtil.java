@@ -151,7 +151,12 @@ public abstract class ProxyUtil {
 	}
 
 	private static String getMethodName(Method method) {
-		return method.getName();
+		final JsonRpcMethod jsonRpcMethod = ReflectionUtil.getAnnotation(method, JsonRpcMethod.class);
+		if(jsonRpcMethod == null){
+			return method.getName();
+		}else{
+			return jsonRpcMethod.value();
+		}
 	}
 
 	public static <T> T createClientProxy(Class<T> clazz, JsonRpcRestClient client) {
