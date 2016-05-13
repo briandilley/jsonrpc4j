@@ -256,7 +256,7 @@ public class JsonRpcClient {
 	}
 
 	private boolean isReturnTypeInvalid(Type returnType) {
-		if (returnType == null) {
+		if (returnType == null || returnType == Void.class) {
 			logger.warn("Server returned result but returnType is null");
 			return true;
 		}
