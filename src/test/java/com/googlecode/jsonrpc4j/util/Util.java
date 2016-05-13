@@ -7,10 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -89,6 +86,24 @@ public class Util {
 			elements.put(key, value);
 		}
 		return messageOfStream(1, methodName, elements);
+	}
+
+	public static ByteArrayOutputStream toByteArrayOutputStream(byte[] data) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream(data.length);
+		result.write(data);
+		return result;
+	}
+
+	public static ByteArrayOutputStream toByteArrayOutputStream(InputStream inputStream) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+		byte[] buffer = new byte[256];
+		int read;
+
+		while(-1 != (read = inputStream.read(buffer))) {
+			result.write(buffer,0,read);
+		}
+
+		return result;
 	}
 
 	public static JsonNode decodeAnswer(ByteArrayOutputStream byteArrayOutputStream) throws IOException {

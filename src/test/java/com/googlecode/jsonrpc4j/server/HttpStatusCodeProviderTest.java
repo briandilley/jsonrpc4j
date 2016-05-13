@@ -28,13 +28,13 @@ import static com.googlecode.jsonrpc4j.util.Util.param2;
 public class HttpStatusCodeProviderTest {
 
 	@Mock(type = MockType.NICE)
-	private JsonRpcServerTest.ServiceInterface mockService;
+	private JsonRpcBasicServerTest.ServiceInterface mockService;
 	private JsonRpcServer jsonRpcServer;
 	private HttpStatusCodeProvider httpStatusCodeProvider;
 
 	@Before
 	public void setUp() throws Exception {
-		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcServerTest.ServiceInterface.class);
+		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcBasicServerTest.ServiceInterface.class);
 		httpStatusCodeProvider = new HttpStatusCodeProvider() {
 			@Override
 			public int getHttpStatusCode(int resultCode) {
