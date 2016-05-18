@@ -158,7 +158,7 @@ the service implementation for the ServiceExporter):
 ```java
 package com.mycompany;
 public interface UserService {
-    User createUser(@JsonRpcParamName("theUserName") String userName, @JsonRpcParamName("thePassword") String password);
+    User createUser(@JsonRpcParam(value="theUserName") String userName, @JsonRpcParam(value="thePassword") String password);
 }
 ```
 
@@ -175,7 +175,7 @@ public interface UserService {
             code=-5678, message="User already exists", data="The Data"),
         @JsonRpcError(exception=Throwable.class,code=-187)
     })
-    User createUser(@JsonRpcParamName("theUserName") String userName, @JsonRpcParamName("thePassword") String password);
+    User createUser(@JsonRpcParam(value="theUserName") String userName, @JsonRpcParam(value="thePassword") String password);
 }
 ```
 
@@ -442,7 +442,7 @@ In this case, use the annotation @JsonRpcMethod on the service method.
 @JsonRpcService("/jsonrpc")
 public interface LibraryService {
     @JsonRpcMethod("VideoLibrary.GetTVShows")
-    List<TVShow> fetchTVShows(@JsonRpcParam("properties") final List<String> properties);
+    List<TVShow> fetchTVShows(@JsonRpcParam(value="properties") final List<String> properties);
 }
 ```
 
