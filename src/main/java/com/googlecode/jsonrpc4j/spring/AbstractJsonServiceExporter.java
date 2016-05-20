@@ -32,6 +32,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
+	private boolean shouldLogInvocationErrors = true;
 	private InvocationListener invocationListener = null;
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
@@ -71,6 +72,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		jsonRpcServer.setInvocationListener(invocationListener);
 		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
 		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
+		jsonRpcServer.setShouldLogInvocationErrors(shouldLogInvocationErrors);
 
 		exportService();
 	}
@@ -174,5 +176,9 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	 */
 	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
 		this.convertedParameterTransformer = convertedParameterTransformer;
+	}
+
+	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
+		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
 	}
 }

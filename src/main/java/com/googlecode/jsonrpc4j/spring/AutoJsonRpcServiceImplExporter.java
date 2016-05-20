@@ -68,6 +68,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
+	private boolean shouldLogInvocationErrors = true;
 	private InvocationListener invocationListener = null;
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
@@ -195,6 +196,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
 		builder.addPropertyValue("allowExtraParams", allowExtraParams);
 		builder.addPropertyValue("allowLessParams", allowLessParams);
+		builder.addPropertyValue("shouldLogInvocationErrors", shouldLogInvocationErrors);
 
 		defaultListableBeanFactory.registerBeanDefinition(servicePath, builder.getBeanDefinition());
 	}
@@ -291,4 +293,9 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
 		this.convertedParameterTransformer = convertedParameterTransformer;
 	}
+
+	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
+		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
+	}
+
 }
