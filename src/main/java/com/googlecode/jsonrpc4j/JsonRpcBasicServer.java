@@ -91,6 +91,7 @@ public class JsonRpcBasicServer {
 	private ErrorResolver errorResolver = null;
 	private InvocationListener invocationListener = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
+	private boolean shouldLogInvocationErrors = true;
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -371,7 +372,11 @@ public class JsonRpcBasicServer {
 
 	private JsonError handleError(OutputStream output, Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) throws IOException {
 		Throwable unwrappedException = getException(e);
-		logger.warn("Error in JSON-RPC Service", unwrappedException);
+
+		if (shouldLogInvocationErrors) {
+			logger.warn("Error in JSON-RPC Service", unwrappedException);
+		}
+
 		JsonError error = resolveError(methodArgs, unwrappedException);
 		writeAndFlushValueError(output, createResponseError(jsonRpc, id, error));
 		if (rethrowExceptions) { throw new RuntimeException(unwrappedException); }
@@ -730,7 +735,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private JsonError writeAndFlushValueError(OutputStream output, ErrorObjectWithJsonError value) throws IOException {
-		logger.warn("failed " + value);
+		logger.debug("failed {}", value);
 		writeAndFlushValue(output, value.node);
 		return value.error;
 	}
@@ -847,6 +852,17 @@ public class JsonRpcBasicServer {
 	 */
 	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
 		this.convertedParameterTransformer = convertedParameterTransformer;
+	}
+
+	/**
+	 * If true, then when errors arise in the invocation of JSON-RPC services, the error will be
+	 * logged together with the underlying stack trace.  When false, no error will be logged.
+	 * An alternative mechanism for logging invocation errors is to employ an implementation of
+	 * {@link InvocationListener}.
+	 */
+
+	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
+		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
 	}
 
 	private static class ErrorObjectWithJsonError {
