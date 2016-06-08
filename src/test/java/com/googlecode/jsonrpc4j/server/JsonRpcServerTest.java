@@ -92,6 +92,25 @@ public class JsonRpcServerTest {
 	}
 
 	@Test
+	public void test_contentType() throws Exception {
+		EasyMock.expect(mockService.testMethod("Whir?inaki")).andReturn("For?est");
+		EasyMock.replay(mockService);
+
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		request.setContentType("application/json");
+		request.setContent("{\"jsonrpc\":\"2.0\",\"id\":123,\"method\":\"testMethod\",\"params\":[\"Whir?inaki\"]}".getBytes(StandardCharsets.UTF_8));
+
+		jsonRpcServer.setContentType("flip/flop");
+
+		jsonRpcServer.handle(request, response);
+
+		assertTrue("flip/flop".equals(response.getContentType()));
+		checkSuccessfulResponse(response);
+	}
+
+	@Test
 	public void testGetMethod_base64Params() throws Exception {
 		EasyMock.expect(mockService.testMethod("Whir?inaki")).andReturn("For?est");
 		EasyMock.replay(mockService);
@@ -105,6 +124,7 @@ public class JsonRpcServerTest {
 
 		jsonRpcServer.handle(request, response);
 
+		assertTrue("application/json-rpc".equals(response.getContentType()));
 		checkSuccessfulResponse(response);
 	}
 
@@ -122,6 +142,7 @@ public class JsonRpcServerTest {
 
 		jsonRpcServer.handle(request, response);
 
+		assertTrue("application/json-rpc".equals(response.getContentType()));
 		checkSuccessfulResponse(response);
 	}
 

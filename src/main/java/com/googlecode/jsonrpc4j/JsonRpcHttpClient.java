@@ -37,6 +37,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	private int readTimeoutMillis = 60 * 1000 * 2;
 	private SSLContext sslContext = null;
 	private HostnameVerifier hostNameVerifier = null;
+	private String contentType = JSONRPC_CONTENT_TYPE;
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -202,7 +203,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	}
 
 	private void addHeaders(Map<String, String> extraHeaders, HttpURLConnection connection) {
-		connection.setRequestProperty("Content-Type", JSONRPC_CONTENT_TYPE);
+		connection.setRequestProperty("Content-Type", contentType);
 		for (Entry<String, String> entry : headers.entrySet()) {
 			connection.setRequestProperty(entry.getKey(), entry.getValue());
 		}
@@ -294,6 +295,13 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 */
 	public void setHostNameVerifier(HostnameVerifier hostNameVerifier) {
 		this.hostNameVerifier = hostNameVerifier;
+	}
+
+	/**
+	 * @param contentType the contentType to set
+	 */
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
 	}
 
 }

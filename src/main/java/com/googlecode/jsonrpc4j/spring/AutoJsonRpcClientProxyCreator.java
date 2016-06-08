@@ -38,6 +38,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 	private String scanPackage;
 	private URL baseUrl;
 	private ObjectMapper objectMapper;
+	private String contentType;
 
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -80,9 +81,15 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 				.rootBeanDefinition(JsonProxyFactoryBean.class)
 				.addPropertyValue("serviceUrl", appendBasePath(path))
 				.addPropertyValue("serviceInterface", className);
+
 		if (objectMapper != null) {
 			beanDefinitionBuilder.addPropertyValue("objectMapper", objectMapper);
 		}
+
+		if (contentType != null) {
+			beanDefinitionBuilder.addPropertyValue("contentType", contentType);
+		}
+
 		defaultListableBeanFactory.registerBeanDefinition(className + "-clientProxy", beanDefinitionBuilder.getBeanDefinition());
 	}
 
@@ -112,5 +119,9 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
+	}
+
+	public void setContentType(String contextType) {
+		this.contentType = contextType;
 	}
 }
