@@ -125,6 +125,15 @@ public class JsonRpcServerTest {
 		checkSuccessfulResponse(response);
 	}
 
+	@Test
+	public void testNullRequest() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/test-get");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		jsonRpcServer.handle(request, response);
+		assertTrue(MockHttpServletResponse.SC_BAD_REQUEST == response.getStatus());
+	}
+
 	// Service and service interfaces used in test
 
 	public interface ServiceInterface {

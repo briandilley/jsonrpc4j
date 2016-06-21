@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -112,7 +113,14 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		response.setContentType(JSONRPC_CONTENT_TYPE);
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
-		int result = handleRequest(input, output);
+		int result = ErrorResolver.JsonError.PARSE_ERROR.code;
+		try {
+			result = handleRequest(input, output);
+		} catch (Throwable t) {
+			if (StreamEndedException.class.isInstance(t)) {
+				logger.debug("Bad request: empty contents!");
+			}
+		}
 		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
 				: httpStatusCodeProvider.getHttpStatusCode(result);
 		response.setStatus(httpStatusCode);
@@ -132,7 +140,14 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
-		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
+		String method = request.getParameter(METHOD);
+		String id = request.getParameter(ID);
+		String params = request.getParameter(PARAMS);
+		if (method == null && id == null && params == null) {
+			return new ByteArrayInputStream(new byte[] {});
+		} else {
+			return createInputStream(method, id, params);
+		}
 	}
 
 }
