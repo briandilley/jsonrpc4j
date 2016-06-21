@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.util.LinkedMultiValueMap;
@@ -11,6 +12,7 @@ import com.googlecode.jsonrpc4j.JsonRpcClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.googlecode.jsonrpc4j.JsonRpcClientException;
 
 import java.lang.reflect.Type;
 import java.net.Proxy;
@@ -23,16 +25,18 @@ import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import org.springframework.http.converter.HttpMessageConversionException;
+import org.springframework.web.client.HttpStatusCodeException;
 
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 
 	private final URL serviceUrl;
-	private final RestTemplate restTemplate;
+	private final RestTemplate  restTemplate;
 
 	private final Map<String, String> headers = new HashMap<>();
 
-	private SslClientHttpRequestFactory requestFactory = null;
+	private final SslClientHttpRequestFactory requestFactory;
 
 	public JsonRpcRestClient(URL serviceUrl) {
 		this(serviceUrl, new ObjectMapper());
@@ -45,7 +49,8 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	@SuppressWarnings("WeakerAccess")
 	public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, RestTemplate restTemplate, Map<String, String> headers) {
 		super(mapper);
-		this.restTemplate = restTemplate != null ? restTemplate : new RestTemplate();
+		this.requestFactory = restTemplate != null ? null         : new SslClientHttpRequestFactory();
+		this.restTemplate   = restTemplate != null ? restTemplate : new RestTemplate(this.requestFactory);
 		this.serviceUrl = serviceUrl;
 
 		if (headers != null) {
@@ -83,6 +88,9 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 			this.restTemplate.setMessageConverters(restMessageConverters);
 		}
 
+		// use specific JSON-RPC erro handler
+		if (!(restTemplate.getErrorHandler() instanceof JsonRpcResponseErrorHandler))
+			restTemplate.setErrorHandler(JsonRpcResponseErrorHandler.INSTANCE);
 	}
 
 	public JsonRpcRestClient(URL serviceUrl, Map<String, String> headers) {
@@ -106,8 +114,8 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 
 	private SslClientHttpRequestFactory getRequestFactory() {
 		if (this.requestFactory == null) {
-			this.requestFactory = new SslClientHttpRequestFactory();
-		}
+			throw new IllegalStateException("Used external RequestTemplate instance");
+        }
 		return requestFactory;
 	}
 
@@ -181,7 +189,7 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	public Object invoke(String methodName, Object argument, Type returnType, Map<String, String> extraHeaders) throws Throwable {
 
 		final ObjectNode request = super.createRequest(methodName, argument);
-		MultiValueMap<String, String> httpHeaders = new LinkedMultiValueMap<>();
+		final MultiValueMap<String, String> httpHeaders = new LinkedMultiValueMap<>();
 
 		for (Map.Entry<String, String> entry : this.headers.entrySet()) {
 			httpHeaders.add(entry.getKey(), entry.getValue());
@@ -193,14 +201,23 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 			}
 		}
 
-		// NB: Too bad code. May be it is better to always use external requestFactory?
-		// im-scooter: It seems to be good idea to delegate all communications to RestTemplate....
-		if (this.requestFactory != null && restTemplate.getRequestFactory() != this.requestFactory) {
-			this.restTemplate.setRequestFactory(this.requestFactory);
-		}
-
 		final HttpEntity<ObjectNode> requestHttpEntity = new HttpEntity<>(request, httpHeaders);
-		ObjectNode response = this.restTemplate.postForObject(serviceUrl.toExternalForm(), requestHttpEntity, ObjectNode.class);
+		ObjectNode response;
+		try {
+			response = this.restTemplate.postForObject(serviceUrl.toExternalForm(), requestHttpEntity, ObjectNode.class);
+		} catch (HttpStatusCodeException httpStatusCodeException) {
+			 logger.error("HTTP Error code={} status={}\nresponse={}"
+				 ,  httpStatusCodeException.getStatusCode().value()
+				 , httpStatusCodeException.getStatusText()
+				 , httpStatusCodeException.getResponseBodyAsString()
+			 );
+			 final JsonNode jsonNode = getObjectMapper().readValue(httpStatusCodeException.getResponseBodyAsString(), JsonNode.class);
+			 throw new JsonRpcClientException(0, "Invalid JSON-RPC response", jsonNode);
+		} catch (HttpMessageConversionException httpMessageConversionException) {
+			logger.error("Can not convert (request/response)", httpMessageConversionException);
+			throw new  JsonRpcClientException(0, "Invalid JSON-RPC response", null);
+		}
+		
 		return this.readResponse(returnType, response);
 	}
 

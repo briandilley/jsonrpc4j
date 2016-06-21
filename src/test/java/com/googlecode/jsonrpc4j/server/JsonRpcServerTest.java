@@ -69,7 +69,7 @@ public class JsonRpcServerTest {
 
 		request.addParameter("id", Integer.toString(123));
 		// no method!
-		request.addParameter("params", net.iharder.Base64.encodeBytes(("[\"Whirinaki\"]").getBytes(StandardCharsets.UTF_8)));
+		request.addParameter("params", net.iharder.Base64.encodeBytes("[\"Whirinaki\"]".getBytes(StandardCharsets.UTF_8)));
 
 		jsonRpcServer.handle(request, response);
 
@@ -101,7 +101,7 @@ public class JsonRpcServerTest {
 
 		request.addParameter("id", Integer.toString(123));
 		request.addParameter("method", "testMethod");
-		request.addParameter("params", net.iharder.Base64.encodeBytes(("[\"Whir?inaki\"]").getBytes(StandardCharsets.UTF_8)));
+		request.addParameter("params", net.iharder.Base64.encodeBytes("[\"Whir?inaki\"]".getBytes(StandardCharsets.UTF_8)));
 
 		jsonRpcServer.handle(request, response);
 

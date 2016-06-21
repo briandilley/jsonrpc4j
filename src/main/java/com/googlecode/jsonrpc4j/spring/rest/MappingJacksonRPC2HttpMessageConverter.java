@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * JSON-RPC Message converter for Spring RestTemplate
@@ -23,7 +24,7 @@ import java.nio.charset.Charset;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverter<Object> {
 
-	private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 	private static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
 
 	private ObjectMapper objectMapper;
@@ -139,9 +140,8 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	protected void writeInternal(Object object, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
 
-		JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
-
-		JsonGenerator jsonGenerator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
+		final JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
+		final JsonGenerator jsonGenerator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
 		try {
 			if (this.prefixJson) {
 				jsonGenerator.writeRaw("{} && ");

@@ -34,7 +34,8 @@ import java.util.Random;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 public class JsonRpcClient {
 
-	private static final Logger logger = LoggerFactory.getLogger(JsonRpcClient.class);
+	// Toha: to use same logger in extension classes
+	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private final ObjectMapper mapper;
 	private final Random random;
