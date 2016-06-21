@@ -72,6 +72,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	private InvocationListener invocationListener = null;
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
+	private String contentType = null;
 
 	/**
 	 * Finds the beans to expose.
@@ -192,6 +193,10 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 			builder.addPropertyValue("convertedParameterTransformer", convertedParameterTransformer);
 		}
 
+		if (contentType != null) {
+			builder.addPropertyValue("contentType", contentType);
+		}
+
 		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
 		builder.addPropertyValue("allowExtraParams", allowExtraParams);
@@ -287,7 +292,6 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	}
 
 	/**
-	 *
 	 * @param convertedParameterTransformer the convertedParameterTransformer to set
 	 */
 	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
@@ -296,6 +300,10 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 
 	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
 		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
 	}
 
 }

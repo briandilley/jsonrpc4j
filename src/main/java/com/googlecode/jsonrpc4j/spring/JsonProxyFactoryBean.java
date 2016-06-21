@@ -39,6 +39,7 @@ class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements MethodInter
 	private ObjectMapper objectMapper = null;
 	private JsonRpcHttpClient jsonRpcHttpClient = null;
 	private Map<String, String> extraHttpHeaders = new HashMap<>();
+	private String contentType;
 
 	private SSLContext sslContext = null;
 	private HostnameVerifier hostNameVerifier = null;
@@ -73,6 +74,10 @@ class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements MethodInter
 			jsonRpcHttpClient.setRequestListener(requestListener);
 			jsonRpcHttpClient.setSslContext(sslContext);
 			jsonRpcHttpClient.setHostNameVerifier(hostNameVerifier);
+
+			if (contentType != null) {
+				jsonRpcHttpClient.setContentType(contentType);
+			}
 		} catch (MalformedURLException mue) {
 			throw new RuntimeException(mue);
 		}
@@ -160,4 +165,10 @@ class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements MethodInter
 		this.hostNameVerifier = hostNameVerifier;
 	}
 
+	/**
+	 * @param contentType the contentType to pass to JsonRpcClient
+	 */
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
 }

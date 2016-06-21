@@ -4,6 +4,8 @@
 
     <bean class="com.googlecode.jsonrpc4j.spring.serviceb.TemperatureImpl"/>
     <bean class="com.googlecode.jsonrpc4j.spring.serviceb.NoopTemperatureImpl"/>
-    <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter"/>
+    <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter">
+        <property name="contentType" value="ding/dong"/>
+    </bean>
 
 </beans>

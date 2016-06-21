@@ -23,6 +23,8 @@ import javax.portlet.ResourceResponse;
 public class JsonRpcServer extends JsonRpcBasicServer {
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
 
+	private String contentType = JSONRPC_CONTENT_TYPE;
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
@@ -78,7 +80,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public void handle(ResourceRequest request, ResourceResponse response) throws IOException {
 		logger.debug("Handing ResourceRequest {}", request.getMethod());
-		response.setContentType(JSONRPC_CONTENT_TYPE);
+		response.setContentType(contentType);
 		InputStream input = getRequestStream(request);
 		OutputStream output = response.getPortletOutputStream();
 		handleRequest(input, output);
@@ -109,7 +111,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		logger.debug("Handling HttpServletRequest {}", request);
-		response.setContentType(JSONRPC_CONTENT_TYPE);
+		response.setContentType(contentType);
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
 		int result = handleRequest(input, output);
@@ -133,6 +135,10 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
 		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
 	}
 
 }
