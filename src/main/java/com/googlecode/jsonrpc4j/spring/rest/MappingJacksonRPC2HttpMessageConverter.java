@@ -11,6 +11,7 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -25,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverter<Object> {
 
 	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-	private static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
+	public static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
 
 	private ObjectMapper objectMapper;
 
@@ -92,7 +93,7 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
 
-		if (!ObjectNode.class.isAssignableFrom(clazz)) { return false; }
+		if (!JsonNode.class.isAssignableFrom(clazz)) { return false; }
 
 		if (mediaType == null) { return true; }
 

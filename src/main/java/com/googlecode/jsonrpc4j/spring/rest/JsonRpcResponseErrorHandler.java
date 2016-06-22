@@ -39,14 +39,20 @@ public enum JsonRpcResponseErrorHandler
 	public boolean hasError(ClientHttpResponse response)
 		throws IOException
 	{
+		
 		final HttpStatus httpStatus = getHttpStatusCode(response);
 		
 		if (JSON_RPC_STATUES.contains(httpStatus.value()))
-			return false;
-		else 
-			return 
-				httpStatus.series() == HttpStatus.Series.CLIENT_ERROR ||
-				httpStatus.series() == HttpStatus.Series.SERVER_ERROR;
+		{
+			// Checks the content type. If application/json-rpc then allow handler to read message
+			final MediaType contentType =  response.getHeaders().getContentType();
+			if (MappingJacksonRPC2HttpMessageConverter.APPLICATION_JSON_RPC.isCompatibleWith(contentType))
+				return true;
+		}
+		
+		return 
+			httpStatus.series() == HttpStatus.Series.CLIENT_ERROR ||
+			httpStatus.series() == HttpStatus.Series.SERVER_ERROR;
 	}
 
 	@Override

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -31,7 +32,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 
-	private final URL serviceUrl;
+	private	final AtomicReference<URL> serviceUrl = new AtomicReference<>();
 	private final RestTemplate  restTemplate;
 
 	private final Map<String, String> headers = new HashMap<>();
@@ -51,7 +52,7 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 		super(mapper);
 		this.requestFactory = restTemplate != null ? null         : new SslClientHttpRequestFactory();
 		this.restTemplate   = restTemplate != null ? restTemplate : new RestTemplate(this.requestFactory);
-		this.serviceUrl = serviceUrl;
+		this.serviceUrl.set(serviceUrl);
 
 		if (headers != null) {
 			this.headers.putAll(headers);
@@ -166,6 +167,17 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 		}
 	}
 
+	public URL getServiceUrl()
+	{
+		return serviceUrl.get();
+	}
+
+	public void setServiceUrl(URL serviceUrl)
+	{
+		this.serviceUrl.set(serviceUrl);
+	}
+	
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -202,17 +214,17 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 		}
 
 		final HttpEntity<ObjectNode> requestHttpEntity = new HttpEntity<>(request, httpHeaders);
-		ObjectNode response;
+		JsonNode response;
+	
 		try {
-			response = this.restTemplate.postForObject(serviceUrl.toExternalForm(), requestHttpEntity, ObjectNode.class);
+			response = this.restTemplate.postForObject(serviceUrl.get().toExternalForm(), requestHttpEntity, ObjectNode.class);
 		} catch (HttpStatusCodeException httpStatusCodeException) {
 			 logger.error("HTTP Error code={} status={}\nresponse={}"
 				 ,  httpStatusCodeException.getStatusCode().value()
 				 , httpStatusCodeException.getStatusText()
 				 , httpStatusCodeException.getResponseBodyAsString()
 			 );
-			 final JsonNode jsonNode = getObjectMapper().readValue(httpStatusCodeException.getResponseBodyAsString(), JsonNode.class);
-			 throw new JsonRpcClientException(0, "Invalid JSON-RPC response", jsonNode);
+			 throw new JsonRpcClientException(0, "Invalid JSON-RPC response", null);
 		} catch (HttpMessageConversionException httpMessageConversionException) {
 			logger.error("Can not convert (request/response)", httpMessageConversionException);
 			throw new  JsonRpcClientException(0, "Invalid JSON-RPC response", null);

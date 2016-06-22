@@ -541,13 +541,14 @@ public class JsonRpcClient {
 	}
 
 	// Suppose than jsonObject is single and contains valid id :)
-	protected Object readResponse(Type returnType, ObjectNode jsonObject) throws Throwable {
+	protected Object readResponse(Type returnType, JsonNode jsonObject) throws Throwable {
 		return readResponse(returnType, jsonObject, null);
 	}
 
 	// Suppose than jsonObject is single and contains valid id :)
-	private Object readResponse(Type returnType, ObjectNode jsonObject, String id) throws Throwable {
-		raiseExceptionIfNotValidResponseObject(jsonObject);
+	private Object readResponse(Type returnType, JsonNode jsonNode, String id) throws Throwable {
+		raiseExceptionIfNotValidResponseObject(jsonNode);
+		final ObjectNode jsonObject = ObjectNode.class.cast(jsonNode);
 		notifyAnswerListener(jsonObject);
 		handleErrorResponse(jsonObject);
 		if (hasResult(jsonObject)) {
