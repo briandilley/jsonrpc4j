@@ -12,6 +12,7 @@ import com.googlecode.jsonrpc4j.JsonRpcClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.googlecode.jsonrpc4j.DefaultHttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.JsonRpcClientException;
 
 import java.lang.reflect.Type;
@@ -224,7 +225,10 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 				 , httpStatusCodeException.getStatusText()
 				 , httpStatusCodeException.getResponseBodyAsString()
 			 );
-			 throw new JsonRpcClientException(0, "Invalid JSON-RPC response", null);
+			 Integer jsonErrorCode = DefaultHttpStatusCodeProvider.INSTANCE.getJsonRpcCode(httpStatusCodeException.getStatusCode().value());
+			 if (jsonErrorCode==null)
+				 jsonErrorCode = httpStatusCodeException.getStatusCode().value();
+			 throw new JsonRpcClientException(jsonErrorCode, httpStatusCodeException.getStatusText(), null);
 		} catch (HttpMessageConversionException httpMessageConversionException) {
 			logger.error("Can not convert (request/response)", httpMessageConversionException);
 			throw new  JsonRpcClientException(0, "Invalid JSON-RPC response", null);
