@@ -39,6 +39,7 @@ public class JsonRpcClient {
 	private final ObjectMapper mapper;
 	private final Random random;
 	private RequestListener requestListener;
+	private RequestIDGenerator requestIDGenerator;
 	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
 	private Map<String, Object> additionalJsonContent = new HashMap<>();
 
@@ -58,6 +59,7 @@ public class JsonRpcClient {
 	public JsonRpcClient(ObjectMapper mapper) {
 		this.mapper = mapper;
 		this.random = new Random(System.currentTimeMillis());
+        this.requestIDGenerator = new RandomRequestIDGenerator();
 	}
 
 	public Map<String, Object> getAdditionalJsonContent() {
@@ -75,6 +77,15 @@ public class JsonRpcClient {
 	public void setRequestListener(RequestListener requestListener) {
 		this.requestListener = requestListener;
 	}
+
+    /**
+     * Set the {@link RequestIDGenerator}
+     *
+     * @param requestIDGenerator the {@link RequestIDGenerator}
+     */
+    public void setRequestIDGenerator(RequestIDGenerator requestIDGenerator) {
+        this.requestIDGenerator = requestIDGenerator;
+    }
 
 	/**
 	 * Invokes the given method on the remote service
@@ -111,7 +122,7 @@ public class JsonRpcClient {
 	 * @throws Throwable on error
 	 */
 	public Object invokeAndReadResponse(String methodName, Object argument, Type returnType, OutputStream output, InputStream input) throws Throwable {
-		return invokeAndReadResponse(methodName, argument, returnType, output, input, generateRandomId());
+		return invokeAndReadResponse(methodName, argument, returnType, output, input, this.requestIDGenerator.generateID());
 	}
 
 	/**
@@ -453,7 +464,7 @@ public class JsonRpcClient {
 	 * @throws IOException on error
 	 */
 	public void invoke(String methodName, Object argument, OutputStream output) throws IOException {
-		invoke(methodName, argument, output, generateRandomId());
+		invoke(methodName, argument, output, this.requestIDGenerator.generateID());
 	}
 
 	/**
@@ -518,7 +529,7 @@ public class JsonRpcClient {
 	}
 
 	protected ObjectNode createRequest(String methodName, Object argument) {
-		return internalCreateRequest(methodName, argument, generateRandomId());
+		return internalCreateRequest(methodName, argument, this.requestIDGenerator.generateID());
 	}
 
 	public ObjectNode createRequest(String methodName, Object argument, String id) {
@@ -598,4 +609,14 @@ public class JsonRpcClient {
 		void onBeforeResponseProcessed(JsonRpcClient client, ObjectNode response);
 	}
 
+    /**
+     * Default generator which returns random generated request ID.
+     */
+    class RandomRequestIDGenerator implements RequestIDGenerator {
+
+        @Override
+        public String generateID() {
+            return generateRandomId();
+        }
+    }
 }
