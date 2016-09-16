@@ -110,19 +110,19 @@ public class JsonRpcClientTest {
 
 	@Test
 	public void testRandomIDGeneration() throws IOException {
-		Map<String, Object> params = new HashMap<>();
-		params.put("hello", "test");
-		params.put("x", 1);
-		client.invoke("test", params, byteArrayOutputStream);
-		JsonNode node = readJSON(byteArrayOutputStream);
+        Map<String, Object> params = new HashMap<>();
+        params.put("hello", "test");
+        params.put("x", 1);
+        client.invoke("test", params, byteArrayOutputStream);
+        JsonNode node = readJSON(byteArrayOutputStream);
 
-		assertTrue(node.has(PARAMS));
-		assertTrue(node.get(PARAMS).isObject());
-		try {
-			long id = Long.parseLong(node.get(ID).asText());
-		} catch (NumberFormatException e) {
-			fail();
-		}
-	}
+        assertTrue(node.has(PARAMS));
+        assertTrue(node.get(PARAMS).isObject());
+        try {
+            Long.parseLong(node.get(ID).asText());
+        } catch (NumberFormatException e) {
+            fail();
+        }
+    }
 
 }
