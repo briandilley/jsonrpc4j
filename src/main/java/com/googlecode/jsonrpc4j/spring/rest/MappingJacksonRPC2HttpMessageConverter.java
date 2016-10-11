@@ -11,11 +11,13 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * JSON-RPC Message converter for Spring RestTemplate
@@ -23,8 +25,8 @@ import java.nio.charset.Charset;
 @SuppressWarnings({ "WeakerAccess", "unused" })
 class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverter<Object> {
 
-	private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-	private static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
+	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+	public static final MediaType APPLICATION_JSON_RPC = new MediaType("application", "json-rpc", DEFAULT_CHARSET);
 
 	private ObjectMapper objectMapper;
 
@@ -91,7 +93,7 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
 
-		if (!ObjectNode.class.isAssignableFrom(clazz)) { return false; }
+		if (!JsonNode.class.isAssignableFrom(clazz)) { return false; }
 
 		if (mediaType == null) { return true; }
 
@@ -139,9 +141,8 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	protected void writeInternal(Object object, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
 
-		JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
-
-		JsonGenerator jsonGenerator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
+		final JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
+		final JsonGenerator jsonGenerator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
 		try {
 			if (this.prefixJson) {
 				jsonGenerator.writeRaw("{} && ");

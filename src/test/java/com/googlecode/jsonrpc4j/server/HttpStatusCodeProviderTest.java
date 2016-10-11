@@ -55,7 +55,14 @@ public class HttpStatusCodeProviderTest {
 						return 1000;
 				}
 			}
+
+			@Override
+			public Integer getJsonRpcCode(int httpStatusCode)
+			{
+				return null;
+			}
 		};
+		
 		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
 	}
 

@@ -24,4 +24,13 @@ public interface HttpStatusCodeProvider {
 	 * @return the int representation of the HTTP status code that should be used by the JSON-RPC response.
 	 */
 	int getHttpStatusCode(int resultCode);
+	
+	/**
+	 * Returns result code for the given HTTP status code
+	 * @param httpStatusCode
+	 *		the int representation of the HTTP status code that should be used by the JSON-RPC response.
+	 * @return 
+	 *		resultCode the result code of the current JSON-RPC method call. This is used to look up the HTTP status
+	 */
+	Integer getJsonRpcCode(int httpStatusCode);
 }

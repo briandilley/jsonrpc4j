@@ -859,8 +859,8 @@ public class JsonRpcBasicServer {
 	 * logged together with the underlying stack trace.  When false, no error will be logged.
 	 * An alternative mechanism for logging invocation errors is to employ an implementation of
 	 * {@link InvocationListener}.
+	 * @param  shouldLogInvocationErrors see method description
 	 */
-
 	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
 		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
 	}
