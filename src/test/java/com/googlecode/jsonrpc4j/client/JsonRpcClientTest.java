@@ -1,10 +1,10 @@
 package com.googlecode.jsonrpc4j.client;
 
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import com.googlecode.jsonrpc4j.RequestIDGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,6 +86,43 @@ public class JsonRpcClientTest {
 		assertTrue(node.get(PARAMS).isObject());
 		assertEquals("test", node.get(PARAMS).get("hello").textValue());
 		assertEquals(1, node.get(PARAMS).get("x").intValue());
+	}
+
+	@Test
+	public void testIDGeneration() throws IOException {
+		client.setRequestIDGenerator(new RequestIDGenerator() {
+			@Override
+			public String generateID() {
+				return "test";
+			}
+		});
+
+		Map<String, Object> params = new HashMap<>();
+		params.put("hello", "test");
+		params.put("x", 1);
+		client.invoke("test", params, byteArrayOutputStream);
+		JsonNode node = readJSON(byteArrayOutputStream);
+
+		assertTrue(node.has(PARAMS));
+		assertTrue(node.get(PARAMS).isObject());
+		assertEquals("test", node.get(ID).asText());
+	}
+
+	@Test
+	public void testRandomIDGeneration() throws IOException {
+		Map<String, Object> params = new HashMap<>();
+		params.put("hello", "test");
+		params.put("x", 1);
+		client.invoke("test", params, byteArrayOutputStream);
+		JsonNode node = readJSON(byteArrayOutputStream);
+
+		assertTrue(node.has(PARAMS));
+		assertTrue(node.get(PARAMS).isObject());
+		try {
+			Long.parseLong(node.get(ID).asText());
+		} catch (NumberFormatException e) {
+			fail();
+		}
 	}
 
 }
