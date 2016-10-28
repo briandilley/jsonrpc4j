@@ -1,14 +1,12 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ACCEPT_ENCODING;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.CONTENT_ENCODING;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC_CONTENT_TYPE;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -18,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,6 +29,8 @@ import javax.net.ssl.SSLContext;
 @SuppressWarnings("unused")
 public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 
+	private static final String GZIP = "gzip";
+
 	private final Map<String, String> headers = new HashMap<>();
 	private URL serviceUrl;
 	private Proxy connectionProxy = Proxy.NO_PROXY;
@@ -38,6 +39,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	private SSLContext sslContext = null;
 	private HostnameVerifier hostNameVerifier = null;
 	private String contentType = JSONRPC_CONTENT_TYPE;
+	private boolean gzipRequests = false;
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -61,9 +63,28 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 * @param headers the headers
 	 */
 	public JsonRpcHttpClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
+		this(mapper, serviceUrl, headers, false, false);
+	}
+
+	/**
+	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
+	 * The headers provided in the {@code headers} map are added to every request
+	 * made to the {@code serviceUrl}.
+	 *
+	 * @param mapper     the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
+	 * @param serviceUrl the service end-point URL
+	 * @param headers    the headers
+	 * @param gzipRequests whether gzip the request
+	 * @param acceptGzipResponses whether accept gzip response
+	 */
+	public JsonRpcHttpClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers, boolean gzipRequests, boolean acceptGzipResponses) {
 		super(mapper);
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
+		this.gzipRequests = gzipRequests;
+		if (acceptGzipResponses) {
+			this.headers.put(ACCEPT_ENCODING, GZIP);
+		}
 	}
 
 	/**
@@ -99,11 +120,24 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	@Override
 	public Object invoke(String methodName, Object argument, Type returnType, Map<String, String> extraHeaders) throws Throwable {
 		HttpURLConnection connection = prepareConnection(extraHeaders);
-		connection.connect();
 		try {
-			try (OutputStream send = connection.getOutputStream()) {
-				super.invoke(methodName, argument, send);
+			if (this.gzipRequests) {
+				connection.setRequestProperty(CONTENT_ENCODING, GZIP);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try(GZIPOutputStream gos = new GZIPOutputStream(baos))
+				{
+					super.invoke(methodName, argument, gos);
+				}
+				connection.setFixedLengthStreamingMode(baos.size());
+				connection.connect();
+				connection.getOutputStream().write(baos.toByteArray());
+			} else {
+				connection.connect();
+				try (OutputStream send = connection.getOutputStream()) {
+					super.invoke(methodName, argument, send);
+				}
 			}
+
 			final boolean useGzip = useGzip(connection);
 			// read and return value
 			try {
@@ -172,8 +206,8 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	}
 
 	private boolean useGzip(final HttpURLConnection connection) {
-		String contentEncoding = connection.getHeaderField("Content-Encoding");
-		return contentEncoding != null && contentEncoding.equalsIgnoreCase("gzip");
+		String contentEncoding = connection.getHeaderField(CONTENT_ENCODING);
+		return contentEncoding != null && contentEncoding.equalsIgnoreCase(GZIP);
 	}
 
 	private static String readErrorString(final HttpURLConnection connection) {
