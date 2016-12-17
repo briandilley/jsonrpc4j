@@ -2,6 +2,7 @@ package com.googlecode.jsonrpc4j;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC_CONTENT_TYPE;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
@@ -110,6 +111,9 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 				try (InputStream answer = getStream(connection.getInputStream(), useGzip)) {
 					return super.readResponse(returnType, answer);
 				}
+			} catch (JsonMappingException e) {
+				// JsonMappingException inherits from IOException
+				throw e;
 			} catch (IOException e) {
 				try (InputStream answer = getStream(connection.getErrorStream(), useGzip)) {
 					return super.readResponse(returnType, answer);
