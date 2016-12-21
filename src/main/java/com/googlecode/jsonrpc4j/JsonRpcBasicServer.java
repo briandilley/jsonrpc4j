@@ -411,7 +411,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private boolean isValidRequest(ObjectNode node) {
-		return !backwardsCompatible || hasMethodAndVersion(node);
+		return backwardsCompatible || hasMethodAndVersion(node);
 	}
 
 	private boolean hasMethodAndVersion(ObjectNode node) {
