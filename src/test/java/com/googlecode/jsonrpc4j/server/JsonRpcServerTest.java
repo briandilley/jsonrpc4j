@@ -8,6 +8,7 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
 import org.easymock.MockType;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,11 +16,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
 import static com.googlecode.jsonrpc4j.util.Util.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -153,6 +155,86 @@ public class JsonRpcServerTest {
 
 		jsonRpcServer.handle(request, response);
 		assertTrue(MockHttpServletResponse.SC_BAD_REQUEST == response.getStatus());
+	}
+
+	@Test
+	public void testGzipResponse() throws IOException {
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		request.addHeader(ACCEPT_ENCODING, "gzip");
+		request.setContentType("application/json");
+		request.setContent("{\"jsonrpc\":\"2.0\",\"id\":123,\"method\":\"testMethod\",\"params\":[\"Whir?inaki\"]}".getBytes(StandardCharsets.UTF_8));
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class, true);
+		jsonRpcServer.handle(request, response);
+
+		byte[] compressed = response.getContentAsByteArray();
+		String sb = getCompressedResponseContent(compressed);
+
+		Assert.assertEquals(sb, "{\"jsonrpc\":\"2.0\",\"id\":123,\"result\":null}");
+		Assert.assertEquals("gzip", response.getHeader(CONTENT_ENCODING));
+	}
+
+	@Test
+	public void testGzipRequest() throws IOException {
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		request.addHeader(CONTENT_ENCODING, "gzip");
+		request.setContentType("application/json");
+		byte[] bytes = "{\"jsonrpc\":\"2.0\",\"id\":123,\"method\":\"testMethod\",\"params\":[\"Whir?inaki\"]}".getBytes(StandardCharsets.UTF_8);
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		GZIPOutputStream gos = new GZIPOutputStream(baos);
+		gos.write(bytes);
+		gos.close();
+
+		request.setContent(baos.toByteArray());
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class, true);
+		jsonRpcServer.handle(request, response);
+
+		String responseContent = new String(response.getContentAsByteArray(), StandardCharsets.UTF_8);
+		Assert.assertEquals(responseContent, "{\"jsonrpc\":\"2.0\",\"id\":123,\"result\":null}\n");
+		Assert.assertNull(response.getHeader(CONTENT_ENCODING));
+	}
+
+	@Test
+	public void testGzipRequestAndResponse() throws IOException {
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		request.addHeader(CONTENT_ENCODING, "gzip");
+		request.addHeader(ACCEPT_ENCODING, "gzip");
+		request.setContentType("application/json");
+		byte[] bytes = "{\"jsonrpc\":\"2.0\",\"id\":123,\"method\":\"testMethod\",\"params\":[\"Whir?inaki\"]}".getBytes(StandardCharsets.UTF_8);
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		GZIPOutputStream gos = new GZIPOutputStream(baos);
+		gos.write(bytes);
+		gos.close();
+
+		request.setContent(baos.toByteArray());
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class, true);
+		jsonRpcServer.handle(request, response);
+
+		byte[] compressed = response.getContentAsByteArray();
+		String sb = getCompressedResponseContent(compressed);
+
+		Assert.assertEquals(sb, "{\"jsonrpc\":\"2.0\",\"id\":123,\"result\":null}");
+		Assert.assertEquals("gzip", response.getHeader(CONTENT_ENCODING));
+	}
+
+	private String getCompressedResponseContent(byte[] compressed) throws IOException {
+		GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(compressed));
+		InputStreamReader inputStreamReader = new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8);
+		BufferedReader bufferedReader = new BufferedReader(inputStreamReader, 2048);
+		StringBuilder sb = new StringBuilder();
+		String readed;
+		while ((readed = bufferedReader.readLine()) != null) {
+			sb.append(readed);
+		}
+		return sb.toString();
 	}
 
 	// Service and service interfaces used in test

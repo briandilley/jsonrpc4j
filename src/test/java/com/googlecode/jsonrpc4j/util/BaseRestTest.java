@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,6 +11,8 @@ import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class BaseRestTest {
 
@@ -33,6 +37,11 @@ public abstract class BaseRestTest {
 
 	protected JsonRpcRestClient getClient() throws MalformedURLException {
 		return getClient(JettyServer.SERVLET);
+	}
+
+	protected JsonRpcHttpClient getHttpClient(boolean gzipRequests, boolean acceptGzipResponses) throws MalformedURLException {
+		Map<String, String> header = new HashMap<>();
+		return new JsonRpcHttpClient(new ObjectMapper(), new URL(jettyServer.getCustomServerUrlString(JettyServer.SERVLET)), header, gzipRequests, acceptGzipResponses);
 	}
 
 	protected JsonRpcRestClient getClient(final String servlet) throws MalformedURLException {

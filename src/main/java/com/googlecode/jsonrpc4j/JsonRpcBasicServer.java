@@ -56,6 +56,8 @@ public class JsonRpcBasicServer {
 	public static final String METHOD = "method";
 	public static final String JSONRPC = "jsonrpc";
 	public static final String ID = "id";
+	public static final String CONTENT_ENCODING = "Content-Encoding";
+	public static final String ACCEPT_ENCODING = "Accept-Encoding";
 
 	public static final String ERROR = "error";
 	public static final String ERROR_MESSAGE = "message";
