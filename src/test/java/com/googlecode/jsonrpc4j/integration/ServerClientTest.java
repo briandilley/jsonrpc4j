@@ -1,11 +1,14 @@
 package com.googlecode.jsonrpc4j.integration;
 
-import static com.googlecode.jsonrpc4j.util.Util.nonAsciiCharacters;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param3;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.googlecode.jsonrpc4j.ProxyUtil;
+import com.googlecode.jsonrpc4j.RequestInterceptor;
+import com.googlecode.jsonrpc4j.util.LocalThreadServer;
+import com.googlecode.jsonrpc4j.util.TestThrowable;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -13,51 +16,45 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.Mock;
-import org.easymock.MockType;
-
-import com.googlecode.jsonrpc4j.ProxyUtil;
-import com.googlecode.jsonrpc4j.RequestInterceptor;
-import com.googlecode.jsonrpc4j.util.LocalThreadServer;
-import com.googlecode.jsonrpc4j.util.TestThrowable;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import static com.googlecode.jsonrpc4j.util.Util.nonAsciiCharacters;
+import static com.googlecode.jsonrpc4j.util.Util.param1;
+import static com.googlecode.jsonrpc4j.util.Util.param3;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(EasyMockRunner.class)
 public class ServerClientTest {
-
+	
 	@Rule
 	public final ExpectedException expectedEx = ExpectedException.none();
-
+	
 	@Mock(type = MockType.NICE)
 	private Service mockService;
-
+	
 	private Service client;
 	private LocalThreadServer<Service> server;
-
+	
 	@Before
 	public void setUp() throws Exception {
 		server = new LocalThreadServer<>(mockService, Service.class);
 		client = server.client(Service.class);
 	}
-
+	
 	@After
 	public void tearDown() throws Exception {
 		server.close();
 	}
-
+	
 	@Test
 	public void allMethods() throws Throwable {
 		testCommon(client);
 	}
-
+	
 	private void testCommon(Service client) throws Throwable {
 		client.noOp();
 		EasyMock.expect(mockService.hello()).andReturn(param1);
 		EasyMock.expect(mockService.hello(nonAsciiCharacters)).andReturn(nonAsciiCharacters);
-
+		
 		EasyMock.replay(mockService);
 		client.noOp();
 		assertEquals(param1, client.hello());
@@ -67,15 +64,15 @@ public class ServerClientTest {
 		client.hashCode();
 		EasyMock.verify(mockService);
 	}
-
+	
 	@Test
 	public void testAllMethodsViaCompositeProxy() throws Throwable {
-		Object compositeService = ProxyUtil.createCompositeServiceProxy(ClassLoader.getSystemClassLoader(), new Object[] { client },
-				new Class<?>[] { Service.class }, true);
+		Object compositeService = ProxyUtil.createCompositeServiceProxy(ClassLoader.getSystemClassLoader(), new Object[]{client},
+				new Class<?>[]{Service.class}, true);
 		Service clientService = (Service) compositeService;
 		testCommon(clientService);
 	}
-
+	
 	@Test
 	public void testNoArgFuncCallException() throws Throwable {
 		final String message = "testing";
@@ -86,7 +83,7 @@ public class ServerClientTest {
 		client.hello();
 		EasyMock.verify(mockService);
 	}
-
+	
 	@Test
 	public void testInterceptorDoingNothingCalled() throws Throwable {
 		EasyMock.expect(mockService.hello()).andReturn(param1);
@@ -98,7 +95,7 @@ public class ServerClientTest {
 		assertEquals(param1, client.hello());
 		EasyMock.verify(interceptorMock, mockService);
 	}
-
+	
 	@Test
 	public void testInterceptorRaisesException() throws Throwable {
 		EasyMock.expect(mockService.hello()).andReturn(param1);
@@ -112,7 +109,7 @@ public class ServerClientTest {
 		client.hello();
 		EasyMock.verify(interceptorMock, mockService);
 	}
-
+	
 	@Test
 	public void testOneArgFuncCallException() throws Throwable {
 		final String name = "uranus";
@@ -124,7 +121,7 @@ public class ServerClientTest {
 		client.hello(name);
 		EasyMock.verify(mockService);
 	}
-
+	
 	@Test
 	public void undeclaredException() {
 		final String message = "testing";
@@ -135,7 +132,7 @@ public class ServerClientTest {
 		expectedEx.expectMessage(message);
 		client.undeclaredExceptionThrown();
 	}
-
+	
 	@Test
 	public void unresolvedException() throws Throwable {
 		final String message = "testing";
@@ -146,17 +143,17 @@ public class ServerClientTest {
 		expectedEx.expectMessage(message);
 		client.unresolvedExceptionThrown();
 	}
-
+	
 	public interface Service {
 		void noOp();
-
+		
 		String hello() throws Throwable;
-
+		
 		String hello(String world) throws Throwable;
-
+		
 		void unresolvedExceptionThrown() throws Throwable;
-
+		
 		void undeclaredExceptionThrown();
 	}
-
+	
 }

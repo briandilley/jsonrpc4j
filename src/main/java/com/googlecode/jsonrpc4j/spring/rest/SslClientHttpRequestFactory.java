@@ -2,12 +2,11 @@ package com.googlecode.jsonrpc4j.spring.rest;
 
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 
 /**
  * Implementation of {@link org.springframework.http.client.ClientHttpRequestFactory} that creates HTTPS connection

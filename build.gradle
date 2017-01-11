@@ -1,18 +1,18 @@
 plugins {
     id 'java'
-    id 'nebula.optional-base' version '3.0.3'
-    id 'nebula.provided-base' version '3.0.3'
+    id 'nebula.optional-base' version '3.1.0'
+    id 'nebula.provided-base' version '3.1.0'
     id 'findbugs'
     id 'pmd'
     id 'jacoco'
     id 'build-announcements'
-    id 'nebula.info' version '3.0.3'
-    id 'com.github.ben-manes.versions' version '0.12.0'
+    id 'nebula.info' version '3.4.1'
+    id 'com.github.ben-manes.versions' version '0.13.0'
     id 'osgi'
     id 'maven-publish'
     id 'nebula.nebula-javadoc-jar' version '2.2.2'
     id 'nebula.nebula-source-jar' version '2.2.2'
-    id 'com.jfrog.bintray' version '1.6'
+    id 'com.jfrog.bintray' version '1.7.3'
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
@@ -26,6 +26,9 @@ compileJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
+test {
+    maxParallelForks 5
+}
 compileTestJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
@@ -37,11 +40,11 @@ repositories {
 
 dependencies {
     ext {
-        jacksonVersion = '2.7.2'
-        springVersion = '4.2.5.RELEASE'
-        springBotVersion = '1.3.3.RELEASE'
-        jettyVersion = '9.3.8.RC0'
-        slf4jVersion = '1.7.9'
+        jacksonVersion = '2.8.5'
+        springVersion = '4.3.5.RELEASE'
+        springBotVersion = '1.4.3.RELEASE'
+        jettyVersion = '9.4.0.RC3'
+        slf4jVersion = '1.7.22'
     }
 
     compile 'net.iharder:base64:2.3.9'
@@ -59,7 +62,7 @@ dependencies {
     compile "org.springframework:spring-webmvc:${springVersion}", optional
 
     compile 'commons-codec:commons-codec:1.10', optional
-    compile 'org.apache.httpcomponents:httpcore-nio:4.4.4', optional
+    compile 'org.apache.httpcomponents:httpcore-nio:4.4.5', optional
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.easymock:easymock:3.4'
@@ -73,22 +76,22 @@ dependencies {
     testCompile("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.5'
-    testRuntime 'org.apache.logging.log4j:log4j-core:2.5'
+    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.7'
+    testRuntime 'org.apache.logging.log4j:log4j-core:2.7'
 
 }
 
 jar {
     manifest {
-        instruction 'Import-Package', 
-            'org.aopalliance.intercept;resolution:="optional"',
-            'org.apache.http.*;resolution:="optional"',
-            'org.springframework.*;resolution:="optional"',
-            'org.apache.commons.logging;resolution:="optional"',
-            'javax.portlet;resolution:="optional"',
-            'javax.servlet*;version=0.0.0',
-            '*'
-  }
+        instruction 'Import-Package',
+                'org.aopalliance.intercept;resolution:="optional"',
+                'org.apache.http.*;resolution:="optional"',
+                'org.springframework.*;resolution:="optional"',
+                'org.apache.commons.logging;resolution:="optional"',
+                'javax.portlet;resolution:="optional"',
+                'javax.servlet*;version=0.0.0',
+                '*'
+    }
 }
 
 jacoco {

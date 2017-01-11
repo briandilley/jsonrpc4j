@@ -12,10 +12,9 @@ package com.googlecode.jsonrpc4j;
  * The default implementation {@link DefaultHttpStatusCodeProvider} follows the rules defined in the
  * <a href="http://www.jsonrpc.org/historical/json-rpc-over-http.html">JSON-RPC over HTTP</a> document.
  * </p>
- *
  */
 public interface HttpStatusCodeProvider {
-
+	
 	/**
 	 * Returns an HTTP status code for the given response and result code.
 	 *
@@ -27,10 +26,9 @@ public interface HttpStatusCodeProvider {
 	
 	/**
 	 * Returns result code for the given HTTP status code
-	 * @param httpStatusCode
-	 *		the int representation of the HTTP status code that should be used by the JSON-RPC response.
-	 * @return 
-	 *		resultCode the result code of the current JSON-RPC method call. This is used to look up the HTTP status
+	 *
+	 * @param httpStatusCode the int representation of the HTTP status code that should be used by the JSON-RPC response.
+	 * @return resultCode the result code of the current JSON-RPC method call. This is used to look up the HTTP status
 	 */
 	Integer getJsonRpcCode(int httpStatusCode);
 }

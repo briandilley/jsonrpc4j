@@ -1,21 +1,18 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import org.springframework.web.HttpRequestHandler;
-
 import com.googlecode.jsonrpc4j.JsonRpcServer;
-
-import java.io.IOException;
+import org.springframework.web.HttpRequestHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * {@link HttpRequestHandler} that exports services using Json
  * according to the JSON-RPC proposal specified at:
  * <a href="http://groups.google.com/group/json-rpc">
  * http://groups.google.com/group/json-rpc</a>.
- *
  */
 class JsonServiceExporter extends AbstractJsonServiceExporter implements HttpRequestHandler {
 

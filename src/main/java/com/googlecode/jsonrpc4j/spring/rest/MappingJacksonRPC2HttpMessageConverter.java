@@ -1,5 +1,11 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -8,13 +14,6 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.util.Assert;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * JSON-RPC Message converter for Spring RestTemplate
  */
-@SuppressWarnings({ "WeakerAccess", "unused" })
+@SuppressWarnings({"WeakerAccess", "unused"})
 class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverter<Object> {
 
 	private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
@@ -84,7 +83,7 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	 * syntactically invalid as a script so that it cannot be hijacked. This prefix does not affect the evaluation of
 	 * JSON, but if JSON validation is performed on the string, the prefix would need to be ignored.
 	 *
-	 * @param prefixJson whether the JSON should be prefixed 
+	 * @param prefixJson whether the JSON should be prefixed
 	 */
 	public void setPrefixJson(boolean prefixJson) {
 		this.prefixJson = prefixJson;
@@ -93,13 +92,19 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	@Override
 	public boolean canRead(Class<?> clazz, MediaType mediaType) {
 
-		if (!JsonNode.class.isAssignableFrom(clazz)) { return false; }
+		if (!JsonNode.class.isAssignableFrom(clazz)) {
+			return false;
+		}
 
-		if (mediaType == null) { return true; }
+		if (mediaType == null) {
+			return true;
+		}
 
 		for (MediaType supportedMediaType : getSupportedMediaTypes()) {
 			// we can't read multipart
-			if (supportedMediaType.includes(mediaType)) { return true; }
+			if (supportedMediaType.includes(mediaType)) {
+				return true;
+			}
 		}
 		return false;
 
@@ -108,12 +113,18 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 	@Override
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
 
-		if (!ObjectNode.class.isAssignableFrom(clazz)) { return false; }
+		if (!ObjectNode.class.isAssignableFrom(clazz)) {
+			return false;
+		}
 
-		if (mediaType == null || MediaType.ALL.equals(mediaType)) { return true; }
+		if (mediaType == null || MediaType.ALL.equals(mediaType)) {
+			return true;
+		}
 
 		for (MediaType supportedMediaType : getSupportedMediaTypes()) {
-			if (supportedMediaType.isCompatibleWith(mediaType)) { return true; }
+			if (supportedMediaType.isCompatibleWith(mediaType)) {
+				return true;
+			}
 		}
 
 		return false;
@@ -163,7 +174,9 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 		if (contentType != null && contentType.getCharSet() != null) {
 			Charset charset = contentType.getCharSet();
 			for (JsonEncoding encoding : JsonEncoding.values()) {
-				if (charset.name().equals(encoding.getJavaName())) { return encoding; }
+				if (charset.name().equals(encoding.getJavaName())) {
+					return encoding;
+				}
 			}
 		}
 		return JsonEncoding.UTF8;

@@ -1,11 +1,5 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,9 +11,16 @@ import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
-public enum JsonRpcResponseErrorHandler
-	implements ResponseErrorHandler {
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
 
+public enum JsonRpcResponseErrorHandler
+		implements ResponseErrorHandler {
+	
 	INSTANCE;
 	
 	/**
@@ -28,8 +29,7 @@ public enum JsonRpcResponseErrorHandler
 	private final Set<Integer> JSON_RPC_STATUES = new HashSet<Integer>();
 	
 	
-	private JsonRpcResponseErrorHandler()
-	{
+	private JsonRpcResponseErrorHandler() {
 		JSON_RPC_STATUES.add(HttpURLConnection.HTTP_INTERNAL_ERROR);
 		JSON_RPC_STATUES.add(HttpURLConnection.HTTP_BAD_REQUEST);
 		JSON_RPC_STATUES.add(HttpURLConnection.HTTP_NOT_FOUND);
@@ -37,28 +37,25 @@ public enum JsonRpcResponseErrorHandler
 	
 	@Override
 	public boolean hasError(ClientHttpResponse response)
-		throws IOException
-	{
+			throws IOException {
 		
 		final HttpStatus httpStatus = getHttpStatusCode(response);
 		
-		if (JSON_RPC_STATUES.contains(httpStatus.value()))
-		{
+		if (JSON_RPC_STATUES.contains(httpStatus.value())) {
 			// Checks the content type. If application/json-rpc then allow handler to read message
-			final MediaType contentType =  response.getHeaders().getContentType();
+			final MediaType contentType = response.getHeaders().getContentType();
 			if (MappingJacksonRPC2HttpMessageConverter.APPLICATION_JSON_RPC.isCompatibleWith(contentType))
 				return true;
 		}
 		
-		return 
-			httpStatus.series() == HttpStatus.Series.CLIENT_ERROR ||
-			httpStatus.series() == HttpStatus.Series.SERVER_ERROR;
+		return
+				httpStatus.series() == HttpStatus.Series.CLIENT_ERROR ||
+						httpStatus.series() == HttpStatus.Series.SERVER_ERROR;
 	}
-
+	
 	@Override
 	public void handleError(ClientHttpResponse response)
-		throws IOException
-	{
+			throws IOException {
 		final HttpStatus statusCode = getHttpStatusCode(response);
 		
 		switch (statusCode.series()) {
@@ -78,27 +75,25 @@ public enum JsonRpcResponseErrorHandler
 		final HttpStatus statusCode;
 		try {
 			statusCode = response.getStatusCode();
-		}
-		catch (IllegalArgumentException ex) {
+		} catch (IllegalArgumentException ex) {
 			throw new UnknownHttpStatusCodeException(response.getRawStatusCode(),
 					response.getStatusText(), response.getHeaders(), getResponseBody(response), getCharset(response));
 		}
 		return statusCode;
 	}
-
+	
 	private byte[] getResponseBody(ClientHttpResponse response) {
 		try {
 			final InputStream responseBody = response.getBody();
 			if (responseBody != null) {
 				return FileCopyUtils.copyToByteArray(responseBody);
 			}
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			throw new RuntimeException(ex.getMessage(), ex);
 		}
 		return new byte[0];
 	}
-
+	
 	private Charset getCharset(ClientHttpResponse response) {
 		HttpHeaders headers = response.getHeaders();
 		MediaType contentType = headers.getContentType();

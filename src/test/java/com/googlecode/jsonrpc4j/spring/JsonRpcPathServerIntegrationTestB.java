@@ -15,7 +15,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * <p>This test replaces {@link JsonRpcPathServerIntegrationTest} and uses the new class
@@ -59,11 +62,11 @@ public class JsonRpcPathServerIntegrationTestB {
 		// check that the no-op was also successfully configured in the context.
 
 		{
-			Map<String,? extends Temperature> beans  = applicationContext.getBeansOfType(Temperature.class);
+			Map<String, ? extends Temperature> beans = applicationContext.getBeansOfType(Temperature.class);
 			assertSame(2, beans.size());
 			Set<Class<? extends Temperature>> beanClasses = new HashSet<>();
 
-			for(Temperature temperature : beans.values()) {
+			for (Temperature temperature : beans.values()) {
 				beanClasses.add(temperature.getClass());
 			}
 

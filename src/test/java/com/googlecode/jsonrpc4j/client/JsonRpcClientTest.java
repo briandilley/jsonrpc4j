@@ -1,23 +1,24 @@
 package com.googlecode.jsonrpc4j.client;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
-import static org.junit.Assert.*;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.RequestIDGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.googlecode.jsonrpc4j.JsonRpcClient;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class JsonRpcClientTest {
 
@@ -49,7 +50,7 @@ public class JsonRpcClientTest {
 
 	@Test
 	public void testInvokeArrayParams() throws Throwable {
-		client.invoke("test", new Object[] { 1, 2 }, byteArrayOutputStream);
+		client.invoke("test", new Object[]{1, 2}, byteArrayOutputStream);
 		JsonNode node = readJSON(byteArrayOutputStream);
 
 		assertTrue(node.has(PARAMS));
@@ -67,7 +68,7 @@ public class JsonRpcClientTest {
 				put(auth, authValue);
 			}
 		});
-		client.invoke("test", new Object[] { 1, 2 }, byteArrayOutputStream);
+		client.invoke("test", new Object[]{1, 2}, byteArrayOutputStream);
 		JsonNode node = readJSON(byteArrayOutputStream);
 
 		assertTrue(node.has(auth));

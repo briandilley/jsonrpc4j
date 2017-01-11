@@ -9,6 +9,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 import static com.googlecode.jsonrpc4j.server.DefaultHttpStatusCodeProviderTest.assertHttpStatusCodeForJsonRpcRequest;
 import static com.googlecode.jsonrpc4j.util.Util.intParam1;
 import static com.googlecode.jsonrpc4j.util.Util.intParam2;
@@ -26,71 +33,71 @@ import static com.googlecode.jsonrpc4j.util.Util.param2;
  */
 @RunWith(EasyMockRunner.class)
 public class HttpStatusCodeProviderTest {
-
+	
 	@Mock(type = MockType.NICE)
 	private JsonRpcBasicServerTest.ServiceInterface mockService;
 	private JsonRpcServer jsonRpcServer;
 	private HttpStatusCodeProvider httpStatusCodeProvider;
-
+	
 	@Before
 	public void setUp() throws Exception {
 		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcBasicServerTest.ServiceInterface.class);
 		httpStatusCodeProvider = new HttpStatusCodeProvider() {
 			@Override
 			public int getHttpStatusCode(int resultCode) {
-				switch (resultCode) {
-					case -32600:
-						return 1001;
-					case -32700:
-						return 1002;
-					case -32601:
-						return 1003;
-					case -32602:
-						return 1004;
-					case -32002:
-						return 1005;
-					case -32001:
-						return 1006;
-					default:
-						return 1000;
+				if (resultCode == PARSE_ERROR.code) {
+					return 1002;
+				} else if (resultCode == INVALID_REQUEST.code) {
+					return 1001;
+				} else if (resultCode == METHOD_NOT_FOUND.code) {
+					return 1003;
+				} else if (resultCode == METHOD_PARAMS_INVALID.code) {
+					return 1004;
+				} else if (resultCode == INTERNAL_ERROR.code) {
+					return 1007;
+				} else if (resultCode == ERROR_NOT_HANDLED.code) {
+					return 1006;
+				} else if (resultCode == BULK_ERROR.code) {
+					return 1005;
+				} else {
+					return 1000;
 				}
 			}
-
+			
 			@Override
-			public Integer getJsonRpcCode(int httpStatusCode)
-			{
+			public Integer getJsonRpcCode(int httpStatusCode) {
 				return null;
 			}
 		};
 		
 		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
 	}
-
+	
 	@Test
 	public void http1001ForInvalidRequest() throws Exception {
-		assertHttpStatusCodeForJsonRpcRequest(invalidJsonRpcRequestStream(), 1001, jsonRpcServer);
+		assertHttpStatusCodeForJsonRpcRequest(invalidJsonRpcRequestStream(), 1003, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1002ForParseError() throws Exception {
 		assertHttpStatusCodeForJsonRpcRequest(invalidJsonStream(), 1002, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1000ForValidRequest() throws Exception {
 		assertHttpStatusCodeForJsonRpcRequest(messageWithListParamsStream(1, "testMethod", param1), 1000, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1003ForNonExistingMethod() throws Exception {
 		assertHttpStatusCodeForJsonRpcRequest(messageWithListParamsStream(1, "nonExistingMethod", param1), 1003, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1004ForInvalidMethodParameters() throws Exception {
 		assertHttpStatusCodeForJsonRpcRequest(messageWithListParamsStream(1, "testMethod", param1, param2), 1004, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1005ForBulkErrors() throws Exception {
 		assertHttpStatusCodeForJsonRpcRequest(
@@ -99,12 +106,12 @@ public class HttpStatusCodeProviderTest {
 						messageWithListParams(2, "overloadedMethod", intParam1, intParam2)
 				), 1005, jsonRpcServer);
 	}
-
+	
 	@Test
 	public void http1006ForErrorNotHandled() throws Exception {
 		JsonRpcServer server = new JsonRpcServer(mapper, mockService, JsonRpcErrorsTest.ServiceInterfaceWithoutAnnotation.class);
 		server.setHttpStatusCodeProvider(httpStatusCodeProvider);
 		assertHttpStatusCodeForJsonRpcRequest(messageWithListParamsStream(1, "testMethod"), 1006, server);
 	}
-
+	
 }

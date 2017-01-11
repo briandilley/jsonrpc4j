@@ -8,15 +8,14 @@ import java.lang.annotation.Target;
 /**
  * Annotation for holding an array of @JsonRpcError annotations
  * for a method.
- *
  */
 @SuppressWarnings("WeakerAccess")
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonRpcErrors {
-
+	
 	/**
-	 * @return  the errors list.
+	 * @return the errors list.
 	 */
 	JsonRpcError[] value();
 }

@@ -1,12 +1,10 @@
 package com.googlecode.jsonrpc4j;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ERROR;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.METHOD;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
-
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
@@ -42,12 +40,7 @@ import org.apache.http.protocol.RequestUserAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,12 +57,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.net.ssl.SSLContext;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ERROR;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.METHOD;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 
 /**
  * Implements an asynchronous JSON-RPC 2.0 HTTP client. This class has a
  * dependency on Apache Commons Codec, Apache
- * 
+ * <p>
  * Because this implementation uses an HTTP request pool, timeouts are
  * controlled at a global level, rather than per-request.
  * <p>
@@ -91,14 +89,14 @@ import javax.net.ssl.SSLContext;
  * <li>com.googlecode.jsonrpc4j.async.reactor.threads - number of asynchronous
  * IO reactor threads, default is 2 (more than sufficient for most clients)</li>
  * </ul>
- * 
+ *
  * @author Brett Wooldridge
  */
-@SuppressWarnings({ "WeakerAccess", "unused" })
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class JsonRpcHttpAsyncClient {
-
+	
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcHttpAsyncClient.class);
-
+	
 	private static final AtomicBoolean initialized = new AtomicBoolean();
 	private static final AtomicLong nextId = new AtomicLong();
 	private static HttpAsyncRequester requester;
@@ -108,128 +106,128 @@ public class JsonRpcHttpAsyncClient {
 	private final Map<String, String> headers = new HashMap<>();
 	private final ObjectMapper mapper;
 	private final URL serviceUrl;
-
+	
 	{
 		initialize();
 	}
-
+	
 	/**
 	 * Creates the {@link JsonRpcHttpAsyncClient} bound to the given {@code serviceUrl}.
-	 * 
+	 *
 	 * @param serviceUrl the service end-point URL
 	 */
 	public JsonRpcHttpAsyncClient(URL serviceUrl) {
 		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
 	}
-
+	
 	/**
-	 * Creates the {@link JsonRpcHttpAsyncClient} using the specified {@code ObjectMapper} and bound to the given 
+	 * Creates the {@link JsonRpcHttpAsyncClient} using the specified {@code ObjectMapper} and bound to the given
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
 	 *
-	 * @param mapper the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
+	 * @param mapper     the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
 	 * @param serviceUrl the service end-point URL
-	 * @param headers the headers
+	 * @param headers    the headers
 	 */
 	public JsonRpcHttpAsyncClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
 		this.mapper = mapper;
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
 	}
-
+	
 	/**
 	 * Creates the {@link JsonRpcHttpAsyncClient} bound to the given
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are
 	 * added to every request made to the {@code serviceUrl}.
 	 *
 	 * @param serviceUrl the service end-point URL
-	 * @param headers the headers
+	 * @param headers    the headers
 	 */
 	public JsonRpcHttpAsyncClient(URL serviceUrl, Map<String, String> headers) {
 		this(new ObjectMapper(), serviceUrl, headers);
 	}
-
+	
 	/**
 	 * Set the SSLContext to be used to create SSL connections. This method most
 	 * be called before the first {@code JsonRpcHttpAsyncClient} is constructed,
 	 * otherwise it has no effect.
-	 * 
+	 *
 	 * @param sslContext the {@code SSLContext to use}
 	 */
 	public static void setSSLContext(SSLContext sslContext) {
 		JsonRpcHttpAsyncClient.sslContext = sslContext;
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * immediately. The {@code Future} object that is returned can be used to
 	 * retrieve the result.
-	 * 
+	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
+	 * @param argument   the arguments to the method
 	 * @return the response {@code Future<T>}
 	 */
 	public Future<Object> invoke(String methodName, Object argument) {
 		return invoke(methodName, argument, Object.class, new HashMap<String, String>());
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * immediately. The {@code extraHeaders} are added to the request. The
 	 * {@code Future<T>} object that is returned can be used to retrieve the
 	 * result.
 	 *
-	 * @param methodName the name of the method to invoke
-	 * @param argument the argument to the method
-	 * @param returnType the return type
+	 * @param methodName   the name of the method to invoke
+	 * @param argument     the argument to the method
+	 * @param returnType   the return type
 	 * @param extraHeaders extra headers to add to the request
-	 * @param <T> the return type
+	 * @param <T>          the return type
 	 * @return the response {@code Future<T>}
 	 */
 	private <T> Future<T> invoke(String methodName, Object argument, Class<T> returnType, Map<String, String> extraHeaders) {
 		return doInvoke(methodName, argument, returnType, extraHeaders, new JsonRpcFuture<T>());
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and invokes the
 	 * {@code JsonRpcCallback} with the result cast to the given
 	 * {@code returnType}, or null if void. The {@code extraHeaders} are added
 	 * to the request.
 	 *
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
+	 * @param methodName   the name of the method to invoke
+	 * @param argument     the arguments to the method
 	 * @param extraHeaders extra headers to add to the request
-	 * @param returnType the return type
-	 * @param callback the {@code JsonRpcCallback}
+	 * @param returnType   the return type
+	 * @param callback     the {@code JsonRpcCallback}
 	 */
 	@SuppressWarnings("unchecked")
 	private <T> Future<T> doInvoke(String methodName, Object argument, Class<T> returnType, Map<String, String> extraHeaders, JsonRpcCallback<T> callback) {
-
+		
 		String path = serviceUrl.getPath() + (serviceUrl.getQuery() != null ? "?" + serviceUrl.getQuery() : "");
 		int port = serviceUrl.getPort() != -1 ? serviceUrl.getPort() : serviceUrl.getDefaultPort();
 		HttpRequest request = new BasicHttpEntityEnclosingRequest("POST", path);
-
+		
 		addHeaders(request, headers);
 		addHeaders(request, extraHeaders);
-
+		
 		try {
 			writeRequest(methodName, argument, request);
 		} catch (IOException e) {
 			callback.onError(e);
 		}
-
+		
 		HttpHost target = new HttpHost(serviceUrl.getHost(), port, serviceUrl.getProtocol());
 		BasicAsyncRequestProducer asyncRequestProducer = new BasicAsyncRequestProducer(target, request);
 		BasicAsyncResponseConsumer asyncResponseConsumer = new BasicAsyncResponseConsumer();
-
+		
 		RequestAsyncFuture<T> futureCallback = new RequestAsyncFuture<>(returnType, callback);
-
+		
 		BasicHttpContext httpContext = new BasicHttpContext();
 		requester.execute(asyncRequestProducer, asyncResponseConsumer, pool, httpContext, futureCallback);
-
+		
 		return (callback instanceof JsonRpcFuture ? (Future<T>) callback : null);
 	}
-
+	
 	/**
 	 * Set the request headers.
 	 *
@@ -241,21 +239,21 @@ public class JsonRpcHttpAsyncClient {
 			request.addHeader(key.getKey(), key.getValue());
 		}
 	}
-
+	
 	/**
 	 * Writes a request.
 	 *
-	 * @param methodName the method name
-	 * @param arguments the arguments
+	 * @param methodName  the method name
+	 * @param arguments   the arguments
 	 * @param httpRequest the stream on error
 	 */
 	private void writeRequest(String methodName, Object arguments, HttpRequest httpRequest) throws IOException {
-
+		
 		ObjectNode request = mapper.createObjectNode();
 		request.put(ID, nextId.getAndIncrement());
 		request.put(JSONRPC, JsonRpcBasicServer.VERSION);
 		request.put(METHOD, methodName);
-
+		
 		if (arguments != null && arguments.getClass().isArray()) {
 			Object[] args = Object[].class.cast(arguments);
 			if (args.length > 0) {
@@ -272,13 +270,13 @@ public class JsonRpcHttpAsyncClient {
 		} else if (arguments != null) {
 			request.set(PARAMS, mapper.valueToTree(arguments));
 		}
-
+		
 		logger.debug("JSON-PRC Request: {}", request);
-
+		
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(512);
 		mapper.writeValue(byteArrayOutputStream, request);
 		HttpEntityEnclosingRequest entityRequest = (HttpEntityEnclosingRequest) httpRequest;
-
+		
 		HttpEntity entity;
 		if (entityRequest.getFirstHeader("Content-Type") == null) {
 			entity = new ByteArrayEntity(byteArrayOutputStream.toByteArray(), ContentType.APPLICATION_JSON);
@@ -287,82 +285,84 @@ public class JsonRpcHttpAsyncClient {
 		}
 		entityRequest.setEntity(entity);
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and returns
 	 * immediately. The {@code Future<T>} object that is returned can be used to
 	 * retrieve the result.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
+	 * @param argument   the arguments to the method
 	 * @param returnType the return type
-	 * @param <T> the return type
+	 * @param <T>        the return type
 	 * @return the response {@code Future<T>}
 	 */
 	public <T> Future<T> invoke(String methodName, Object argument, Class<T> returnType) {
 		return invoke(methodName, argument, returnType, new HashMap<String, String>());
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and invokes the
 	 * {@code JsonRpcCallback} with the result.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param callback the {@code JsonRpcCallback}
+	 * @param argument   the arguments to the method
+	 * @param callback   the {@code JsonRpcCallback}
 	 */
 	public void invoke(String methodName, Object argument, JsonRpcCallback<Object> callback) {
 		invoke(methodName, argument, Object.class, new HashMap<String, String>(), callback);
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and invokes the
 	 * {@code JsonRpcCallback} with the result cast to the given
 	 * {@code returnType}, or null if void. The {@code extraHeaders} are added
 	 * to the request.
 	 *
-	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
-	 * @param returnType the return type
+	 * @param methodName   the name of the method to invoke
+	 * @param argument     the arguments to the method
+	 * @param returnType   the return type
 	 * @param extraHeaders extra headers to add to the request
-	 * @param callback the {@code JsonRpcCallback}
+	 * @param callback     the {@code JsonRpcCallback}
 	 */
 	private <T> void invoke(String methodName, Object argument, Class<T> returnType, Map<String, String> extraHeaders, JsonRpcCallback<T> callback) {
 		doInvoke(methodName, argument, returnType, extraHeaders, callback);
 	}
-
+	
 	/**
 	 * Invokes the given method with the given arguments and invokes the
 	 * {@code JsonRpcCallback} with the result cast to the given
 	 * {@code returnType}, or null if void.
 	 *
 	 * @param methodName the name of the method to invoke
-	 * @param argument the arguments to the method
+	 * @param argument   the arguments to the method
 	 * @param returnType the return type
-	 * @param <T> the return type
-	 * @param callback the {@code JsonRpcCallback}
+	 * @param <T>        the return type
+	 * @param callback   the {@code JsonRpcCallback}
 	 */
 	public <T> void invoke(String methodName, Object argument, Class<T> returnType, JsonRpcCallback<T> callback) {
 		invoke(methodName, argument, returnType, new HashMap<String, String>(), callback);
 	}
-
+	
 	/**
 	 * Reads a JSON-PRC response from the server. This blocks until a response
 	 * is received.
 	 *
 	 * @param returnType the expected return type
-	 * @param ips the {@link InputStream} to read from
+	 * @param ips        the {@link InputStream} to read from
 	 * @return the object returned by the JSON-RPC response
 	 * @throws Throwable on error
 	 */
 	private <T> T readResponse(Type returnType, InputStream ips) throws Throwable {
 		JsonNode response = mapper.readTree(new NoCloseInputStream(ips));
 		logger.debug("JSON-PRC Response: {}", response);
-		if (!response.isObject()) { throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response); }
+		if (!response.isObject()) {
+			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
+		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
-
+		
 		if (jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull()) {
-
+			
 			if (exceptionResolver == null) {
 				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
 			} else {
@@ -370,17 +370,19 @@ public class JsonRpcHttpAsyncClient {
 			}
 		}
 		if (jsonObject.has(RESULT) && !jsonObject.get(RESULT).isNull() && jsonObject.get(RESULT) != null) {
-
+			
 			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get(RESULT));
 			JavaType returnJavaType = mapper.getTypeFactory().constructType(returnType);
-
+			
 			return mapper.readValue(returnJsonParser, returnJavaType);
 		}
 		return null;
 	}
-
+	
 	private void initialize() {
-		if (initialized.getAndSet(true)) { return; }
+		if (initialized.getAndSet(true)) {
+			return;
+		}
 		IOReactorConfig.Builder config = createConfig();
 		// params.setParameter(CoreProtocolPNames.USER_AGENT, "jsonrpc4j/1.0");
 		final ConnectingIOReactor ioReactor = createIoReactor(config);
@@ -391,7 +393,7 @@ public class JsonRpcHttpAsyncClient {
 		pool = new BasicNIOConnPool(ioReactor, nioConnFactory, Integer.getInteger("com.googlecode.jsonrpc4j.async.connect.timeout", 30000));
 		pool.setDefaultMaxPerRoute(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.route", 500));
 		pool.setMaxTotal(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.total", 500));
-
+		
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -406,14 +408,14 @@ public class JsonRpcHttpAsyncClient {
 				}
 			}
 		}, "jsonrpc4j HTTP IOReactor");
-
+		
 		t.setDaemon(true);
 		t.start();
-
+		
 		HttpProcessor httpProcessor = new ImmutableHttpProcessor(new RequestContent(), new RequestTargetHost(), new RequestConnControl(), new RequestUserAgent(), new RequestExpectContinue(false));
 		requester = new HttpAsyncRequester(httpProcessor, new DefaultConnectionReuseStrategy());
 	}
-
+	
 	private IOReactorConfig.Builder createConfig() {
 		IOReactorConfig.Builder config = IOReactorConfig.custom();
 		config = config.setSoTimeout(Integer.getInteger("com.googlecode.jsonrpc4j.async.socket.timeout", 30000));
@@ -422,7 +424,7 @@ public class JsonRpcHttpAsyncClient {
 		config = config.setIoThreadCount(Integer.getInteger("com.googlecode.jsonrpc4j.async.reactor.threads", 1));
 		return config;
 	}
-
+	
 	private ConnectingIOReactor createIoReactor(IOReactorConfig.Builder config) {
 		final ConnectingIOReactor ioReactor;
 		try {
@@ -432,7 +434,7 @@ public class JsonRpcHttpAsyncClient {
 		}
 		return ioReactor;
 	}
-
+	
 	private void createSslContext() {
 		if (sslContext == null) {
 			try {
@@ -442,61 +444,65 @@ public class JsonRpcHttpAsyncClient {
 			}
 		}
 	}
-
+	
 	private static class JsonRpcFuture<T> implements Future<T>, JsonRpcCallback<T> {
-
+		
 		private T object;
 		private boolean done;
 		private ExecutionException exception;
-
+		
 		public boolean cancel(boolean mayInterruptIfRunning) {
 			return false;
 		}
-
+		
 		public boolean isCancelled() {
 			return false;
 		}
-
+		
 		public synchronized boolean isDone() {
 			return done;
 		}
-
+		
 		public synchronized T get() throws InterruptedException,
 				ExecutionException {
 			while (!done) {
 				this.wait();
 			}
-
-			if (exception != null) { throw exception; }
-
+			
+			if (exception != null) {
+				throw exception;
+			}
+			
 			return object;
 		}
-
+		
 		public synchronized T get(long timeout, TimeUnit unit)
 				throws InterruptedException, ExecutionException,
 				TimeoutException {
 			while (!done) {
 				this.wait(unit.toMillis(timeout));
 			}
-
-			if (exception != null) { throw exception; }
-
+			
+			if (exception != null) {
+				throw exception;
+			}
+			
 			return object;
 		}
-
+		
 		public synchronized void onComplete(T result) {
 			object = result;
 			done = true;
 			this.notify();
 		}
-
+		
 		public synchronized void onError(Throwable t) {
 			exception = new ExecutionException(t);
 			done = true;
 			this.notify();
 		}
 	}
-
+	
 	/**
 	 * Private class to handleRequest the HttpResponse callback.
 	 *
@@ -505,17 +511,17 @@ public class JsonRpcHttpAsyncClient {
 	private class RequestAsyncFuture<T> implements FutureCallback<HttpResponse> {
 		private final JsonRpcCallback<T> callBack;
 		private final Class<T> type;
-
+		
 		RequestAsyncFuture(Class<T> type, JsonRpcCallback<T> callBack) {
 			this.type = type;
 			this.callBack = callBack;
 		}
-
+		
 		public void completed(final HttpResponse response) {
 			try {
 				StatusLine statusLine = response.getStatusLine();
 				int statusCode = statusLine.getStatusCode();
-
+				
 				InputStream stream;
 				if (statusCode == 200) {
 					HttpEntity entity = response.getEntity();
@@ -525,7 +531,7 @@ public class JsonRpcHttpAsyncClient {
 						failed(e);
 						return;
 					}
-
+					
 					callBack.onComplete(type.cast(readResponse(type, stream)));
 				} else {
 					callBack.onError(new RuntimeException(
@@ -535,11 +541,11 @@ public class JsonRpcHttpAsyncClient {
 				callBack.onError(t);
 			}
 		}
-
+		
 		public void failed(final Exception ex) {
 			callBack.onError(ex);
 		}
-
+		
 		public void cancelled() {
 			callBack.onError(new RuntimeException("HTTP Request was cancelled"));
 		}

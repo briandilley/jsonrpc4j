@@ -3,6 +3,8 @@ package com.googlecode.jsonrpc4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLException;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -20,20 +22,16 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLException;
-
 /**
  * A multi-threaded streaming server that uses JSON-RPC over sockets.
- *
  */
-@SuppressWarnings({ "unused", "WeakerAccess" })
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class StreamServer {
-
+	
 	private static final Logger logger = LoggerFactory.getLogger(StreamServer.class);
-
+	
 	private static final long SERVER_SOCKET_SO_TIMEOUT = 5000;
-
+	
 	private final ThreadPoolExecutor executor;
 	private final ServerSocket serverSocket;
 	private final JsonRpcBasicServer jsonRpcServer;
@@ -41,7 +39,7 @@ public class StreamServer {
 	private final AtomicBoolean keepRunning = new AtomicBoolean(false);
 	private final Set<Server> servers = new HashSet<>();
 	private int maxClientErrors = 5;
-
+	
 	/**
 	 * Creates a {@code StreamServer} with the given max number
 	 * of threads.  A {@link ServerSocket} is created using the
@@ -49,24 +47,24 @@ public class StreamServer {
 	 * given {@code port} and {@link InetAddress}.
 	 *
 	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handleRequest requests
-	 * @param maxThreads the mac number of threads the server will spawn
-	 * @param port the port to listen on
-	 * @param backlog the {@link ServerSocket} backlog
-	 * @param bindAddress the address to listen on
+	 * @param maxThreads    the mac number of threads the server will spawn
+	 * @param port          the port to listen on
+	 * @param backlog       the {@link ServerSocket} backlog
+	 * @param bindAddress   the address to listen on
 	 * @throws IOException on error
 	 */
 	private StreamServer(JsonRpcBasicServer jsonRpcServer, int maxThreads, int port, int backlog, InetAddress bindAddress) throws IOException {
 		this(jsonRpcServer, maxThreads, ServerSocketFactory.getDefault().createServerSocket(port, backlog, bindAddress));
 	}
-
+	
 	/**
 	 * Creates a {@code StreamServer} with the given max number
 	 * of threads using the given {@link ServerSocket} to listen
 	 * for client connections.
 	 *
 	 * @param jsonRpcServer the {@link JsonRpcBasicServer} that will handleRequest requests
-	 * @param maxThreads the mac number of threads the server will spawn
-	 * @param serverSocket the {@link ServerSocket} used for accepting client connections
+	 * @param maxThreads    the mac number of threads the server will spawn
+	 * @param serverSocket  the {@link ServerSocket} used for accepting client connections
 	 */
 	public StreamServer(JsonRpcBasicServer jsonRpcServer, int maxThreads, ServerSocket serverSocket) {
 		this.jsonRpcServer = jsonRpcServer;
@@ -75,35 +73,41 @@ public class StreamServer {
 		executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
 		jsonRpcServer.setRethrowExceptions(false);
 	}
-
+	
 	/**
 	 * Returns the current servers.
+	 *
 	 * @return the servers
 	 */
 	public Set<Server> getServers() {
 		return Collections.unmodifiableSet(servers);
 	}
-
+	
 	/**
 	 * Starts the server.
 	 */
 	public void start() {
-		if (tryToStart()) { throw new IllegalStateException("The StreamServer is already started"); }
+		if (tryToStart()) {
+			throw new IllegalStateException("The StreamServer is already started");
+		}
 		logger.debug("StreamServer starting {}:{}", serverSocket.getInetAddress(), serverSocket.getLocalPort());
 		keepRunning.set(true);
 		executor.submit(new Server());
 	}
-
+	
 	private boolean tryToStart() {
 		return !isStarted.compareAndSet(false, true);
 	}
-
+	
 	/**
 	 * Stops the server thread.
+	 *
 	 * @throws InterruptedException if a graceful shutdown didn't happen
 	 */
 	public void stop() throws InterruptedException {
-		if (!isStarted.get()) { throw new IllegalStateException("The StreamServer is not started"); }
+		if (!isStarted.get()) {
+			throw new IllegalStateException("The StreamServer is not started");
+		}
 		stopServer();
 		stopClients();
 		closeSocket();
@@ -116,15 +120,15 @@ public class StreamServer {
 			throw e;
 		}
 	}
-
+	
 	private void stopServer() {
 		keepRunning.set(false);
 	}
-
+	
 	private void stopClients() {
 		executor.shutdownNow();
 	}
-
+	
 	private void closeSocket() {
 		try {
 			serverSocket.close();
@@ -132,15 +136,16 @@ public class StreamServer {
 			logger.debug("Failed to close socket", e);
 		}
 	}
-
+	
 	private void waitForServerToTerminate() throws InterruptedException {
 		if (!executor.isTerminated()) {
 			executor.awaitTermination(2000 + SERVER_SOCKET_SO_TIMEOUT, TimeUnit.MILLISECONDS);
 		}
 	}
-
+	
 	/**
 	 * Closes something quietly.
+	 *
 	 * @param c closable
 	 */
 	private void closeQuietly(Closeable c) {
@@ -152,51 +157,51 @@ public class StreamServer {
 			}
 		}
 	}
-
+	
 	/**
 	 * @return the number of connected clients
 	 */
 	public int getNumberOfConnections() {
 		return servers.size();
 	}
-
+	
 	/**
 	 * @return the maxClientErrors
 	 */
 	public int getMaxClientErrors() {
 		return maxClientErrors;
 	}
-
+	
 	/**
 	 * @param maxClientErrors the maxClientErrors to set
 	 */
 	public void setMaxClientErrors(int maxClientErrors) {
 		this.maxClientErrors = maxClientErrors;
 	}
-
+	
 	/**
 	 * @return the isStarted
 	 */
 	public boolean isStarted() {
 		return isStarted.get();
 	}
-
+	
 	/**
 	 * Server thread.
 	 */
 	public class Server implements Runnable {
-
+		
 		private int errors;
 		private Throwable lastException;
-
+		
 		public int getNumberOfErrors() {
 			return errors;
 		}
-
+		
 		public Throwable getLastException() {
 			return lastException;
 		}
-
+		
 		/**
 		 * {@inheritDoc}
 		 */
@@ -234,7 +239,7 @@ public class StreamServer {
 					logger.error("Client socket failed", e);
 					return;
 				}
-
+				
 				servers.add(this);
 				try {
 					while (StreamServer.this.keepRunning.get()) {
@@ -263,7 +268,7 @@ public class StreamServer {
 				}
 			}
 		}
-
+		
 		private void handleSocketTimeoutException(SocketTimeoutException e) {
 			// this is expected because of so_timeout
 		}

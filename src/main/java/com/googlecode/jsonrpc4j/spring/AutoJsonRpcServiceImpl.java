@@ -1,10 +1,10 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * This annotation goes on the <em>implementation</em> of the JSON-RPC service.  It defines any additional paths on
@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 @Target(TYPE)
 @Retention(RUNTIME)
 public @interface AutoJsonRpcServiceImpl {
-
+	
 	/**
 	 * This value may contain a list of <em>additional</em> paths that the JSON-RPC service will be exposed on.
 	 * These are in addition to any which are defined on the {@link com.googlecode.jsonrpc4j.JsonRpcService}
@@ -25,8 +25,8 @@ public @interface AutoJsonRpcServiceImpl {
 	 * to expose a service on legacy paths for older clients.
 	 *
 	 * @return an array of additional paths
-	 * */
-
+	 */
+	
 	String[] additionalPaths() default {};
-
+	
 }

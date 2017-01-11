@@ -3,16 +3,16 @@ package com.googlecode.jsonrpc4j;
 import java.io.IOException;
 import java.io.InputStream;
 
-@SuppressWarnings({ "WeakerAccess", "unused" })
+@SuppressWarnings({"WeakerAccess", "unused"})
 class NoCloseInputStream extends InputStream {
-
+	
 	private final InputStream input;
 	private boolean closeAttempted = false;
-
+	
 	public NoCloseInputStream(InputStream input) {
 		this.input = input;
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -20,7 +20,7 @@ class NoCloseInputStream extends InputStream {
 	public int read() throws IOException {
 		return this.input.read();
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -28,7 +28,7 @@ class NoCloseInputStream extends InputStream {
 	public int read(byte[] b) throws IOException {
 		return this.input.read(b);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -36,7 +36,7 @@ class NoCloseInputStream extends InputStream {
 	public int read(byte[] b, int off, int len) throws IOException {
 		return this.input.read(b, off, len);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -44,7 +44,7 @@ class NoCloseInputStream extends InputStream {
 	public long skip(long n) throws IOException {
 		return this.input.skip(n);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -52,7 +52,7 @@ class NoCloseInputStream extends InputStream {
 	public int available() throws IOException {
 		return this.input.available();
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -60,7 +60,7 @@ class NoCloseInputStream extends InputStream {
 	public void close() throws IOException {
 		closeAttempted = true;
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -68,7 +68,7 @@ class NoCloseInputStream extends InputStream {
 	public synchronized void mark(int readLimit) {
 		this.input.mark(readLimit);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -76,7 +76,7 @@ class NoCloseInputStream extends InputStream {
 	public synchronized void reset() throws IOException {
 		this.input.reset();
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -84,12 +84,12 @@ class NoCloseInputStream extends InputStream {
 	public boolean markSupported() {
 		return this.input.markSupported();
 	}
-
+	
 	/**
 	 * @return the closeAttempted
 	 */
 	public boolean wasCloseAttempted() {
 		return closeAttempted;
 	}
-
+	
 }

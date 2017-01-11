@@ -1,5 +1,9 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.JsonRpcServer;
+import com.googlecode.jsonrpc4j.ProxyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -7,15 +11,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.JsonRpcServer;
-import com.googlecode.jsonrpc4j.ProxyUtil;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  * Abstract class for exposing composite services via spring.
- *
  */
 @SuppressWarnings("unused")
 abstract class AbstractCompositeJsonServiceExporter implements InitializingBean, ApplicationContextAware {
@@ -75,6 +72,7 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 
 	/**
 	 * Called when the service is ready to be exported.
+	 *
 	 * @throws Exception on error
 	 */
 	void exportService()

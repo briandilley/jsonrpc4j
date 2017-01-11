@@ -6,8 +6,8 @@ import com.googlecode.jsonrpc4j.JsonRpcService;
 		"api/temperature" // note the absence of a leading slash
 )
 public interface Temperature {
-
+	
 	@SuppressWarnings("unused")
 	Integer currentTemperature();
-
+	
 }

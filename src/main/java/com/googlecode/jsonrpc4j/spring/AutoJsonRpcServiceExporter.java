@@ -1,9 +1,11 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import static java.lang.String.format;
-import static org.springframework.util.ClassUtils.forName;
-import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
+import com.googlecode.jsonrpc4j.InvocationListener;
+import com.googlecode.jsonrpc4j.JsonRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -14,17 +16,13 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
-import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
-import com.googlecode.jsonrpc4j.InvocationListener;
-import com.googlecode.jsonrpc4j.JsonRpcService;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static java.lang.String.format;
+import static org.springframework.util.ClassUtils.forName;
+import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
 
 /**
  * <p>This exporter class is deprecated because it exposes all beans from a spring context that has the
@@ -33,6 +31,7 @@ import java.util.Map.Entry;
  * be (inadvertently) exposed by {@link AutoJsonRpcServiceExporter}.  To avoid this, switch over to use
  * {@link AutoJsonRpcServiceImplExporter} which exposes specific implementations of the JSON-RPC services'
  * interfaces rather than all beans that implement {@link JsonRpcService}.</p>
+ *
  * @deprecated use {@link AutoJsonRpcServiceImplExporter} instead.
  */
 @Deprecated
@@ -67,7 +66,8 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 			if (hasServiceAnnotation(jsonRpcPath)) {
 				String pathValue = jsonRpcPath.value();
 				logger.debug("Found JSON-RPC path '{}' for bean [{}].", pathValue, beanName);
-				if (isNotDuplicateService(serviceBeanNames, beanName, pathValue)) serviceBeanNames.put(pathValue, beanName);
+				if (isNotDuplicateService(serviceBeanNames, beanName, pathValue))
+					serviceBeanNames.put(pathValue, beanName);
 			}
 		}
 		collectFromParentBeans(beanFactory, serviceBeanNames);
@@ -79,7 +79,8 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 		BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
 		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
 			for (Entry<String, String> entry : findServiceBeanDefinitions((ConfigurableListableBeanFactory) parentBeanFactory).entrySet()) {
-				if (isNotDuplicateService(serviceBeanNames, entry.getKey(), entry.getValue())) serviceBeanNames.put(entry.getKey(), entry.getValue());
+				if (isNotDuplicateService(serviceBeanNames, entry.getKey(), entry.getValue()))
+					serviceBeanNames.put(entry.getKey(), entry.getValue());
 			}
 		}
 	}
@@ -225,6 +226,7 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 
 	/**
 	 * See {@link org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
+	 *
 	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
 	 */
 	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
@@ -246,7 +248,6 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	}
 
 	/**
-	 *
 	 * @param convertedParameterTransformer the convertedParameterTransformer to set
 	 */
 	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {

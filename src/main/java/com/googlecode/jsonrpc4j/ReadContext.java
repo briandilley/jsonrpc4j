@@ -8,31 +8,33 @@ import java.io.InputStream;
 
 @SuppressWarnings("WeakerAccess")
 public class ReadContext {
-
+	
 	private final InputStream input;
 	private final ObjectMapper mapper;
-
+	
 	private ReadContext(InputStream input, ObjectMapper mapper) {
 		this.input = new NoCloseInputStream(input);
 		this.mapper = mapper;
 	}
-
+	
 	public synchronized static ReadContext getReadContext(InputStream input, ObjectMapper mapper) {
 		return new ReadContext(input, mapper);
 	}
-
+	
 	public JsonNode nextValue() throws IOException {
 		return mapper.readValue(input, JsonNode.class);
 	}
-
+	
 	public void assertReadable() throws IOException {
 		if (input.markSupported()) {
 			input.mark(1);
-			if (input.read() == -1) { throw new StreamEndedException(); }
+			if (input.read() == -1) {
+				throw new StreamEndedException();
+			}
 			input.reset();
 		}
 	}
-
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -41,7 +43,7 @@ public class ReadContext {
 		result = prime * result + (mapper == null ? 0 : mapper.hashCode());
 		return result;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -60,5 +62,5 @@ public class ReadContext {
 			return false;
 		return true;
 	}
-
+	
 }

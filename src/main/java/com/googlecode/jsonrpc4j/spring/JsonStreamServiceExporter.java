@@ -1,15 +1,13 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import static com.googlecode.jsonrpc4j.Util.DEFAULT_HOSTNAME;
-
+import com.googlecode.jsonrpc4j.StreamServer;
 import org.springframework.beans.factory.DisposableBean;
 
-import com.googlecode.jsonrpc4j.StreamServer;
-
+import javax.net.ServerSocketFactory;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 
-import javax.net.ServerSocketFactory;
+import static com.googlecode.jsonrpc4j.Util.DEFAULT_HOSTNAME;
 
 /**
  * {@link org.springframework.remoting.support.RemoteExporter RemoteExporter}
@@ -17,7 +15,6 @@ import javax.net.ServerSocketFactory;
  * at:
  * <a href="http://groups.google.com/group/json-rpc">
  * http://groups.google.com/group/json-rpc</a>.
- *
  */
 @SuppressWarnings("unused")
 class JsonStreamServiceExporter extends AbstractJsonServiceExporter implements DisposableBean {

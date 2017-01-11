@@ -7,7 +7,7 @@ package com.googlecode.jsonrpc4j.spring.serviceb;
  */
 
 public class NoopTemperatureImpl implements Temperature {
-
+	
 	@Override
 	public Integer currentTemperature() {
 		return 0;

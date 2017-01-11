@@ -10,34 +10,37 @@ import java.util.List;
 /**
  * {@link com.googlecode.jsonrpc4j.InvocationListener} that supports the use
  * of multiple {@link InvocationListener}s called one after another.
+ *
  * @author Andrew Lindesay
  */
 
-@SuppressWarnings({ "unused", "WeakerAccess" })
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class MultipleInvocationListener implements InvocationListener {
-
+	
 	private final List<InvocationListener> invocationListeners;
-
+	
 	/**
 	 * Creates with the given {@link InvocationListener}s,
 	 * {@link #addInvocationListener(InvocationListener)} can be called to
 	 * add additional {@link InvocationListener}s.
+	 *
 	 * @param invocationListeners the {@link InvocationListener}s
 	 */
 	public MultipleInvocationListener(InvocationListener... invocationListeners) {
 		this.invocationListeners = new LinkedList<>();
 		Collections.addAll(this.invocationListeners, invocationListeners);
 	}
-
+	
 	/**
 	 * Adds an {@link InvocationListener} to the end of the
 	 * list of invocation listeners.
+	 *
 	 * @param invocationListener the {@link InvocationListener} to add
 	 */
 	public void addInvocationListener(InvocationListener invocationListener) {
 		this.invocationListeners.add(invocationListener);
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -46,7 +49,7 @@ public class MultipleInvocationListener implements InvocationListener {
 			invocationListener.willInvoke(method, arguments);
 		}
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -55,5 +58,5 @@ public class MultipleInvocationListener implements InvocationListener {
 			invocationListener.didInvoke(method, arguments, result, t, duration);
 		}
 	}
-
+	
 }

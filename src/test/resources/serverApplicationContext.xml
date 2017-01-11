@@ -2,8 +2,8 @@
        xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-  <bean class="com.googlecode.jsonrpc4j.spring.service.ServiceImpl" />
-  <bean class="com.googlecode.jsonrpc4j.spring.servicesansinterface.ServiceSansInterfaceImpl" />
-  <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter"/>
+    <bean class="com.googlecode.jsonrpc4j.spring.service.ServiceImpl"/>
+    <bean class="com.googlecode.jsonrpc4j.spring.servicesansinterface.ServiceSansInterfaceImpl"/>
+    <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter"/>
 
 </beans>

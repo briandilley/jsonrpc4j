@@ -8,15 +8,14 @@ import java.lang.annotation.Target;
 /**
  * Annotation for annotating service methods as
  * JsonRpc method by name.
- *
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonRpcMethod {
-
+	
 	/**
 	 * @return the method's name.
 	 */
 	String value();
-
+	
 }
