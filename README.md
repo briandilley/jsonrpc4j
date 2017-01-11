@@ -10,7 +10,7 @@ JSON-RPC).
 [ ![Download](https://api.bintray.com/packages/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/images/download.svg) ](https://bintray.com/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/_latestVersion)
 [![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
 [![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.5.0.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.5.0...master)
-[![Maintenance](https://img.shields.io/maintenance/yes/2016.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
+[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
