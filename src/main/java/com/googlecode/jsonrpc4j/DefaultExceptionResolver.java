@@ -66,10 +66,9 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 	 * @throws InstantiationException
 	 * @throws IllegalArgumentException
 	 */
-	private Throwable createThrowable(String typeName, String message) throws IllegalAccessException, InvocationTargetException, InstantiationException {
+	private Throwable createThrowable(String typeName, String message) throws IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
 		Class<? extends Throwable> clazz = loadThrowableClass(typeName);
-		if (clazz == null) return null;
-		
+
 		Constructor<? extends Throwable> defaultCtr = getDefaultConstructor(clazz);
 		Constructor<? extends Throwable> messageCtr = getMessageConstructor(clazz);
 		
@@ -88,8 +87,8 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 			return null;
 		}
 	}
-	
-	private Class<? extends Throwable> loadThrowableClass(String typeName) {
+
+	private Class<? extends Throwable> loadThrowableClass(String typeName) throws ClassNotFoundException {
 		Class<?> clazz;
 		try {
 			clazz = Class.forName(typeName);
@@ -98,7 +97,10 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 			} else {
 				return clazz.asSubclass(Throwable.class);
 			}
-		} catch (Exception e) {
+		} catch(ClassNotFoundException e) {
+			logger.warn("Unable to load Throwable class {}", typeName);
+			throw e;
+		} catch(Exception e) {
 			logger.warn("Unable to load Throwable class {}", typeName);
 		}
 		return null;
