@@ -12,13 +12,13 @@ import static com.googlecode.jsonrpc4j.Util.hasNonNullTextualData;
 
 /**
  * Default implementation of the {@link ExceptionResolver} interface that attempts to re-throw the same exception
- * that was thrown by the server.  This always returns a {@link Throwable}.
+ * that was thrown by the server. This always returns a {@link Throwable}.
+ * The exception class must be present on the classpath.
  */
-@SuppressWarnings("WeakerAccess")
-public enum DefaultExceptionResolver implements ExceptionResolver {
-	INSTANCE;
+public class DefaultExceptionResolver implements ExceptionResolver {
 	private static final Logger logger = LoggerFactory.getLogger(DefaultExceptionResolver.class);
-	
+	public static final DefaultExceptionResolver INSTANCE = new DefaultExceptionResolver();
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -67,7 +67,7 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 	 * @throws IllegalArgumentException
 	 */
 	private Throwable createThrowable(String typeName, String message) throws IllegalAccessException, InvocationTargetException, InstantiationException, ClassNotFoundException {
-		Class<? extends Throwable> clazz = loadThrowableClass(typeName);
+		Class<? extends Throwable> clazz = resolveThrowableClass(typeName);
 
 		Constructor<? extends Throwable> defaultCtr = getDefaultConstructor(clazz);
 		Constructor<? extends Throwable> messageCtr = getMessageConstructor(clazz);
@@ -88,7 +88,15 @@ public enum DefaultExceptionResolver implements ExceptionResolver {
 		}
 	}
 
-	private Class<? extends Throwable> loadThrowableClass(String typeName) throws ClassNotFoundException {
+	/**
+	 * Resolves original exception type name into an actual {@link Class<?>}.
+	 * Override this, if you want custom behaviour for handling exceptions,
+	 * i.e.: Default to RuntimeException.
+	 *
+	 * @param typeName Original exception type name thrown on the server.
+	 * @throws ClassNotFoundException
+	 */
+	protected Class<? extends Throwable> resolveThrowableClass(String typeName) throws ClassNotFoundException {
 		Class<?> clazz;
 		try {
 			clazz = Class.forName(typeName);
