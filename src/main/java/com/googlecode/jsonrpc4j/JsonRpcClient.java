@@ -40,7 +40,7 @@ public class JsonRpcClient {
 	private final Random random;
 	private RequestListener requestListener;
 	private RequestIDGenerator requestIDGenerator;
-	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
+	private ExceptionResolver exceptionResolver;
 	private Map<String, Object> additionalJsonContent = new HashMap<>();
 	
 	/**
@@ -50,7 +50,7 @@ public class JsonRpcClient {
 	public JsonRpcClient() {
 		this(new ObjectMapper());
 	}
-	
+
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
 	 * map to and from JSON and Java objects.
@@ -58,11 +58,23 @@ public class JsonRpcClient {
 	 * @param mapper the {@link ObjectMapper}
 	 */
 	public JsonRpcClient(ObjectMapper mapper) {
+		this(mapper, DefaultExceptionResolver.INSTANCE);
+	}
+
+	/**
+	 * Creates a client that uses the given {@link ObjectMapper} and
+	 * {@link ExceptionResolver } to map to and from JSON and Java objects.
+	 *
+	 * @param mapper            the {@link ObjectMapper}
+	 * @param exceptionResolver the {@link ExceptionResolver}
+	 */
+	public JsonRpcClient(ObjectMapper mapper, ExceptionResolver exceptionResolver) {
 		this.mapper = mapper;
 		this.random = new Random(System.currentTimeMillis());
 		this.requestIDGenerator = new RandomRequestIDGenerator();
+		this.exceptionResolver = exceptionResolver;
 	}
-	
+
 	public Map<String, Object> getAdditionalJsonContent() {
 		return additionalJsonContent;
 	}
