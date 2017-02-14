@@ -102,7 +102,7 @@ public class JsonRpcHttpAsyncClient {
 	private static HttpAsyncRequester requester;
 	private static BasicNIOConnPool pool;
 	private static SSLContext sslContext;
-	private final ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
+	private final ExceptionResolver exceptionResolver;
 	private final Map<String, String> headers = new HashMap<>();
 	private final ObjectMapper mapper;
 	private final URL serviceUrl;
@@ -130,11 +130,32 @@ public class JsonRpcHttpAsyncClient {
 	 * @param headers    the headers
 	 */
 	public JsonRpcHttpAsyncClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
+		this(mapper, DefaultExceptionResolver.INSTANCE, serviceUrl, headers);
+	}
+
+	/**
+	 * Creates the {@link JsonRpcHttpAsyncClient} using the specified
+	 * {@link ObjectMapper} and {@link ExceptionResolver}, bound to the given
+	 * {@code serviceUrl}. The headers provided in the {@code headers} map are
+	 * added to every request made to the {@code serviceUrl}.
+	 * The {@link ExceptionResolver} can not be null.
+	 *
+	 * @param mapper     the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
+	 * @param exceptionResolver the {@link ExceptionResolver} translating remote exceptions.
+	 * @param serviceUrl the service end-point URL
+	 * @param headers    the headers
+	 */
+	public JsonRpcHttpAsyncClient(ObjectMapper mapper, ExceptionResolver exceptionResolver, URL serviceUrl, Map<String, String> headers) {
 		this.mapper = mapper;
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
+		this.exceptionResolver = exceptionResolver;
+
+		if(this.exceptionResolver == null) {
+			throw new IllegalArgumentException("ExceptionResolver can not be null");
+		}
 	}
-	
+
 	/**
 	 * Creates the {@link JsonRpcHttpAsyncClient} bound to the given
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are
@@ -362,12 +383,7 @@ public class JsonRpcHttpAsyncClient {
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
 		
 		if (jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull()) {
-			
-			if (exceptionResolver == null) {
-				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
-			} else {
-				throw exceptionResolver.resolveException(jsonObject);
-			}
+			throw exceptionResolver.resolveException(jsonObject);
 		}
 		if (jsonObject.has(RESULT) && !jsonObject.get(RESULT).isNull() && jsonObject.get(RESULT) != null) {
 			
