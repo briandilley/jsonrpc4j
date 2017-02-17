@@ -504,14 +504,11 @@ public class JsonRpcBasicServer {
             result = method.invoke(target, new Object[] {convertedParams});
 
         } else {
-            convertedParams = new Object[params.size()];
-            Type[] parameterTypes = method.getGenericParameterTypes();
-            for (int i = 0; i < parameterTypes.length; i++) {
-                JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
-                JavaType paramJavaType = TypeFactory.defaultInstance().constructType(parameterTypes[i]);
-                convertedParams[i] = mapper.readValue(paramJsonParser, paramJavaType);
-            }
-            result = method.invoke(target, convertedParams);
+            convertedParams = convertJsonToParameters(method, params);
+			if (convertedParameterTransformer != null) {
+				convertedParams = convertedParameterTransformer.transformConvertedParameters(target, convertedParams);
+			}
+			result = method.invoke(target, convertedParams);
         }
 
 		logger.debug("Invoked method: {}, result {}", method.getName(), result);
@@ -610,7 +607,7 @@ public class JsonRpcBasicServer {
 		if (hasNoParameters(paramsNode)) {
 			return findBestMethodUsingParamIndexes(methods, 0, null);
 		}
-		AMethodWithItsArgs matchedMethod = null;
+		AMethodWithItsArgs matchedMethod;
 		if (paramsNode.isArray()) {
 			matchedMethod = findBestMethodUsingParamIndexes(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode));
 		} else if (paramsNode.isObject()) {
