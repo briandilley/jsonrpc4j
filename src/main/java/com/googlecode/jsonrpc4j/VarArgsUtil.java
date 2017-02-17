@@ -5,9 +5,8 @@ import java.util.Map;
 
 /**
  * 20.04.2016
- * Konstantin Lychagin Aka KostaPC
- * Copyright (c) 2016 Infon. All rights reserved.
- */
+ * KostaPC
+*/
 
 public class VarArgsUtil {
 
@@ -19,7 +18,7 @@ public class VarArgsUtil {
                 unsafeMap.put(params[i].toString(), params[i + 1]);
             }
         }
-
         return unsafeMap;
+
     }
 }

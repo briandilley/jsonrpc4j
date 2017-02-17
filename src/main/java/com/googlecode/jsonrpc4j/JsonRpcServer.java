@@ -1,88 +1,87 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
- * A JSON-RPC request server reads JSON-RPC requests from an
- * input stream and writes responses to an output stream.
- * Supports handlet and servlet requests.
+ * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
+ * Supports handler and servlet requests.
  */
-public class JsonRpcServer extends JsonRpcBasicServer
-{
-	private static final Logger LOGGER = Logger.getLogger(JsonRpcServer.class.getName());
-    
+@SuppressWarnings("unused")
+public class JsonRpcServer extends JsonRpcBasicServer {
+	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
+	
+	private static final String GZIP = "gzip";
+	private final boolean gzipResponses;
+	private String contentType = JSONRPC_CONTENT_TYPE;
+	
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
-	 * @param mapper the {@link ObjectMapper}
-	 * @param handler the {@code handler}
+	 * @param mapper          the {@link ObjectMapper}
+	 * @param handler         the {@code handler}
+	 * @param remoteInterface the interface
+	 * @param gzipResponses   whether gzip the response that is sent to the client.
+	 */
+	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface, boolean gzipResponses) {
+		super(mapper, handler, remoteInterface);
+		this.gzipResponses = gzipResponses;
+	}
+	
+	/**
+	 * Creates the server with the given {@link ObjectMapper} delegating
+	 * all calls to the given {@code handler} {@link Object} but only
+	 * methods available on the {@code remoteInterface}.
+	 *
+	 * @param mapper          the {@link ObjectMapper}
+	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(
-		ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
+	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
 		super(mapper, handler, remoteInterface);
+		this.gzipResponses = false;
 	}
-
+	
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
 	 *
-	 * @param mapper the {@link ObjectMapper}
+	 * @param mapper  the {@link ObjectMapper}
 	 * @param handler the {@code handler}
 	 */
 	public JsonRpcServer(ObjectMapper mapper, Object handler) {
 		super(mapper, handler, null);
+		this.gzipResponses = false;
 	}
-
+	
 	/**
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
-	 * @param handler the {@code handler}
+	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
+	private JsonRpcServer(Object handler, Class<?> remoteInterface) {
 		super(new ObjectMapper(), handler, remoteInterface);
+		this.gzipResponses = false;
 	}
-
+	
 	/**
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
@@ -91,102 +90,128 @@ public class JsonRpcServer extends JsonRpcBasicServer
 	 */
 	public JsonRpcServer(Object handler) {
 		super(new ObjectMapper(), handler, null);
+		this.gzipResponses = false;
 	}
-        
+	
 	/**
 	 * Handles a portlet request.
 	 *
-	 * @param request the {@link ResourceRequest}
+	 * @param request  the {@link ResourceRequest}
 	 * @param response the {@link ResourceResponse}
 	 * @throws IOException on error
 	 */
-	public void handle(ResourceRequest request, ResourceResponse response)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Handing ResourceRequest "+request.getMethod());
-		}
-
-		// set response type
-		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-
-		// setup streams
-		InputStream input 	= null;
-		OutputStream output	= response.getPortletOutputStream();
-
-		// POST
-		if (request.getMethod().equals("POST")) {
-			input = request.getPortletInputStream();
-
-		// GET
-		} else if (request.getMethod().equals("GET")) {
-			input = createInputStream(
-				request.getParameter("method"),
-				request.getParameter("id"),
-				request.getParameter("params"));
-
-		// invalid request
-		} else {
-			throw new IOException(
-				"Invalid request method, only POST and GET is supported");
-		}
-
-		// service the request
-		handle(input, output);
-		//fix to not flush within handle() but outside so http status code can be set
+	public void handle(ResourceRequest request, ResourceResponse response) throws IOException {
+		logger.debug("Handing ResourceRequest {}", request.getMethod());
+		response.setContentType(contentType);
+		InputStream input = getRequestStream(request);
+		OutputStream output = response.getPortletOutputStream();
+		handleRequest(input, output);
+		// fix to not flush within handleRequest() but outside so http status code can be set
 		output.flush();
 	}
-
+	
+	private InputStream getRequestStream(ResourceRequest request) throws IOException {
+		if (request.getMethod().equals("POST")) {
+			return request.getPortletInputStream();
+		} else if (request.getMethod().equals("GET")) {
+			return createInputStream(request);
+		} else {
+			throw new IOException("Invalid request method, only POST and GET is supported");
+		}
+	}
+	
+	private static InputStream createInputStream(ResourceRequest request) throws IOException {
+		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
+	}
+	
 	/**
 	 * Handles a servlet request.
 	 *
-	 * @param request the {@link HttpServletRequest}
+	 * @param request  the {@link HttpServletRequest}
 	 * @param response the {@link HttpServletResponse}
 	 * @throws IOException on error
 	 */
-	public void handle(HttpServletRequest request, HttpServletResponse response)
-		throws IOException {
-		if (LOGGER.isLoggable(Level.FINE)) {
-			LOGGER.log(Level.FINE, "Handing HttpServletRequest "+request.getMethod());
-		}
-
-		// set response type
-		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-
-		// setup streams
-		InputStream input 	= null;
-		OutputStream output	= response.getOutputStream();
-
-		// POST
-		if (request.getMethod().equals("POST")) {
-			input = request.getInputStream();
-
-		// GET
-		} else if (request.getMethod().equals("GET")) {
-			input = createInputStream(
-				request.getParameter("method"),
-				request.getParameter("id"),
-				request.getParameter("params"));
-
-		// invalid request
-		} else {
-			throw new IOException(
-				"Invalid request method, only POST and GET is supported");
-		}
-
-		// service the request
-		//fix to set HTTP status correctly
-		int result = handle(input, output);
-		if(result != 0){
-			if (result == -32700 || result == -32602 || result == -32603
-					|| (result <= -32000 && result >= -32099)) {
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} else if (result == -32600) {
-				response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			} else if (result == -32601) {
-				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.debug("Handling HttpServletRequest {}", request);
+		response.setContentType(contentType);
+		OutputStream output = response.getOutputStream();
+		InputStream input = getRequestStream(request);
+		int result = ErrorResolver.JsonError.PARSE_ERROR.code;
+		try {
+			String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
+			result = handleRequest0(input, output, acceptEncoding, response);
+		} catch (Throwable t) {
+			if (StreamEndedException.class.isInstance(t)) {
+				logger.debug("Bad request: empty contents!");
+			} else {
+				logger.error(t.getMessage(), t);
 			}
 		}
-		//fix to not flush within handle() but outside so http status code can be set
+		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
+				: httpStatusCodeProvider.getHttpStatusCode(result);
+		response.setStatus(httpStatusCode);
 		output.flush();
 	}
+	
+	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
+		InputStream input;
+		if (request.getMethod().equals("POST")) {
+			input = createInputStream(request.getInputStream(), request.getHeader(CONTENT_ENCODING));
+		} else if (request.getMethod().equals("GET")) {
+			input = createInputStream(request);
+		} else {
+			throw new IOException("Invalid request method, only POST and GET is supported");
+		}
+		return input;
+	}
+	
+	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response) throws IOException {
+		try (ByteArrayOutputStream byteOutput = new ByteArrayOutputStream()) {
+			int result = handleRequest(input, byteOutput);
+			
+			boolean canGzipResponse = contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding);
+			// Use gzip if client's accept-encoding is set to gzip and gzipResponses is enabled.
+			if (gzipResponses && canGzipResponse) {
+				response.addHeader(CONTENT_ENCODING, GZIP);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (GZIPOutputStream gos = new GZIPOutputStream(baos)) {
+					gos.write(byteOutput.toByteArray());
+				}
+				response.setContentLength(baos.size());
+				output.write(baos.toByteArray());
+			} else {
+				response.setContentLength(byteOutput.size());
+				output.write(byteOutput.toByteArray());
+			}
+			
+			return result;
+		}
+	}
+	
+	private static InputStream createInputStream(InputStream inputStream, String contentEncoding) throws IOException {
+		InputStream input;
+		if (contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding)) {
+			input = new GZIPInputStream(inputStream);
+		} else {
+			input = inputStream;
+		}
+		
+		return input;
+	}
+	
+	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
+		String method = request.getParameter(METHOD);
+		String id = request.getParameter(ID);
+		String params = request.getParameter(PARAMS);
+		if (method == null && id == null && params == null) {
+			return new ByteArrayInputStream(new byte[]{});
+		} else {
+			return createInputStream(method, id, params);
+		}
+	}
+	
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+	
 }

@@ -1,65 +1,55 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2014 jsonrpc4j
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
- */
-
 package com.googlecode.jsonrpc4j;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.googlecode.jsonrpc4j.DefaultErrorResolver.ErrorData;
-
 /**
  * {@link ErrorResolver} that uses annotations.
  */
-public class AnnotationsErrorResolver
-	implements ErrorResolver {
-
-	public static final AnnotationsErrorResolver INSTANCE = new AnnotationsErrorResolver();
-
+public enum AnnotationsErrorResolver implements ErrorResolver {
+	INSTANCE;
+	
 	/**
 	 * {@inheritDoc}
 	 */
-    @Override
-	public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
-
-		// use annotations to map errors
+	@Override
+	public JsonError resolveError(Throwable thrownException, Method method, List<JsonNode> arguments) {
+		JsonRpcError resolver = getResolverForException(thrownException, method);
+		if (notFoundResolver(resolver)) return null;
+		
+		String message = hasErrorMessage(resolver) ? resolver.message() : thrownException.getMessage();
+		return new JsonError(resolver.code(), message, new ErrorData(resolver.exception().getName(), message));
+	}
+	
+	private JsonRpcError getResolverForException(Throwable thrownException, Method method) {
 		JsonRpcErrors errors = ReflectionUtil.getAnnotation(method, JsonRpcErrors.class);
-		if (errors!=null) {
-			for (JsonRpcError em : errors.value()) {
-				if (em.exception().isInstance(t)) {
-					String message = em.message()!=null && em.message().trim().length() > 0
-						? em.message()
-						: t.getMessage();
-					return new JsonError(em.code(), message,
-						new ErrorData(em.exception().getName(), message));
+		if (hasAnnotations(errors)) {
+			for (JsonRpcError errorDefined : errors.value()) {
+				if (isExceptionInstanceOfError(thrownException, errorDefined)) {
+					return errorDefined;
 				}
 			}
 		}
-
-		//  none found
 		return null;
 	}
-
+	
+	private boolean notFoundResolver(JsonRpcError resolver) {
+		return resolver == null;
+	}
+	
+	private boolean hasErrorMessage(JsonRpcError em) {
+		// noinspection ConstantConditions
+		return em.message() != null && em.message().trim().length() > 0;
+	}
+	
+	private boolean hasAnnotations(JsonRpcErrors errors) {
+		return errors != null;
+	}
+	
+	private boolean isExceptionInstanceOfError(Throwable target, JsonRpcError em) {
+		return em.exception().isInstance(target);
+	}
+	
 }

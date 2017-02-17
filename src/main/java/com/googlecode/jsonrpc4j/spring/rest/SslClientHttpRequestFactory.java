@@ -1,29 +1,30 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 
 /**
  * Implementation of {@link org.springframework.http.client.ClientHttpRequestFactory} that creates HTTPS connection
  * with specified settings.
  */
-public class SslClientHttpRequestFactory
-	extends SimpleClientHttpRequestFactory {
+class SslClientHttpRequestFactory
+		extends SimpleClientHttpRequestFactory {
 
 	private SSLContext sslContext;
 	private HostnameVerifier hostNameVerifier;
 
 	@Override
 	protected void prepareConnection(HttpURLConnection connection, String httpMethod)
-		throws IOException {
+			throws IOException {
 
 		if (connection instanceof HttpsURLConnection) {
 			final HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
-			
+
 			if (hostNameVerifier != null) {
 				httpsConnection.setHostnameVerifier(hostNameVerifier);
 			}

@@ -4,7 +4,13 @@ This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
 [Jackson][Jackson page] library to convert java
 objects to and from json objects (and other things related to
-JSON-RPC).
+JSON-RPC). 
+
+[![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.5.0/)
+[ ![Download](https://api.bintray.com/packages/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/images/download.svg) ](https://bintray.com/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/_latestVersion)
+[![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
+[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.5.0.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.5.0...master)
+[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
@@ -37,7 +43,7 @@ In `<dependencies>`:
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.2.0</version>
+		<version>1.5.0</version>
 	</dependency>
 
 ```
@@ -152,7 +158,7 @@ the service implementation for the ServiceExporter):
 ```java
 package com.mycompany;
 public interface UserService {
-    User createUser(@JsonRpcParamName("theUserName") String userName, @JsonRpcParamName("thePassword") String password);
+    User createUser(@JsonRpcParam(value="theUserName") String userName, @JsonRpcParam(value="thePassword") String password);
 }
 ```
 
@@ -169,7 +175,7 @@ public interface UserService {
             code=-5678, message="User already exists", data="The Data"),
         @JsonRpcError(exception=Throwable.class,code=-187)
     })
-    User createUser(@JsonRpcParamName("theUserName") String userName, @JsonRpcParamName("thePassword") String password);
+    User createUser(@JsonRpcParam(value="theUserName") String userName, @JsonRpcParam(value="thePassword") String password);
 }
 ```
 
@@ -179,6 +185,7 @@ case of any other exception the code `-187` is returned with the value
 of `getMessage()` as returned by the exception itself.
 
 ### Auto Discovery With Annotations
+
 Spring can also be configured to auto-discover services and clients with annotations.
 
 To configure auto-discovery of annotated services first annotate the service interface:
@@ -190,14 +197,23 @@ interface MyService {
 }
 ```
 
-and use the following configuration to allow spring to find it:
+Next annotate the implementation of the service interface;
+
+```java
+@AutoJsonRpcServiceImpl
+class MyServiceImpl {
+... service methods' implementations ...
+}
+```
+
+and use the following configuration to allow spring to find the implementation that you would like to expose:
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-  <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceExporter"/>
+  <bean class="com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter"/>
 
   <bean class="com.mycompany.MyServiceImpl" />
 
@@ -275,7 +291,7 @@ class UserServiceServlet
     }
 
     public void init(ServletConfig config) {
-        this.userService = ...;
+        //this.userService = ...
         this.jsonRpcServer = new JsonRpcServer(this.userService, UserService.class);
     }
 
@@ -316,7 +332,7 @@ named `CompositeJsonServiceExporter`.
 
 ### Streaming (Socket) Server
 A streaming server that uses `Socket`s is available in the form of the
-`StreamServer` class.  It's use is very straitforward:
+`StreamServer` class.  It's use is very straightforward:
 
 ```java
 // create the jsonRpcServer
@@ -351,7 +367,7 @@ Of course, this is all possible in the Spring Framework as well:
         <property name="services">
         	<list>
 	        	<ref bean="userService" 	/>
-	        	<ref bean="contentServic" 	/>
+	        	<ref bean="contentService" 	/>
 	        	<ref bean="blackJackService" 	/>
         	</list>
         </property>
@@ -415,7 +431,7 @@ public void addFriend(UserObjectEx userObjectEx);
 
 The reason being that there is no efficient way for the server to
 determine the difference in the json between the `UserObject`
-and `UserObjectEx` pojos.
+and `UserObjectEx` Plain Old Java Objects.
 
 #### Custom method names
 
@@ -426,7 +442,7 @@ In this case, use the annotation @JsonRpcMethod on the service method.
 @JsonRpcService("/jsonrpc")
 public interface LibraryService {
     @JsonRpcMethod("VideoLibrary.GetTVShows")
-    List<TVShow> fetchTVShows(@JsonRpcParam("properties") final List<String> properties);
+    List<TVShow> fetchTVShows(@JsonRpcParam(value="properties") final List<String> properties);
 }
 ```
 

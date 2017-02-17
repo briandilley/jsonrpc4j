@@ -1,0 +1,177 @@
+plugins {
+    id 'java'
+    id 'nebula.optional-base' version '3.1.0'
+    id 'nebula.provided-base' version '3.1.0'
+    id 'findbugs'
+    id 'pmd'
+    id 'jacoco'
+    id 'build-announcements'
+    id 'nebula.info' version '3.4.1'
+    id 'com.github.ben-manes.versions' version '0.13.0'
+    id 'osgi'
+    id 'maven-publish'
+    id 'nebula.nebula-javadoc-jar' version '2.2.2'
+    id 'nebula.nebula-source-jar' version '2.2.2'
+    id 'com.jfrog.bintray' version '1.7.3'
+}
+
+description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
+version = '1.5.0'
+group = 'com.github.briandilley.jsonrpc4j-dynamic'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+test {
+    maxParallelForks 5
+}
+compileTestJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    ext {
+        jacksonVersion = '2.8.5'
+        springVersion = '4.3.5.RELEASE'
+        springBotVersion = '1.4.3.RELEASE'
+        jettyVersion = '9.4.0.RC3'
+        slf4jVersion = '1.7.22'
+    }
+
+    compile 'net.iharder:base64:2.3.9'
+    compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    provided 'javax.portlet:portlet-api:2.0'
+    provided 'javax.servlet:javax.servlet-api:3.1.0'
+
+    compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    compile "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+
+    compile "org.springframework:spring-core:${springVersion}", optional
+    compile "org.springframework:spring-context:${springVersion}", optional
+    compile "org.springframework:spring-web:${springVersion}", optional
+    compile "org.springframework:spring-webmvc:${springVersion}", optional
+
+    compile 'commons-codec:commons-codec:1.10', optional
+    compile 'org.apache.httpcomponents:httpcore-nio:4.4.5', optional
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.easymock:easymock:3.4'
+    testCompile("org.springframework.boot:spring-boot-starter-web:${springBotVersion}") {
+        exclude module: 'logback-classic'
+    }
+    testCompile "org.springframework.boot:spring-boot-starter-test:${springBotVersion}"
+    testCompile("org.eclipse.jetty:jetty-server:${jettyVersion}") {
+        exclude module: 'javax.servlet'
+    }
+    testCompile("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
+        exclude module: 'org.eclipse.jetty.orbit'
+    }
+    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.7'
+    testRuntime 'org.apache.logging.log4j:log4j-core:2.7'
+
+}
+
+jar {
+    manifest {
+        instruction 'Import-Package',
+                'org.aopalliance.intercept;resolution:="optional"',
+                'org.apache.http.*;resolution:="optional"',
+                'org.springframework.*;resolution:="optional"',
+                'org.apache.commons.logging;resolution:="optional"',
+                'javax.portlet;resolution:="optional"',
+                'javax.servlet*;version=0.0.0',
+                '*'
+    }
+}
+
+jacoco {
+    toolVersion = '0.7.6.201602180812'
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination "${buildDir}/jacocoHtml"
+    }
+}
+
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            from components.java
+            artifact tasks.javadocJar
+            artifact tasks.sourceJar
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', project.name)
+                root.appendNode('description', project.description)
+                def pomProperties = root.appendNode('properties')
+                pomProperties.appendNode('release_Manifest_Version', '1.0')
+                pomProperties.appendNode('release_Implementation_Title', "${project.group}:${project.name}:${project.version}")
+                pomProperties.appendNode('release_Implementation_Version', project.version)
+                pomProperties.appendNode('release_Build_Date', new Date().format('yyyy-MM-dd_HH:mm:ss'))
+                pomProperties.appendNode('release_Created_By', "${System.getProperty('java.runtime.version')} (${System.getProperty('java.vm.specification.vendor')})")
+                pomProperties.appendNode('release_Build_Java_Version', System.getProperty('java.version'))
+                pomProperties.appendNode('release_X_Compile_Target_JDK', project.targetCompatibility)
+                pomProperties.appendNode('release_X_Compile_Source_JDK', project.sourceCompatibility)
+                root.appendNode('url', 'https://github.com/briandilley/jsonrpc4j')
+                root.appendNode('scm').appendNode('url', 'https://github.com/briandilley/jsonrpc4j.git')
+                def devs = root.appendNode('developers')
+                def bernat = devs.appendNode('developer')
+                bernat.appendNode('id', 'gaborbernat')
+                bernat.appendNode('name', 'Bernát Gábor')
+                bernat.appendNode('email', 'bernat@primeransk.net')
+                def apache = root.appendNode('licenses').appendNode('license')
+                apache.appendNode('name', 'The MIT License')
+                apache.appendNode('url', 'https://opensource.org/licenses/MIT')
+                apache.appendNode('distribution', 'repo')
+            }
+        }
+    }
+}
+
+bintray {
+    user = project.hasProperty('user') ? project.property('user') : 'not_set'
+    key = project.hasProperty('key') ? project.property('key') : 'not_set'
+    dryRun = false
+    publish = true
+    pkg {
+        repo = 'maven'
+        name = 'com.github.briandilley.jsonrpc4j:jsonrpc4j'
+        desc = project.description
+        licenses = ['MIT']
+        publications = ['release']
+        websiteUrl = 'https://briandilley.github.io/jsonrpc4j'
+        issueTrackerUrl = 'https://github.com/briandilley/jsonrpc4j/issues'
+        vcsUrl = 'git@github.com:briandilley/jsonrpc4j.git'
+        githubRepo = 'briandilley/jsonrpc'
+        githubReleaseNotesFile = 'README.md'
+        labels = ['json', 'rpc', 'java']
+        publicDownloadNumbers = true
+        version {
+            gpg {
+                sign = true
+            }
+            name = project.version
+            vcsTag = project.version
+            released = new Date()
+        }
+    }
+}
+
+bintrayUpload {
+    dependsOn "publishToMavenLocal"
+}
