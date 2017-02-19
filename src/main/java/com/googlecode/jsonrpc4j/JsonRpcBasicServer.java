@@ -478,12 +478,6 @@ public class JsonRpcBasicServer {
 		logger.debug("Invoking method: {} with args {}", method.getName(), params);
 
 		Object[] convertedParams;
-
-		/*Object[] convertedParams = convertJsonToParameters(method, params);
-		if (convertedParameterTransformer != null) {
-			convertedParams = convertedParameterTransformer.transformConvertedParameters(target, convertedParams);
-		}*/
-		//Object result = method.invoke(target, convertedParams);
 		Object result;
 
         if(method.getGenericParameterTypes().length==1 && method.isVarArgs()) {
