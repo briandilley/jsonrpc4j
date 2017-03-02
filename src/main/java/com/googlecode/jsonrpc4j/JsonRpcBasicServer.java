@@ -676,6 +676,15 @@ public class JsonRpcBasicServer {
 		return bestMethod;
 	}
 
+    /**
+     * Finds the {@link Method} from the supplied {@link Set} that
+     * matches the method name annotation and have varargs.
+     * it as a {@link AMethodWithItsArgs} class.
+     *
+     * @param methods    the {@link Method}s
+     * @param paramsNode the {@link JsonNode} of request
+     * @return the {@link AMethodWithItsArgs}
+     */
 	private AMethodWithItsArgs findBestMethodForVarargs(Set<Method> methods, JsonNode paramsNode) {
 		for (Method method : methods) {
 			if(method.getParameterTypes().length!=1) {
