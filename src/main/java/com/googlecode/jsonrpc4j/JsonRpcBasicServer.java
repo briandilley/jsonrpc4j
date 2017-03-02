@@ -5,8 +5,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.*;
-import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import net.iharder.Base64;
 import org.slf4j.Logger;
@@ -17,11 +20,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.logging.Level;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
@@ -610,33 +624,7 @@ public class JsonRpcBasicServer {
 			throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
 		}
 		if(matchedMethod==null) {
-			for (Method method : methods) {
-				if(method.getParameterTypes().length!=1) {
-					continue;
-				}
-				if(method.isVarArgs()) {
-					matchedMethod = new AMethodWithItsArgs(method);
-
-					if (paramsNode.isArray()) {
-						ArrayNode arrayNode = ArrayNode.class.cast(paramsNode);
-						for (int i = 0; i < paramsNode.size(); i++) {
-							matchedMethod.arguments.add(arrayNode.get(i));
-						}
-					}
-
-					if (paramsNode.isObject()) {
-						ObjectNode objectNode = ObjectNode.class.cast(paramsNode);
-						Iterator<Map.Entry<String, JsonNode>> items = objectNode.fields();
-						while (items.hasNext()) {
-							Map.Entry<String, JsonNode> item = items.next();
-							JsonNode name = JsonNodeFactory.instance.objectNode().put(item.getKey(),item.getKey());
-							matchedMethod.arguments.add(name.get(item.getKey()));
-							matchedMethod.arguments.add(item.getValue());
-						}
-					}
-					break;
-				}
-			}
+			matchedMethod = findBestMethodForVarargs(methods, paramsNode);
 		}
 		return matchedMethod;
 	}
@@ -686,6 +674,37 @@ public class JsonRpcBasicServer {
 			}
 		}
 		return bestMethod;
+	}
+
+	private AMethodWithItsArgs findBestMethodForVarargs(Set<Method> methods, JsonNode paramsNode) {
+		for (Method method : methods) {
+			if(method.getParameterTypes().length!=1) {
+				continue;
+			}
+			if(method.isVarArgs()) {
+				AMethodWithItsArgs matchedMethod = new AMethodWithItsArgs(method);
+
+				if (paramsNode.isArray()) {
+					ArrayNode arrayNode = ArrayNode.class.cast(paramsNode);
+					for (int i = 0; i < paramsNode.size(); i++) {
+						matchedMethod.arguments.add(arrayNode.get(i));
+					}
+				}
+
+				if (paramsNode.isObject()) {
+					ObjectNode objectNode = ObjectNode.class.cast(paramsNode);
+					Iterator<Map.Entry<String, JsonNode>> items = objectNode.fields();
+					while (items.hasNext()) {
+						Map.Entry<String, JsonNode> item = items.next();
+						JsonNode name = JsonNodeFactory.instance.objectNode().put(item.getKey(),item.getKey());
+						matchedMethod.arguments.add(name.get(item.getKey()));
+						matchedMethod.arguments.add(item.getValue());
+					}
+				}
+				return matchedMethod;
+			}
+		}
+		return null;
 	}
 	
 	private int getNumArgTypeMatches(ArrayNode paramNodes, int numParams, List<Class<?>> parameterTypes) {
