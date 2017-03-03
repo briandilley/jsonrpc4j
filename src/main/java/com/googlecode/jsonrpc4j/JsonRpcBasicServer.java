@@ -494,7 +494,7 @@ public class JsonRpcBasicServer {
 		Object[] convertedParams;
 		Object result;
 
-        if(method.getGenericParameterTypes().length==1 && method.isVarArgs()) {
+        if (method.getGenericParameterTypes().length == 1 && method.isVarArgs()) {
             convertedParams = new Object[params.size()];
             ObjectMapper mapper = new ObjectMapper();
 
@@ -502,10 +502,7 @@ public class JsonRpcBasicServer {
                 JsonNode jsonNode = params.get(i);
                 Class type = getJavaTypeForJsonType(jsonNode.getNodeType());
                 Object object = mapper.convertValue(jsonNode, type);
-                logger.debug(String.format(
-                        "[%s] param: %s -> %s",
-                        method.getName(), i, type.getName()
-                ));
+                logger.debug(String.format("[%s] param: %s -> %s", method.getName(), i, type.getName()));
                 convertedParams[i] = object;
             }
 
@@ -623,8 +620,8 @@ public class JsonRpcBasicServer {
 		} else {
 			throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
 		}
-		if(matchedMethod==null) {
-			matchedMethod = findBestMethodForVarargs(methods, paramsNode);
+        if (matchedMethod == null) {
+            matchedMethod = findBestMethodForVarargs(methods, paramsNode);
 		}
 		return matchedMethod;
 	}
@@ -687,27 +684,27 @@ public class JsonRpcBasicServer {
      */
 	private AMethodWithItsArgs findBestMethodForVarargs(Set<Method> methods, JsonNode paramsNode) {
 		for (Method method : methods) {
-			if(method.getParameterTypes().length!=1) {
-				continue;
+            if (method.getParameterTypes().length != 1) {
+                continue;
 			}
-			if(method.isVarArgs()) {
-				AMethodWithItsArgs matchedMethod = new AMethodWithItsArgs(method);
+            if (method.isVarArgs()) {
+                AMethodWithItsArgs matchedMethod = new AMethodWithItsArgs(method);
 
 				if (paramsNode.isArray()) {
 					ArrayNode arrayNode = ArrayNode.class.cast(paramsNode);
 					for (int i = 0; i < paramsNode.size(); i++) {
-						matchedMethod.arguments.add(arrayNode.get(i));
+						matchedMethod.addArgument(arrayNode.get(i));
 					}
 				}
 
 				if (paramsNode.isObject()) {
 					ObjectNode objectNode = ObjectNode.class.cast(paramsNode);
-					Iterator<Map.Entry<String, JsonNode>> items = objectNode.fields();
+					Iterator<Map.Entry<String,JsonNode>> items = objectNode.fields();
 					while (items.hasNext()) {
-						Map.Entry<String, JsonNode> item = items.next();
+						Map.Entry<String,JsonNode> item = items.next();
 						JsonNode name = JsonNodeFactory.instance.objectNode().put(item.getKey(),item.getKey());
-						matchedMethod.arguments.add(name.get(item.getKey()));
-						matchedMethod.arguments.add(item.getValue());
+						matchedMethod.addArgument(name.get(item.getKey()));
+						matchedMethod.addArgument(item.getValue());
 					}
 				}
 				return matchedMethod;
@@ -1008,9 +1005,9 @@ public class JsonRpcBasicServer {
 			int numParameters = method.getParameterTypes().length;
 			for (int i = 0; i < numParameters; i++) {
 				if (i < paramCount) {
-					arguments.add(paramNodes.get(i));
+					addArgument(paramNodes.get(i));
 				} else {
-					arguments.add(NullNode.getInstance());
+					addArgument(NullNode.getInstance());
 				}
 			}
 		}
@@ -1025,12 +1022,16 @@ public class JsonRpcBasicServer {
 			for (int i = 0; i < numParameters; i++) {
 				JsonRpcParam param = allNames.get(i);
 				if (param != null && paramNames.contains(param.value())) {
-					arguments.add(paramNodes.get(param.value()));
+					addArgument(paramNodes.get(param.value()));
 				} else {
-					arguments.add(NullNode.getInstance());
+					addArgument(NullNode.getInstance());
 				}
 			}
 		}
+
+		public void addArgument(JsonNode argumentJsonNode) {
+		    arguments.add(argumentJsonNode);
+        }
 	}
 	
 	private static class InvokeListenerHandler implements AutoCloseable {

@@ -10,11 +10,11 @@ import java.util.Map;
 
 public class VarArgsUtil {
 
-    public static Map<String, Object> convertArgs(Object[] params) {
+    public static Map<String,Object> convertArgs(Object[] params) {
 
-        final Map<String, Object> unsafeMap = new HashMap<>();
+        final Map<String,Object> unsafeMap = new HashMap<>();
         for (int i = 0; i < params.length; i += 2) {
-            if(params[i] instanceof String && params[i]!=null && !params[i].toString().isEmpty()) {
+            if (params[i] instanceof String && params[i] != null && !params[i].toString().isEmpty()) {
                 unsafeMap.put(params[i].toString(), params[i + 1]);
             }
         }

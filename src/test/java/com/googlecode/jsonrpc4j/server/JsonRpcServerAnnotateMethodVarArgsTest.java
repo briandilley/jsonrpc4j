@@ -37,7 +37,7 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 	@Test
 	public void callMethodWithVarArgParameters() throws Exception {
-	    Map<String, Object> paramsMap = new HashMap<>();
+	    Map<String,Object> paramsMap = new HashMap<>();
         paramsMap.put("argOne","one");
         paramsMap.put("argTwo",2);
         paramsMap.put("argThree","three");
@@ -45,18 +45,15 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
         paramsMap.put("argFive", (Object)"five");
         paramsMap.put("argSix", 6.0f);
         paramsMap.put("argSeven", 7d);
-        Object[] callParams = new Object[paramsMap.size()*2];
+        Object[] callParams = new Object[paramsMap.size() * 2];
         int i=0;
-        for (Map.Entry<String, Object> entry : paramsMap.entrySet()) {
+        for (Map.Entry<String,Object> entry : paramsMap.entrySet()) {
             callParams[i++] = entry.getKey();
             callParams[i++] = entry.getValue();
         }
 
         jsonRpcServerAnnotatedMethod.handleRequest(
-                messageWithMapParamsStream(
-                        "testMethodVararg",
-                        callParams
-                ),
+                messageWithMapParamsStream("testMethodVararg", callParams),
 				byteArrayOutputStream
 		);
         JsonNode res = result();
@@ -65,10 +62,10 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
         // params order saved during call, but order not guaranteed
         ObjectNode expectedResult = mapper.valueToTree(paramsMap);
         // all json numbers will be mapped to double
-        expectedResult.set("argTwo",mapper.valueToTree(2d));
+        expectedResult.set("argTwo", mapper.valueToTree(2d));
         expectedResult.set("argFour", mapper.valueToTree(4d));
         Assert.assertEquals(expectedResult.toString(), resultNode.toString());
-	}
+    }
 
     private JsonNode result() throws IOException {
         return decodeAnswer(byteArrayOutputStream).get(RESULT);
