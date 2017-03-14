@@ -496,11 +496,11 @@ public class JsonRpcBasicServer {
 
         if (method.getGenericParameterTypes().length == 1 && method.isVarArgs()) {
             convertedParams = new Object[params.size()];
-            ObjectMapper mapper = new ObjectMapper();
+            // ObjectMapper mapper = new ObjectMapper();
 
             for (int i = 0; i < params.size(); i++) {
                 JsonNode jsonNode = params.get(i);
-                Class type = getJavaTypeForJsonType(jsonNode.getNodeType());
+                Class<?> type = getJavaTypeForJsonType(jsonNode.getNodeType());
                 Object object = mapper.convertValue(jsonNode, type);
                 logger.debug(String.format("[%s] param: %s -> %s", method.getName(), i, type.getName()));
                 convertedParams[i] = object;

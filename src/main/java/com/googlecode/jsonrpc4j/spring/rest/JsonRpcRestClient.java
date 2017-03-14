@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.web.client.ResponseErrorHandler;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
@@ -87,8 +88,8 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 			this.restTemplate.setMessageConverters(restMessageConverters);
 		}
 
-		// use specific JSON-RPC erro handler
-		if (!(restTemplate.getErrorHandler() instanceof JsonRpcResponseErrorHandler))
+		// use specific JSON-RPC error handler if it has not been changed to custom 
+		if (restTemplate.getErrorHandler() instanceof org.springframework.web.client.DefaultResponseErrorHandler)
 			restTemplate.setErrorHandler(JsonRpcResponseErrorHandler.INSTANCE);
 	}
 

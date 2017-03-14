@@ -89,12 +89,13 @@ public class DefaultExceptionResolver implements ExceptionResolver {
 	}
 
 	/**
-	 * Resolves original exception type name into an actual {@link Class<?>}.
+	 * Resolves original exception type name into an actual {@link Class}.
 	 * Override this, if you want custom behaviour for handling exceptions,
 	 * i.e.: Default to RuntimeException.
 	 *
 	 * @param typeName Original exception type name thrown on the server.
-	 * @throws ClassNotFoundException
+     * @return the resolved throwable
+	 * @throws ClassNotFoundException - if throwable class has not been found
 	 */
 	protected Class<? extends Throwable> resolveThrowableClass(String typeName) throws ClassNotFoundException {
 		Class<?> clazz;
