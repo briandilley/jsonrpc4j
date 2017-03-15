@@ -17,12 +17,16 @@ import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public enum JsonRpcResponseErrorHandler
+public class JsonRpcResponseErrorHandler
 		implements ResponseErrorHandler {
 	
-	INSTANCE;
+	public static final JsonRpcResponseErrorHandler INSTANCE =  new JsonRpcResponseErrorHandler();
 	
+    private  final Logger logger = LoggerFactory.getLogger(this.getClass());
+    
 	/**
 	 * for supported codes see {@link com.googlecode.jsonrpc4j.DefaultHttpStatusCodeProvider}
 	 */
@@ -45,7 +49,7 @@ public enum JsonRpcResponseErrorHandler
 			// Checks the content type. If application/json-rpc then allow handler to read message
 			final MediaType contentType = response.getHeaders().getContentType();
 			if (MappingJacksonRPC2HttpMessageConverter.APPLICATION_JSON_RPC.isCompatibleWith(contentType))
-				return true;
+				return false;
 		}
 		
 		return
@@ -89,7 +93,8 @@ public enum JsonRpcResponseErrorHandler
 				return FileCopyUtils.copyToByteArray(responseBody);
 			}
 		} catch (IOException ex) {
-			throw new RuntimeException(ex.getMessage(), ex);
+            // No body in response 401 for example
+            logger.debug("Can not read resonse body", ex);
 		}
 		return new byte[0];
 	}
@@ -97,7 +102,7 @@ public enum JsonRpcResponseErrorHandler
 	private Charset getCharset(ClientHttpResponse response) {
 		HttpHeaders headers = response.getHeaders();
 		MediaType contentType = headers.getContentType();
-		return contentType != null ? contentType.getCharSet() : null;
+		return contentType != null ? contentType.getCharset() : null;
 	}
 	
 }
