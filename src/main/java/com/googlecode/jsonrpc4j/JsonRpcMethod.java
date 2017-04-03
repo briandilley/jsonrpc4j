@@ -18,4 +18,6 @@ public @interface JsonRpcMethod {
 	 */
 	String value();
 	
+	JsonRpcParamsPassMode paramsPassMode() default JsonRpcParamsPassMode.AUTO;
+	
 }

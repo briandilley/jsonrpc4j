@@ -5,8 +5,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -196,13 +196,43 @@ public abstract class ReflectionUtil {
 	 * @return the parsed arguments
 	 */
 	public static Object parseArguments(Method method, Object[] arguments) {
-		
+
+		JsonRpcParamsPassMode paramsPassMode = JsonRpcParamsPassMode.AUTO;
+		JsonRpcMethod jsonRpcMethod = getAnnotation(method, JsonRpcMethod.class);
+		if (jsonRpcMethod != null)
+			paramsPassMode = jsonRpcMethod.paramsPassMode();
+
 		Map<String, Object> namedParams = getNamedParameters(method, arguments);
-		
-		if (namedParams.size() > 0) {
-			return namedParams;
-		} else {
-			return arguments != null ? arguments : new Object[]{};
+
+		switch (paramsPassMode) {
+		case ARRAY:
+			if (namedParams.size() > 0) {
+				Object[] parsed = new Object[namedParams.size()];
+				int i = 0;
+				for (Object value : namedParams.values()) {
+					parsed[i++] = value;
+				}
+				return parsed;
+			} else {
+				return arguments != null ? arguments : new Object[] {};
+			}
+		case OBJECT:
+			if (namedParams.size() > 0) {
+				return namedParams;
+			} else {
+				if (arguments == null)
+					return new Object[] {};
+				throw new RuntimeException(
+						"OBJECT parameters pass mode is impossible without declaring JsonRpcParam annotations for all parameters on method "
+								+ method.getName());
+			}
+		case AUTO:
+		default:
+			if (namedParams.size() > 0) {
+				return namedParams;
+			} else {
+				return arguments != null ? arguments : new Object[] {};
+			}
 		}
 	}
 	
@@ -216,7 +246,7 @@ public abstract class ReflectionUtil {
 	 */
 	private static Map<String, Object> getNamedParameters(Method method, Object[] arguments) {
 		
-		Map<String, Object> namedParams = new HashMap<>();
+		Map<String, Object> namedParams = new LinkedHashMap<>();
 		
 		Annotation[][] paramAnnotations = method.getParameterAnnotations();
 		for (int i = 0; i < paramAnnotations.length; i++) {
