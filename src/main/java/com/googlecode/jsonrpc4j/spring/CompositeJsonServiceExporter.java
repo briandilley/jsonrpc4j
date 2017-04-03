@@ -13,7 +13,7 @@ import java.io.IOException;
  * multiple services via JSON-RPC over HTTP.
  */
 @SuppressWarnings("unused")
-class CompositeJsonServiceExporter extends AbstractCompositeJsonServiceExporter implements HttpRequestHandler {
+public class CompositeJsonServiceExporter extends AbstractCompositeJsonServiceExporter implements HttpRequestHandler {
 
 	private JsonRpcServer jsonRpcServer;
 
