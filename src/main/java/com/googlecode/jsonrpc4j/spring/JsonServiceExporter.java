@@ -14,7 +14,7 @@ import java.io.IOException;
  * <a href="http://groups.google.com/group/json-rpc">
  * http://groups.google.com/group/json-rpc</a>.
  */
-class JsonServiceExporter extends AbstractJsonServiceExporter implements HttpRequestHandler {
+public class JsonServiceExporter extends AbstractJsonServiceExporter implements HttpRequestHandler {
 
 	private JsonRpcServer jsonRpcServer;
 

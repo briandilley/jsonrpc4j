@@ -28,7 +28,7 @@ import java.util.Map;
  * (aka consumer) for accessing an HTTP based JSON-RPC service.
  */
 @SuppressWarnings("unused")
-class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements MethodInterceptor, InitializingBean, FactoryBean<Object>, ApplicationContextAware {
+public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements MethodInterceptor, InitializingBean, FactoryBean<Object>, ApplicationContextAware {
 
 	private Object proxyObject = null;
 	private RequestListener requestListener = null;
