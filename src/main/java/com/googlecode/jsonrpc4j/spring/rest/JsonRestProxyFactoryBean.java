@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.ExceptionResolver;
 import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 import com.googlecode.jsonrpc4j.ReflectionUtil;
@@ -41,6 +42,9 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 	private SSLContext sslContext = null;
 	private HostnameVerifier hostNameVerifier = null;
 
+	
+	private ExceptionResolver exceptionResolver; 
+	
 	private ApplicationContext applicationContext;
 
 	/**
@@ -52,28 +56,40 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 
 		proxyObject = ProxyFactory.getProxy(getObjectType(), this);
 
-		if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
-		}
-		if (objectMapper == null && applicationContext != null) {
-			try {
-				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-			} catch (Exception e) {
-				logger.debug(e);
+		if (jsonRpcRestClient==null) {
+			
+			if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
+				objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+			
 			}
-		}
-		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
-		}
+			if (objectMapper == null && applicationContext != null) {
+				try {
+					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+				} catch (Exception e) {
+					logger.debug(e);
+				}
+			}
+			
+			if (objectMapper == null) {
+				objectMapper = new ObjectMapper();
+			}
 
-		try {
-			jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap<String, String>());
-			jsonRpcRestClient.setRequestListener(requestListener);
-			jsonRpcRestClient.setSslContext(sslContext);
-			jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
-		} catch (MalformedURLException mue) {
-			throw new RuntimeException(mue);
+			try {
+				jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap<String, String>());
+				jsonRpcRestClient.setRequestListener(requestListener);
+				jsonRpcRestClient.setSslContext(sslContext);
+				jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
+				
+				if (exceptionResolver!=null) {
+					jsonRpcRestClient.setExceptionResolver(exceptionResolver);
+				}
+				
+			} catch (MalformedURLException mue) {
+				throw new RuntimeException(mue);
+			}
+			
 		}
+		
 	}
 
 	/**
@@ -167,4 +183,14 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 		this.restTemplate = restTemplate;
 	}
 
+	public void setJsonRpcRestClient(JsonRpcRestClient jsonRpcRestClient) {
+		this.jsonRpcRestClient = jsonRpcRestClient;
+	}
+
+	public void setExceptionResolver(ExceptionResolver exceptionResolver) {
+		this.exceptionResolver = exceptionResolver;
+	}
+
+	
+	
 }

@@ -2,6 +2,7 @@ package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
+import com.googlecode.jsonrpc4j.ExceptionResolver;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -39,6 +40,8 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 
 	private SSLContext sslContext = null;
 	private HostnameVerifier hostNameVerifier = null;
+	
+	private ExceptionResolver exceptionResolver; 
 
 	private ApplicationContext applicationContext;
 
@@ -51,31 +54,37 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 		super.afterPropertiesSet();
 		proxyObject = ProxyFactory.getProxy(getServiceInterface(), this);
 
-		if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
-		}
-		if (objectMapper == null && applicationContext != null) {
+		if (jsonRpcHttpClient==null) {
+			if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
+				objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+			}
+			if (objectMapper == null && applicationContext != null) {
+				try {
+					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+				} catch (Exception e) {
+					logger.debug(e);
+				}
+			}
+			if (objectMapper == null) {
+				objectMapper = new ObjectMapper();
+			}
+	
 			try {
-				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-			} catch (Exception e) {
-				logger.debug(e);
+				jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
+				jsonRpcHttpClient.setRequestListener(requestListener);
+				jsonRpcHttpClient.setSslContext(sslContext);
+				jsonRpcHttpClient.setHostNameVerifier(hostNameVerifier);
+	
+				if (contentType != null) {
+					jsonRpcHttpClient.setContentType(contentType);
+				}
+				
+				if (exceptionResolver!=null) {
+					jsonRpcHttpClient.setExceptionResolver(exceptionResolver);
+				}
+			} catch (MalformedURLException mue) {
+				throw new RuntimeException(mue);
 			}
-		}
-		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
-		}
-
-		try {
-			jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
-			jsonRpcHttpClient.setRequestListener(requestListener);
-			jsonRpcHttpClient.setSslContext(sslContext);
-			jsonRpcHttpClient.setHostNameVerifier(hostNameVerifier);
-
-			if (contentType != null) {
-				jsonRpcHttpClient.setContentType(contentType);
-			}
-		} catch (MalformedURLException mue) {
-			throw new RuntimeException(mue);
 		}
 	}
 
@@ -169,4 +178,14 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
+
+	public void setJsonRpcHttpClient(JsonRpcHttpClient jsonRpcHttpClient) {
+		this.jsonRpcHttpClient = jsonRpcHttpClient;
+	}
+
+	public void setExceptionResolver(ExceptionResolver exceptionResolver) {
+		this.exceptionResolver = exceptionResolver;
+	}
+
+
 }
