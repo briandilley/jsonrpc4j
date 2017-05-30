@@ -1,11 +1,13 @@
 package com.googlecode.jsonrpc4j;
 
-import org.junit.Test;
-
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Set;
+
+import org.junit.Test;
 
 public class ReflectionUtilTest {
 	
@@ -117,6 +119,14 @@ public class ReflectionUtilTest {
 		assertEquals(2, namedParams.get("two"));
 	}
 	
+  @Test
+  public void sameNameObjectParamJsonRpcMethod() {
+    Set<Method> methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "objectParamSameName", true);
+    assertEquals(1, methods.size());
+    methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "diffMethodName", true);
+    assertEquals(1, methods.size());
+  }
+
 	private interface JsonRpcTestService {
 		
 		void noParams();
@@ -153,5 +163,36 @@ public class ReflectionUtilTest {
 
 		@JsonRpcMethod(value = "allNamedParamsPassParamsObject", paramsPassMode = JsonRpcParamsPassMode.OBJECT)
 		void allNamedParamsPassParamsObject(@JsonRpcParam("one") String one, @JsonRpcParam("two") int two);
+
+    void objectParamSameName(Object1 obj);
+
+    @JsonRpcMethod("diffMethodName")
+    void objectParamSameName(Object2 obj);
 	}
+
+  private static class Object1 {
+    String foo;
+
+    public String getFoo() {
+      return foo;
+    }
+
+    public void setFoo(String foo) {
+      this.foo = foo;
+    }
+  }
+
+  private static class Object2 {
+    String foo;
+
+    public String getFoo() {
+      return foo;
+    }
+
+    public void setFoo(String foo) {
+      this.foo = foo;
+    }
+
+  }
+
 }

@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Utilities for reflection.
  */
-@SuppressWarnings("unused")
 public abstract class ReflectionUtil {
 	
 	private static final Map<String, Set<Method>> methodCache = new ConcurrentHashMap<>();
@@ -29,11 +28,13 @@ public abstract class ReflectionUtil {
 	/**
 	 * Finds methods with the given name on the given class.
 	 *
-	 * @param classes the classes
-	 * @param name    the method name
+	 * @param classes                    the classes
+	 * @param name                       the method name
+	 * @param requireAnnotatedMethodName if true, and the JsonRpcMethod annotation is present on a class its value must match
+	 *                                   to be a candidate.
 	 * @return the methods
 	 */
-	static Set<Method> findCandidateMethods(Class<?>[] classes, String name) {
+	static Set<Method> findCandidateMethods(Class<?>[] classes, String name, boolean requireAnnotatedMethodName) {
 		StringBuilder sb = new StringBuilder();
 		for (Class<?> clazz : classes) {
 			sb.append(clazz.getName()).append("::");
@@ -45,8 +46,9 @@ public abstract class ReflectionUtil {
 		Set<Method> methods = new HashSet<>();
 		for (Class<?> clazz : classes) {
 			for (Method method : clazz.getMethods()) {
-				if (method.getName().equals(name) || annotationMatches(method, name)) {
-					methods.add(method);
+				if (method.getName().equals(name) && (!requireAnnotatedMethodName || !method.isAnnotationPresent(JsonRpcMethod.class)) ||
+				    annotationMatches(method, name)) {
+          methods.add(method);
 				}
 			}
 		}
