@@ -86,7 +86,6 @@ public class JsonRpcBasicServer {
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
-	private boolean requireAnnotatedMethodName = false;
 	private RequestInterceptor requestInterceptor = null;
 	private ErrorResolver errorResolver = null;
 	private InvocationListener invocationListener = null;
@@ -346,7 +345,7 @@ public class JsonRpcBasicServer {
 		final String partialMethodName = getMethodName(fullMethodName);
 		final String serviceName = getServiceName(fullMethodName);
 		
-		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName, requireAnnotatedMethodName);
+		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName);
 		if (methods.isEmpty())
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
 		AMethodWithItsArgs methodArgs = findBestMethodByParamsNode(methods, node.get(PARAMS));
@@ -912,17 +911,6 @@ public class JsonRpcBasicServer {
 		this.allowLessParams = allowLessParams;
 	}
 
-  /**
-   * Sets whether or not the server should require method name specified in the JsonRpcMethod annotation
-   * if it is present.  When true, JsonRpcMethod annotations can be used to resolve ambiguity between
-   * overloaded methods that take the same number of Object type parameters.
-   *
-   * @param requireAnnotatedMethodName the requireAnnotatedMethodName to set
-   */
-  public void setRequireAnnotatedMethodName(boolean requireAnnotatedMethodName) {
-    this.requireAnnotatedMethodName = requireAnnotatedMethodName;
-  }
-	
 	/**
 	 * Sets the {@link ErrorResolver} used for resolving errors.
 	 * Multiple {@link ErrorResolver}s can be used at once by

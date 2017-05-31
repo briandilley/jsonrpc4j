@@ -4,7 +4,7 @@ This project aims to provide the facility to easily implement
 JSON-RPC for the java programming language.  jsonrpc4j uses the
 [Jackson][Jackson page] library to convert java
 objects to and from json objects (and other things related to
-JSON-RPC). 
+JSON-RPC).
 
 [![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.5.0/)
 [ ![Download](https://api.bintray.com/packages/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/images/download.svg) ](https://bintray.com/gaborbernat/maven/com.github.briandilley.jsonrpc4j%3Ajsonrpc4j/_latestVersion)
@@ -373,6 +373,8 @@ Of course, this is all possible in the Spring Framework as well:
         </property>
     </bean>
 ```
+	}
+
 
 ### `JsonRpcServer` settings explained
 The following settings apply to both the `JsonRpcServer` and `JsonServiceExporter`:
@@ -387,12 +389,13 @@ The following settings apply to both the `JsonRpcServer` and `JsonServiceExporte
 Methods are resolved in the following way, each step immediately short circuits the
 process when the available methods is 1 or less.
 
-  1. All methods with the same name as the request method are considered
-  2. If `allowLessParams` is disabled methods with more parameters than the request are removed
-  3. If `allowExtraParams` is disabled then methods with less parameters than the request are removed
-  4. If either of the two parameters above are enabled then methods with the lowest difference in parameter count from the request are kept
-  5. Parameters types are compared to the request parameters and the method(s) with the highest number of matching parameters is kept
-  6. If there are multiple methods remaining then the first of them are used
+  1. If a method has the @JsonRpcMethod annotation, then if the annotation value has the same name as the request method, it is considered.  If the annotation has `required` set to `true`, then the Java method name is not considered.
+  1. Otherwise, all methods with the same name as the request method are considered.
+  1. If `allowLessParams` is disabled methods with more parameters than the request are removed
+  1. If `allowExtraParams` is disabled then methods with less parameters than the request are removed
+  1. If either of the two parameters above are enabled then methods with the lowest difference in parameter count from the request are kept
+  1. Parameters types are compared to the request parameters and the method(s) with the highest number of matching parameters is kept
+  1. If there are multiple methods remaining then the first of them are used
 
 jsonrpc4j's method resolution allows for overloaded methods _sometimes_.  Primitives are
 easily resolved from json to java.  But resolution between other objects are not possible.
@@ -436,7 +439,8 @@ and `UserObjectEx` Plain Old Java Objects.
 #### Custom method names
 
 In some instances, you may need to expose a JsonRpc method that is not a valid Java method name.
-In this case, use the annotation @JsonRpcMethod on the service method.
+In this case, use the annotation @JsonRpcMethod on the service method.  You may also use this annotation
+to disambiguate overloaded methods by setting the `required` property on the annotation to `true`.
 
 ```java
 @JsonRpcService("/jsonrpc")

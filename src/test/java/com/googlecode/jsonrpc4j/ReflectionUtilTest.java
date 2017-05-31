@@ -121,9 +121,9 @@ public class ReflectionUtilTest {
 	
   @Test
   public void sameNameObjectParamJsonRpcMethod() {
-    Set<Method> methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "objectParamSameName", true);
+    Set<Method> methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "objectParamSameName");
     assertEquals(1, methods.size());
-    methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "diffMethodName", true);
+    methods = ReflectionUtil.findCandidateMethods(new Class<?>[] { JsonRpcTestService.class }, "diffMethodName");
     assertEquals(1, methods.size());
   }
 
@@ -166,7 +166,7 @@ public class ReflectionUtilTest {
 
     void objectParamSameName(Object1 obj);
 
-    @JsonRpcMethod("diffMethodName")
+    @JsonRpcMethod(value="diffMethodName", required=true)
     void objectParamSameName(Object2 obj);
 	}
 

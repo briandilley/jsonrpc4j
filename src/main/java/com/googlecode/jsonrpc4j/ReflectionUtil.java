@@ -30,11 +30,9 @@ public abstract class ReflectionUtil {
 	 *
 	 * @param classes                    the classes
 	 * @param name                       the method name
-	 * @param requireAnnotatedMethodName if true, and the JsonRpcMethod annotation is present on a class its value must match
-	 *                                   to be a candidate.
 	 * @return the methods
 	 */
-	static Set<Method> findCandidateMethods(Class<?>[] classes, String name, boolean requireAnnotatedMethodName) {
+	static Set<Method> findCandidateMethods(Class<?>[] classes, String name) {
 		StringBuilder sb = new StringBuilder();
 		for (Class<?> clazz : classes) {
 			sb.append(clazz.getName()).append("::");
@@ -46,32 +44,24 @@ public abstract class ReflectionUtil {
 		Set<Method> methods = new HashSet<>();
 		for (Class<?> clazz : classes) {
 			for (Method method : clazz.getMethods()) {
-				if (method.getName().equals(name) && (!requireAnnotatedMethodName || !method.isAnnotationPresent(JsonRpcMethod.class)) ||
-				    annotationMatches(method, name)) {
+			  if (method.isAnnotationPresent(JsonRpcMethod.class)) {
+		      JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
+		      
+		      if (methodAnnotation.required()) {
+		        if (methodAnnotation.value().equals(name)) {
+		          methods.add(method);
+		        }
+		      } else if (methodAnnotation.value().equals(name) || method.getName().equals(name)) {
+		        methods.add(method);
+		      }
+			  } else if (method.getName().equals(name)) {
           methods.add(method);
-				}
+			  }
 			}
 		}
 		methods = Collections.unmodifiableSet(methods);
 		methodCache.put(cacheKey, methods);
 		return methods;
-	}
-	
-	/**
-	 * Checks for the annotation {@link JsonRpcMethod} on {@code method} to see if its value matches {@code name}
-	 *
-	 * @param method the method to check
-	 * @param name   the expected method name
-	 * @return true if {@code method} is named {@code name}
-	 */
-	private static boolean annotationMatches(Method method, String name) {
-		if (method.isAnnotationPresent(JsonRpcMethod.class)) {
-			JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
-			if (methodAnnotation.value().equals(name)) {
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	/**
