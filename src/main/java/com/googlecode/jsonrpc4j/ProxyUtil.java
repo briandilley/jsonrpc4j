@@ -186,7 +186,7 @@ public abstract class ProxyUtil {
 	 * @return the proxied interface
 	 */
 	public static <T> T createClientProxy(ClassLoader classLoader, Class<T> proxyInterface, final IJsonRpcClient client) {
-		return createClientProxy(classLoader, proxyInterface, client, new HashMap<String, String>());
+		return createClientProxy(classLoader, proxyInterface, client, client.getHeaders());
 	}
 	
 	/**
