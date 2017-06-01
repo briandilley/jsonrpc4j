@@ -390,12 +390,12 @@ Methods are resolved in the following way, each step immediately short circuits 
 process when the available methods is 1 or less.
 
   1. If a method has the @JsonRpcMethod annotation, then if the annotation value has the same name as the request method, it is considered.  If the annotation has `required` set to `true`, then the Java method name is not considered.
-  1. Otherwise, all methods with the same name as the request method are considered.
-  1. If `allowLessParams` is disabled methods with more parameters than the request are removed
-  1. If `allowExtraParams` is disabled then methods with less parameters than the request are removed
-  1. If either of the two parameters above are enabled then methods with the lowest difference in parameter count from the request are kept
-  1. Parameters types are compared to the request parameters and the method(s) with the highest number of matching parameters is kept
-  1. If there are multiple methods remaining then the first of them are used
+  2. Otherwise, all methods with the same name as the request method are considered.
+  3. If `allowLessParams` is disabled methods with more parameters than the request are removed
+  4. If `allowExtraParams` is disabled then methods with less parameters than the request are removed
+  5. If either of the two parameters above are enabled then methods with the lowest difference in parameter count from the request are kept
+  6. Parameters types are compared to the request parameters and the method(s) with the highest number of matching parameters is kept
+  7. If there are multiple methods remaining then the first of them are used
 
 jsonrpc4j's method resolution allows for overloaded methods _sometimes_.  Primitives are
 easily resolved from json to java.  But resolution between other objects are not possible.
