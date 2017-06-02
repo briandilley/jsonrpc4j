@@ -20,4 +20,9 @@ public @interface JsonRpcMethod {
 	
 	JsonRpcParamsPassMode paramsPassMode() default JsonRpcParamsPassMode.AUTO;
 	
+  /**
+   * If {@code true}, the Java method name will not be used to resolve rpc calls.
+   * @return whether the {@link #value()} is required to match the method.
+   */
+  boolean required() default false;
 }

@@ -910,7 +910,7 @@ public class JsonRpcBasicServer {
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
 	}
-	
+
 	/**
 	 * Sets the {@link ErrorResolver} used for resolving errors.
 	 * Multiple {@link ErrorResolver}s can be used at once by

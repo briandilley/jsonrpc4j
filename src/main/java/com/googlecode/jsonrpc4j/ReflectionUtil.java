@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Utilities for reflection.
  */
-@SuppressWarnings("unused")
 public abstract class ReflectionUtil {
 	
 	private static final Map<String, Set<Method>> methodCache = new ConcurrentHashMap<>();
@@ -29,8 +28,8 @@ public abstract class ReflectionUtil {
 	/**
 	 * Finds methods with the given name on the given class.
 	 *
-	 * @param classes the classes
-	 * @param name    the method name
+	 * @param classes                    the classes
+	 * @param name                       the method name
 	 * @return the methods
 	 */
 	static Set<Method> findCandidateMethods(Class<?>[] classes, String name) {
@@ -45,31 +44,24 @@ public abstract class ReflectionUtil {
 		Set<Method> methods = new HashSet<>();
 		for (Class<?> clazz : classes) {
 			for (Method method : clazz.getMethods()) {
-				if (method.getName().equals(name) || annotationMatches(method, name)) {
-					methods.add(method);
-				}
+			  if (method.isAnnotationPresent(JsonRpcMethod.class)) {
+		      JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
+		      
+		      if (methodAnnotation.required()) {
+		        if (methodAnnotation.value().equals(name)) {
+		          methods.add(method);
+		        }
+		      } else if (methodAnnotation.value().equals(name) || method.getName().equals(name)) {
+		        methods.add(method);
+		      }
+			  } else if (method.getName().equals(name)) {
+          methods.add(method);
+			  }
 			}
 		}
 		methods = Collections.unmodifiableSet(methods);
 		methodCache.put(cacheKey, methods);
 		return methods;
-	}
-	
-	/**
-	 * Checks for the annotation {@link JsonRpcMethod} on {@code method} to see if its value matches {@code name}
-	 *
-	 * @param method the method to check
-	 * @param name   the expected method name
-	 * @return true if {@code method} is named {@code name}
-	 */
-	private static boolean annotationMatches(Method method, String name) {
-		if (method.isAnnotationPresent(JsonRpcMethod.class)) {
-			JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
-			if (methodAnnotation.value().equals(name)) {
-				return true;
-			}
-		}
-		return false;
 	}
 	
 	/**
