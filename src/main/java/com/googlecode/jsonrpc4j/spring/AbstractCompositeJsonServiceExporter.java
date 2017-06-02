@@ -1,7 +1,10 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
+import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.ProxyUtil;
 import org.slf4j.Logger;
@@ -22,9 +25,16 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	private ApplicationContext applicationContext;
 	private ErrorResolver errorResolver = null;
 	private boolean backwardsCompatible = true;
+	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
 	private boolean allowLessParams = false;
 
+	private boolean shouldLogInvocationErrors = true;
+	private InvocationListener invocationListener = null;
+	private HttpStatusCodeProvider httpStatusCodeProvider = null;
+	private ConvertedParameterTransformer convertedParameterTransformer = null;
+	private String contentType = null;
+	
 	private JsonRpcServer jsonRpcServer;
 
 	private boolean allowMultipleInheritance = false;
@@ -63,9 +73,20 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 		jsonRpcServer = new JsonRpcServer(objectMapper, service);
 		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsCompatible(backwardsCompatible);
+		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
 
+		jsonRpcServer.setInvocationListener(invocationListener);
+		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
+		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
+		jsonRpcServer.setShouldLogInvocationErrors(shouldLogInvocationErrors);
+
+		if (contentType != null) {
+			jsonRpcServer.setContentType(contentType);
+		}
+
+		
 		// export
 		exportService();
 	}
@@ -116,6 +137,13 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	}
 
 	/**
+	 * @param rethrowExceptions the rethrowExceptions to set
+	 */
+	public void setRethrowExceptions(boolean rethrowExceptions) {
+		this.rethrowExceptions = rethrowExceptions;
+	}
+	
+	/**
 	 * @param allowExtraParams the allowExtraParams to set
 	 */
 	public void setAllowExtraParams(boolean allowExtraParams) {
@@ -129,6 +157,36 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 		this.allowLessParams = allowLessParams;
 	}
 
+	/**
+	 * @param invocationListener the invocationListener to set
+	 */
+	public void setInvocationListener(InvocationListener invocationListener) {
+		this.invocationListener = invocationListener;
+	}
+
+	/**
+	 * @param httpStatusCodeProvider the HttpStatusCodeProvider to set
+	 */
+	public void setHttpStatusCodeProvider(HttpStatusCodeProvider httpStatusCodeProvider) {
+		this.httpStatusCodeProvider = httpStatusCodeProvider;
+	}
+
+	/**
+	 * @param convertedParameterTransformer the convertedParameterTransformer to set
+	 */
+	public void setConvertedParameterTransformer(ConvertedParameterTransformer convertedParameterTransformer) {
+		this.convertedParameterTransformer = convertedParameterTransformer;
+	}
+
+	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
+		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+	
+	
 	/**
 	 * @param allowMultipleInheritance the allowMultipleInheritance to set
 	 */
