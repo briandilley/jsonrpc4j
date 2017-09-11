@@ -23,6 +23,7 @@ public class Util {
 	public static final String param4 = "param4";
 	public static final int intParam1 = 1;
 	public static final int intParam2 = 2;
+	public static final long longParam1 = Integer.MAX_VALUE + 1L;
 	public static final String JSON_ENCODING = StandardCharsets.UTF_8.name();
 	public static final ObjectMapper mapper = new ObjectMapper();
 	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
