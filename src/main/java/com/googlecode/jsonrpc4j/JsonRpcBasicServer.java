@@ -860,8 +860,9 @@ public class JsonRpcBasicServer {
 		if (node.isDouble()) return node.asDouble();
 		if (node.isFloatingPointNumber()) return node.asDouble();
 		if (node.isInt()) return node.asInt();
-		if (node.isIntegralNumber()) return node.asInt();
 		if (node.isLong()) return node.asLong();
+		//TODO(donequis): consider parsing bigints
+		if (node.isIntegralNumber()) return node.asInt();
 		if (node.isTextual()) return node.asText();
 		throw new IllegalArgumentException("Unknown id type");
 	}
