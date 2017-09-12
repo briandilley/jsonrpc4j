@@ -252,5 +252,5 @@ public class JsonRpcServerTest {
 	public interface ServiceInterface {
 		String testMethod(String param1);
 	}
-	
+
 }
