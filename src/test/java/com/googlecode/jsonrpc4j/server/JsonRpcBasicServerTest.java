@@ -27,6 +27,7 @@ import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
 import static com.googlecode.jsonrpc4j.util.Util.getFromArrayWithId;
 import static com.googlecode.jsonrpc4j.util.Util.intParam1;
 import static com.googlecode.jsonrpc4j.util.Util.intParam2;
+import static com.googlecode.jsonrpc4j.util.Util.longParam;
 import static com.googlecode.jsonrpc4j.util.Util.messageOfStream;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
 import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
@@ -184,7 +185,15 @@ public class JsonRpcBasicServerTest {
 		jsonRpcServer.handleRequest(messageWithListParamsStream(intParam1, "testMethod", param1), byteArrayOutputStream);
 		assertTrue(decodeAnswer(byteArrayOutputStream).get(ID).isIntegralNumber());
 	}
-	
+
+	@Test
+	public void idLongType() throws Exception {
+		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);
+		EasyMock.replay(mockService);
+		jsonRpcServer.handleRequest(messageWithListParamsStream(longParam, "testMethod", param1), byteArrayOutputStream);
+		assertTrue(decodeAnswer(byteArrayOutputStream).get(ID).isLong());
+	}
+
 	@Test
 	public void idStringType() throws Exception {
 		EasyMock.expect(mockService.testMethod(param1)).andReturn(param1);

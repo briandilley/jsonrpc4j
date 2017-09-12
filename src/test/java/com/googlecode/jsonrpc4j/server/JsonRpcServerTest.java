@@ -253,30 +253,4 @@ public class JsonRpcServerTest {
 		String testMethod(String param1);
 	}
 
-	@Test
-	public void testGetMethod_longId() throws Exception {
-		EasyMock.expect(mockService.testMethod("Whirinaki")).andReturn("Forest");
-		EasyMock.replay(mockService);
-
-		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/test-get");
-		MockHttpServletResponse response = new MockHttpServletResponse();
-
-		request.addParameter("id", "1600000000000");
-		request.addParameter("method", "testMethod");
-		request.addParameter("params", "{}");
-
-		jsonRpcServer.handle(request, response);
-		String contentResponse = response.getContentAsString();
-		String[] results = contentResponse.split(",");
-		String idstr = null;
-		for (String s : results) {
-			if (s.contains("\"id\"")) {
-				idstr = s;
-				break;
-			}
-		}
-		Long resid = Long.valueOf(idstr.split(":")[1]);
-		Assert.assertTrue(resid == 1600000000000L);
-	}
-
 }
