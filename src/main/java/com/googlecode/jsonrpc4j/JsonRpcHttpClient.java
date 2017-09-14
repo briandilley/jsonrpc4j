@@ -151,6 +151,10 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 				// JsonMappingException inherits from IOException
 				throw e;
 			} catch (IOException e) {
+				if (connection.getErrorStream() == null) {
+					throw new HttpException("Caught error with no response body.", e);
+				}
+
 				try (InputStream answer = getStream(connection.getErrorStream(), useGzip)) {
 					return super.readResponse(returnType, answer);
 				} catch (IOException ef) {
