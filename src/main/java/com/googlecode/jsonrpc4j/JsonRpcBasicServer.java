@@ -91,6 +91,7 @@ public class JsonRpcBasicServer {
 	private InvocationListener invocationListener = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private boolean shouldLogInvocationErrors = true;
+	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
 	
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -253,9 +254,14 @@ public class JsonRpcBasicServer {
 		try {
 			readContext.assertReadable();
 			final JsonNode jsonNode = readContext.nextValue();
+			for (JsonRpcInterceptor interceptor : interceptorList) {
+				interceptor.preHandleJson(jsonNode);
+			}
 			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
 			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, JsonError.PARSE_ERROR)).code;
+		} catch (Throwable e) { // interceptors can produce exceptions
+			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, new JsonError(-31000, "Interceptor exception", e))).code;
 		}
 	}
 	
@@ -354,7 +360,18 @@ public class JsonRpcBasicServer {
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
 				if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
-				handler.result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
+				Object target = getHandler(serviceName);
+				// interceptors preHandle
+				for (JsonRpcInterceptor interceptor : interceptorList) {
+					interceptor.preHandle(target, methodArgs.method, methodArgs.arguments);
+				}
+				// invocation
+				JsonNode result = invoke(target, methodArgs.method, methodArgs.arguments);
+				handler.result = result;
+				// interceptors postHandle
+				for (JsonRpcInterceptor interceptor : interceptorList) {
+					interceptor.postHandle(target, methodArgs.method, methodArgs.arguments, result);
+				}
 				if (!isNotificationRequest(id)) {
 					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
 					writeAndFlushValue(output, response);
@@ -849,8 +866,12 @@ public class JsonRpcBasicServer {
 	 * @param value  the value to write
 	 * @throws IOException on error
 	 */
-	private void writeAndFlushValue(OutputStream output, Object value) throws IOException {
+	private void writeAndFlushValue(OutputStream output, ObjectNode value) throws IOException {
 		logger.debug("Response: {}", value);
+
+		for (JsonRpcInterceptor interceptor : interceptorList) {
+			interceptor.postHandleJson(value);
+		}
 		mapper.writeValue(new NoCloseOutputStream(output), value);
 		output.write('\n');
 	}
@@ -1137,5 +1158,16 @@ public class JsonRpcBasicServer {
 			return nameCount;
 		}
 		
+	}
+
+	public List<JsonRpcInterceptor> getInterceptorList() {
+		return interceptorList;
+	}
+
+	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
+		if (interceptorList == null) {
+			throw new IllegalArgumentException("Interceptors list can't be null");
+		}
+		this.interceptorList = interceptorList;
 	}
 }

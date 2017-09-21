@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.JsonRpcInterceptor;
 import com.googlecode.jsonrpc4j.util.CustomTestException;
 import com.googlecode.jsonrpc4j.util.Util;
 import org.easymock.EasyMock;
@@ -14,42 +15,27 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
-import static com.googlecode.jsonrpc4j.util.Util.createStream;
-import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
-import static com.googlecode.jsonrpc4j.util.Util.getFromArrayWithId;
-import static com.googlecode.jsonrpc4j.util.Util.intParam1;
-import static com.googlecode.jsonrpc4j.util.Util.intParam2;
-import static com.googlecode.jsonrpc4j.util.Util.longParam;
-import static com.googlecode.jsonrpc4j.util.Util.messageOfStream;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.multiMessageOfStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
-import static com.googlecode.jsonrpc4j.util.Util.param3;
-import static com.googlecode.jsonrpc4j.util.Util.param4;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.eq;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class JsonRpcBasicServerTest {
 	
 	@Mock(type = MockType.NICE)
 	private ServiceInterface mockService;
+	@Mock(type = MockType.NICE)
+	private JsonRpcInterceptor mockInterceptor;
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcBasicServer jsonRpcServer;
 	
@@ -342,6 +328,73 @@ public class JsonRpcBasicServerTest {
 		assertEquals(getFromArrayWithId(json, 2).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.DATA).get(JsonRpcBasicServer.ERROR_MESSAGE).asText(), param4);
 		EasyMock.verify(mockService);
 	}
+
+	@Test
+	public void interceptorsTest() throws IOException {
+		jsonRpcServer.setInterceptorList(new ArrayList<JsonRpcInterceptor>() {{
+			add(mockInterceptor);
+		}});
+		String requestNotRpc = "{\"test\": 1}";
+		final String requestGood = "{\n" +
+				"  \"id\": 0,\n" +
+				"  \"jsonrpc\": \"2.0\",\n" +
+				"  \"method\": \"overloadedMethod\",\n" +
+				"  \"params\": [\"test.cool\",\"test.ru\"]\n" +
+				"  }\n" +
+				"}";
+		String responseError = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
+		final String responseGood = "{\n" +
+				"  \"jsonrpc\": \"string\",\n" +
+				"  \"id\": 0,\n" +
+				"  \"result\": \"test.ru\"}\n" +
+				"}";
+
+
+		//bad call
+//		mockInterceptor.preHandleJson(anyObject(JsonNode.class));
+		mockInterceptor.preHandleJson(Util.mapper.readTree(requestNotRpc));
+		expectLastCall().times(1);
+		mockInterceptor.postHandleJson(Util.mapper.readTree(responseError));
+		expectLastCall().times(1);
+
+		replay(/*mockService, */mockInterceptor);
+		jsonRpcServer.handleRequest(new ByteArrayInputStream(requestNotRpc.getBytes()), byteArrayOutputStream);
+
+		verify(/*mockService, */mockInterceptor);
+
+/*
+
+
+		// good call
+//		mockInterceptor.preHandleJson(Util.mapper.readTree(requestGood));
+		mockInterceptor.preHandleJson(anyObject(JsonNode.class));
+		expectLastCall().times(1);
+		mockInterceptor.preHandle(
+				anyObject(),
+				anyObject(Method.class),
+				eq(new ArrayList<JsonNode>() {{
+					add(Util.mapper.readTree(requestGood).at("/params"));
+				}})
+		);
+		expectLastCall().times(1);
+//		EasyMock.expect(mockService.overloadedMethod(param1, param2)).andReturn(param1 + param2);
+		EasyMock.expect(mockService.overloadedMethod("test.cool","test.ru")).andReturn("test.ru");
+		expectLastCall().times(1);
+		mockInterceptor.postHandle(
+				anyObject(),
+				anyObject(Method.class),
+				eq(new ArrayList<JsonNode>() {{
+					add(Util.mapper.readTree(responseGood).at("/params"));
+				}}),
+				eq(Util.mapper.readTree(responseGood))
+		);
+		expectLastCall().times(1);
+		mockInterceptor.postHandleJson(Util.mapper.readTree(responseGood));
+		expectLastCall().times(1);
+		jsonRpcServer.handleRequest(new ByteArrayInputStream(requestGood.getBytes()), byteArrayOutputStream);
+*/
+
+	}
 	
 	// Service and service interfaces used in test
 	
@@ -353,7 +406,7 @@ public class JsonRpcBasicServerTest {
 		String overloadedMethod(String stringParam1);
 		
 		String overloadedMethod(String stringParam1, String stringParam2);
-		
+
 		String overloadedMethod(int intParam1);
 		
 		String overloadedMethod(int intParam1, int intParam2);
