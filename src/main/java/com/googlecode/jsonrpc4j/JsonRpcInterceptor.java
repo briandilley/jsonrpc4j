@@ -9,9 +9,9 @@ import java.util.List;
  * Interceptor can work with parsed full JSON RPC {@link JsonNode} and with parsed target, method and arguments list.
  * In case you want to work with raw input you can use filters.
  * In case you want to work with your parsed objects you can use aspect on your exported service.
- * <br><br>
+ * <br/><br/>
  * Interceptors could produce {@link RuntimeException} (except preHandleJson!), than JSON RPC standard error will be shown.
- * If exception will thrown in preHandleJson(), error: {code:-31000, message: "interceptor exception"} will be generated.
+ * If exception will thrown in preHandleJson(), <tt>error: {code:-31000, message: "interceptor exception"}</tt> will be generated.
  * @author pavyazankin
  * @since 21/09/2017
  */
