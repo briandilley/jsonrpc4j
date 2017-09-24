@@ -5,11 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import net.iharder.Base64;
 import org.slf4j.Logger;
@@ -20,22 +16,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
@@ -260,8 +244,6 @@ public class JsonRpcBasicServer {
 			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
 			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, JsonError.PARSE_ERROR)).code;
-		} catch (Throwable e) { // interceptors can produce exceptions
-			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, new JsonError(-31000, "Interceptor exception", e))).code;
 		}
 	}
 	

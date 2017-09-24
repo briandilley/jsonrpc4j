@@ -20,7 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
@@ -43,7 +45,10 @@ public class JsonRpcBasicServerTest {
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
 		jsonRpcServer = new JsonRpcBasicServer(Util.mapper, mockService, ServiceInterface.class);
-	}
+        jsonRpcServer.setInterceptorList(new ArrayList<JsonRpcInterceptor>() {{
+            add(mockInterceptor);
+        }});
+    }
 	
 	@Test
 	public void receiveJsonRpcNotification() throws Exception {
@@ -330,24 +335,21 @@ public class JsonRpcBasicServerTest {
 	}
 
 	@Test
-	public void interceptorsBadTest() throws IOException {
-		jsonRpcServer.setInterceptorList(new ArrayList<JsonRpcInterceptor>() {{
-			add(mockInterceptor);
-		}});
-		String requestNotRpc = "{\"test\": 1}";
+    public void interceptorsNotJsonRpcTest() throws IOException {
+        String requestNotRpc = "{\"test\": 1}";
 		String responseError = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32601,\"message\":\"method not found\"}}";
 
 
 		//bad call
-		mockInterceptor.preHandleJson(Util.mapper.readTree(requestNotRpc));
-		expectLastCall().times(1);
+        mockInterceptor.preHandleJson(mapper.readTree(requestNotRpc));
+        expectLastCall().times(1);
 		mockInterceptor.postHandleJson(anyObject(JsonNode.class));
 //		mockInterceptor.postHandleJson(Util.mapper.readTree(responseError)); this place cause problem
 		// json nodes are same but EasyMock don't understand it
 		expectLastCall().times(1);
 
 		replay(mockInterceptor);
-		jsonRpcServer.handleRequest(new ByteArrayInputStream(requestNotRpc.getBytes()), byteArrayOutputStream);
+        jsonRpcServer.handleRequest(new ByteArrayInputStream(requestNotRpc.getBytes(StandardCharsets.UTF_8)), byteArrayOutputStream);
 
 		verify(mockInterceptor);
 	}
@@ -364,40 +366,41 @@ public class JsonRpcBasicServerTest {
 				"  }\n" +
 				"}";
 		final String responseGood = "{\n" +
-				"  \"jsonrpc\": \"string\",\n" +
-				"  \"id\": 0,\n" +
+                "  \"jsonrpc\": \"2.0\",\n" +
+                "  \"id\": 0,\n" +
 				"  \"result\": \"test.ru\"}\n" +
 				"}";
+        Iterator<JsonNode> paramsIterator = mapper.readTree(requestGood).at("/params").iterator();
+        List<JsonNode> paramsNodes = new ArrayList<>();
+        while (paramsIterator.hasNext()) {
+            paramsNodes.add(paramsIterator.next());
+        }
 
 		// good call
-		mockInterceptor.preHandleJson(Util.mapper.readTree(requestGood));
-		expectLastCall().times(1);
+        mockInterceptor.preHandleJson(mapper.readTree(requestGood));
+        expectLastCall().times(1);
 		mockInterceptor.preHandle(
 				anyObject(),
 				anyObject(Method.class),
-				eq(new ArrayList<JsonNode>() {{
-					add(Util.mapper.readTree(requestGood).at("/params"));
-				}})
-		);
+                eq(paramsNodes)
+        );
 		expectLastCall().times(1);
-		EasyMock.expect(mockService.overloadedMethod("test.cool","test.ru")).andReturn("test.ru");
-		mockInterceptor.postHandle(
+        expect(mockService.overloadedMethod("test.cool", "test.ru")).andReturn("test.ru");
+        mockInterceptor.postHandle(
 				anyObject(),
 				anyObject(Method.class),
-				eq(new ArrayList<JsonNode>() {{
-					add(Util.mapper.readTree(responseGood).at("/params"));
-				}}),
-				eq(Util.mapper.readTree(responseGood).at("/result"))
-		);
+                eq(paramsNodes),
+                eq(mapper.readTree(responseGood).at("/result"))
+        );
 		expectLastCall().times(1);
-		mockInterceptor.postHandleJson(Util.mapper.readTree(responseGood));
-		expectLastCall().times(1);
+        mockInterceptor.postHandleJson(mapper.readTree(responseGood));
+        expectLastCall().times(1);
 
 		replay(mockService, mockInterceptor);
-		jsonRpcServer.handleRequest(new ByteArrayInputStream(requestGood.getBytes()), byteArrayOutputStream);
+        jsonRpcServer.handleRequest(new ByteArrayInputStream(requestGood.getBytes(StandardCharsets.UTF_8)), byteArrayOutputStream);
 
-
-	}
+        verify(mockService, mockInterceptor);
+    }
 	
 	// Service and service interfaces used in test
 	
