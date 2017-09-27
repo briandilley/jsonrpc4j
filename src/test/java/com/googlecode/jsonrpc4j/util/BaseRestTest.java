@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -42,6 +43,10 @@ public abstract class BaseRestTest {
 		return new JsonRpcRestClient(new URL(jettyServer.getCustomServerUrlString(servlet)));
 	}
 	
+	protected JsonRpcRestClient getClient(final String servlet, RestTemplate restTemplate) throws MalformedURLException {
+		return new JsonRpcRestClient(new URL(jettyServer.getCustomServerUrlString(servlet)), restTemplate);
+	}
+
 	protected JsonRpcHttpClient getHttpClient(boolean gzipRequests, boolean acceptGzipResponses) throws MalformedURLException {
 		Map<String, String> header = new HashMap<>();
 		return new JsonRpcHttpClient(new ObjectMapper(), new URL(jettyServer.getCustomServerUrlString(JettyServer.SERVLET)), header, gzipRequests, acceptGzipResponses);

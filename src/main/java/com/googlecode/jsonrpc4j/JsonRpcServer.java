@@ -137,9 +137,13 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
 		int result = ErrorResolver.JsonError.PARSE_ERROR.code;
+		int contentLength = 0;
+		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
 		try {
 			String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
-			result = handleRequest0(input, output, acceptEncoding, response);
+			result = handleRequest0(input, output, acceptEncoding, response, byteOutput);
+
+			contentLength = byteOutput.size();
 		} catch (Throwable t) {
 			if (StreamEndedException.class.isInstance(t)) {
 				logger.debug("Bad request: empty contents!");
@@ -150,6 +154,8 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
 				: httpStatusCodeProvider.getHttpStatusCode(result);
 		response.setStatus(httpStatusCode);
+		response.setContentLength(contentLength);
+		byteOutput.writeTo(output);
 		output.flush();
 	}
 	
@@ -165,27 +171,21 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		return input;
 	}
 	
-	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response) throws IOException {
-		try (ByteArrayOutputStream byteOutput = new ByteArrayOutputStream()) {
-			int result = handleRequest(input, byteOutput);
-			
-			boolean canGzipResponse = contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding);
-			// Use gzip if client's accept-encoding is set to gzip and gzipResponses is enabled.
-			if (gzipResponses && canGzipResponse) {
-				response.addHeader(CONTENT_ENCODING, GZIP);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (GZIPOutputStream gos = new GZIPOutputStream(baos)) {
-					gos.write(byteOutput.toByteArray());
-				}
-				response.setContentLength(baos.size());
-				output.write(baos.toByteArray());
-			} else {
-				response.setContentLength(byteOutput.size());
-				output.write(byteOutput.toByteArray());
+	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
+		int result;
+
+		boolean canGzipResponse = contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding);
+		// Use gzip if client's accept-encoding is set to gzip and gzipResponses is enabled.
+		if (gzipResponses && canGzipResponse) {
+			response.addHeader(CONTENT_ENCODING, GZIP);
+			try (GZIPOutputStream gos = new GZIPOutputStream(byteOutput)) {
+				result = handleRequest(input, gos);
 			}
-			
-			return result;
+		} else {
+			result = handleRequest(input, byteOutput);
 		}
+
+		return result;
 	}
 	
 	private static InputStream createInputStream(InputStream inputStream, String contentEncoding) throws IOException {
