@@ -243,7 +243,7 @@ public class JsonRpcBasicServer {
 			}
 			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
-			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, JsonError.PARSE_ERROR)).code;
+			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.PARSE_ERROR)).code;
 		}
 	}
 	

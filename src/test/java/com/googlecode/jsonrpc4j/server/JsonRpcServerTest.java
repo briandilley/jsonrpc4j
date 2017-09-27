@@ -186,6 +186,23 @@ public class JsonRpcServerTest {
 		Assert.assertEquals("gzip", response.getHeader(CONTENT_ENCODING));
 	}
 
+	@Test
+	public void testCorruptRequest() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		request.setContentType("application/json");
+		request.setContent("{NOT JSON}".getBytes(StandardCharsets.UTF_8));
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class, true);
+		jsonRpcServer.handle(request, response);
+
+		String content = response.getContentAsString();
+
+		Assert.assertEquals(content, "{\"jsonrpc\":\"2.0\",\"id\":\"null\"," +
+				"\"error\":{\"code\":-32700,\"message\":\"JSON parse error\"}}\n");
+	}
+
 	private String getCompressedResponseContent(byte[] compressed) throws IOException {
 		GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(compressed));
 		InputStreamReader inputStreamReader = new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8);
