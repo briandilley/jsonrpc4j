@@ -1,16 +1,14 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
-import com.googlecode.jsonrpc4j.InvocationListener;
-import com.googlecode.jsonrpc4j.JsonRpcServer;
+import com.googlecode.jsonrpc4j.*;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
+
+import java.util.List;
 
 /**
  * {@link RemoteExporter} that exports services using Json
@@ -34,6 +32,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private String contentType = null;
+	private List<JsonRpcInterceptor> interceptorList;
 
 	/**
 	 * {@inheritDoc}
@@ -74,6 +73,9 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 
 		if (contentType != null) {
 			jsonRpcServer.setContentType(contentType);
+		}
+		if (interceptorList != null) {
+			jsonRpcServer.setInterceptorList(interceptorList);
 		}
 
 		exportService();
@@ -188,4 +190,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		this.contentType = contentType;
 	}
 
+	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
+		this.interceptorList = interceptorList;
+	}
 }

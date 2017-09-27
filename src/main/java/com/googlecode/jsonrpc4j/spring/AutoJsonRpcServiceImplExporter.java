@@ -1,11 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
-import com.googlecode.jsonrpc4j.ErrorResolver;
-import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
-import com.googlecode.jsonrpc4j.InvocationListener;
-import com.googlecode.jsonrpc4j.JsonRpcService;
+import com.googlecode.jsonrpc4j.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -16,11 +12,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -71,6 +63,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	private HttpStatusCodeProvider httpStatusCodeProvider = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private String contentType = null;
+	private List<JsonRpcInterceptor> interceptorList = null;
 	
 	/**
 	 * Finds the beans to expose.
@@ -203,6 +196,10 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		if (contentType != null) {
 			builder.addPropertyValue("contentType", contentType);
 		}
+
+		if (interceptorList != null) {
+			builder.addPropertyValue("interceptorList", interceptorList);
+		}
 		
 		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
@@ -313,5 +310,11 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
-	
+
+	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
+		if (interceptorList == null || interceptorList.isEmpty()) {
+			throw new IllegalArgumentException("Interceptor list must be not null and not empty");
+		}
+		this.interceptorList = interceptorList;
+	}
 }

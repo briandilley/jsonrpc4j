@@ -5,11 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import net.iharder.Base64;
 import org.slf4j.Logger;
@@ -20,22 +16,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
@@ -91,6 +75,7 @@ public class JsonRpcBasicServer {
 	private InvocationListener invocationListener = null;
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private boolean shouldLogInvocationErrors = true;
+	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
 	
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -253,6 +238,9 @@ public class JsonRpcBasicServer {
 		try {
 			readContext.assertReadable();
 			final JsonNode jsonNode = readContext.nextValue();
+			for (JsonRpcInterceptor interceptor : interceptorList) {
+				interceptor.preHandleJson(jsonNode);
+			}
 			return handleJsonNodeRequest(jsonNode, output).code;
 		} catch (JsonParseException e) {
 			return writeAndFlushValueError(output, createResponseError(JSONRPC, NULL, JsonError.PARSE_ERROR)).code;
@@ -354,7 +342,18 @@ public class JsonRpcBasicServer {
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
 				if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
-				handler.result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
+				Object target = getHandler(serviceName);
+				// interceptors preHandle
+				for (JsonRpcInterceptor interceptor : interceptorList) {
+					interceptor.preHandle(target, methodArgs.method, methodArgs.arguments);
+				}
+				// invocation
+				JsonNode result = invoke(target, methodArgs.method, methodArgs.arguments);
+				handler.result = result;
+				// interceptors postHandle
+				for (JsonRpcInterceptor interceptor : interceptorList) {
+					interceptor.postHandle(target, methodArgs.method, methodArgs.arguments, result);
+				}
 				if (!isNotificationRequest(id)) {
 					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
 					writeAndFlushValue(output, response);
@@ -849,8 +848,12 @@ public class JsonRpcBasicServer {
 	 * @param value  the value to write
 	 * @throws IOException on error
 	 */
-	private void writeAndFlushValue(OutputStream output, Object value) throws IOException {
+	private void writeAndFlushValue(OutputStream output, ObjectNode value) throws IOException {
 		logger.debug("Response: {}", value);
+
+		for (JsonRpcInterceptor interceptor : interceptorList) {
+			interceptor.postHandleJson(value);
+		}
 		mapper.writeValue(new NoCloseOutputStream(output), value);
 		output.write('\n');
 	}
@@ -1137,5 +1140,16 @@ public class JsonRpcBasicServer {
 			return nameCount;
 		}
 		
+	}
+
+	public List<JsonRpcInterceptor> getInterceptorList() {
+		return interceptorList;
+	}
+
+	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
+		if (interceptorList == null) {
+			throw new IllegalArgumentException("Interceptors list can't be null");
+		}
+		this.interceptorList = interceptorList;
 	}
 }
