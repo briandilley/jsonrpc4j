@@ -56,40 +56,39 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 
 		proxyObject = ProxyFactory.getProxy(getObjectType(), this);
 
-		if (jsonRpcRestClient==null) {
-			
-			if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
-				objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
-			
+		objectMapper = null;
+
+		if (applicationContext != null && applicationContext.containsBean("objectMapper")) {
+			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+
+		}
+		if (objectMapper == null && applicationContext != null) {
+			try {
+				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+			} catch (Exception e) {
+				logger.debug(e);
 			}
-			if (objectMapper == null && applicationContext != null) {
-				try {
-					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-				} catch (Exception e) {
-					logger.debug(e);
-				}
-			}
-			
-			if (objectMapper == null) {
-				objectMapper = new ObjectMapper();
+		}
+
+		if (objectMapper == null) {
+			objectMapper = new ObjectMapper();
+		}
+
+		try {
+			jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap<String, String>());
+			jsonRpcRestClient.setRequestListener(requestListener);
+			jsonRpcRestClient.setSslContext(sslContext);
+			jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
+
+			if (exceptionResolver!=null) {
+				jsonRpcRestClient.setExceptionResolver(exceptionResolver);
 			}
 
-			try {
-				jsonRpcRestClient = new JsonRpcRestClient(new URL(getServiceUrl()), objectMapper, restTemplate, new HashMap<String, String>());
-				jsonRpcRestClient.setRequestListener(requestListener);
-				jsonRpcRestClient.setSslContext(sslContext);
-				jsonRpcRestClient.setHostNameVerifier(hostNameVerifier);
-				
-				if (exceptionResolver!=null) {
-					jsonRpcRestClient.setExceptionResolver(exceptionResolver);
-				}
-				
-			} catch (MalformedURLException mue) {
-				throw new RuntimeException(mue);
-			}
-			
+		} catch (MalformedURLException mue) {
+			throw new RuntimeException(mue);
 		}
-		
+
+		ReflectionUtil.clearCache();
 	}
 
 	/**

@@ -46,11 +46,10 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	 */
 	public final void afterPropertiesSet()
 			throws Exception {
+		objectMapper = null;
 
 		// find the ObjectMapper
-		if (objectMapper == null
-				&& applicationContext != null
-				&& applicationContext.containsBean("objectMapper")) {
+		if (applicationContext != null && applicationContext.containsBean("objectMapper")) {
 			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
 		}
 		if (objectMapper == null && applicationContext != null) {
@@ -86,7 +85,8 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 			jsonRpcServer.setContentType(contentType);
 		}
 
-		
+		ReflectionUtil.clearCache();
+
 		// export
 		exportService();
 	}

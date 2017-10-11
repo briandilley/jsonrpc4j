@@ -38,8 +38,9 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	 * {@inheritDoc}
 	 */
 	public void afterPropertiesSet() throws Exception {
+		objectMapper = null;
 
-		if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
+		if (applicationContext != null && applicationContext.containsBean("objectMapper")) {
 			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
 		}
 		if (objectMapper == null && applicationContext != null) {
@@ -77,6 +78,8 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		if (interceptorList != null) {
 			jsonRpcServer.setInterceptorList(interceptorList);
 		}
+
+		ReflectionUtil.clearCache();
 
 		exportService();
 	}

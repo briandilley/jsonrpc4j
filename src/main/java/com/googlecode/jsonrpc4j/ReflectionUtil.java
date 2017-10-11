@@ -258,4 +258,11 @@ public abstract class ReflectionUtil {
 		
 		return namedParams;
 	}
+
+	public static void clearCache() {
+		methodCache.clear();
+		parameterTypeCache.clear();
+		methodAnnotationCache.clear();
+		methodParamAnnotationCache.clear();
+	}
 }
