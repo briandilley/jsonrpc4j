@@ -17,7 +17,7 @@ public class ReadContext {
 		this.mapper = mapper;
 	}
 	
-	public synchronized static ReadContext getReadContext(InputStream input, ObjectMapper mapper) {
+	public static ReadContext getReadContext(InputStream input, ObjectMapper mapper) {
 		return new ReadContext(input, mapper);
 	}
 	
