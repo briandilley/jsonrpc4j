@@ -24,3 +24,4 @@ tmp/
 .settings/
 /bin/
 /.nb-gradle/
+/target
