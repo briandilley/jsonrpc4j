@@ -56,6 +56,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ERROR;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
@@ -464,8 +467,12 @@ public class JsonRpcHttpAsyncClient {
 	private static class JsonRpcFuture<T> implements Future<T>, JsonRpcCallback<T> {
 		
 		private T object;
-		private boolean done;
+		private volatile boolean done;
 		private ExecutionException exception;
+
+		private final Lock lock = new ReentrantLock();
+
+		private final Condition condition = lock.newCondition();
 		
 		public boolean cancel(boolean mayInterruptIfRunning) {
 			return false;
@@ -475,47 +482,78 @@ public class JsonRpcHttpAsyncClient {
 			return false;
 		}
 		
-		public synchronized boolean isDone() {
+		public boolean isDone() {
 			return done;
 		}
 		
-		public synchronized T get() throws InterruptedException,
+		public T get() throws InterruptedException,
 				ExecutionException {
-			while (!done) {
-				this.wait();
+
+			lock.lock();
+			try {
+
+				while (!done) {
+					condition.await();
+				}
+
+				if (exception != null) {
+					throw exception;
+				}
+
+				return object;
+			} finally {
+				lock.unlock();
 			}
-			
-			if (exception != null) {
-				throw exception;
-			}
-			
-			return object;
 		}
 		
-		public synchronized T get(long timeout, TimeUnit unit)
+		public T get(long timeout, TimeUnit unit)
 				throws InterruptedException, ExecutionException,
 				TimeoutException {
-			while (!done) {
-				this.wait(unit.toMillis(timeout));
+
+			if (timeout <= 0) {
+				throw new TimeoutException();
 			}
-			
-			if (exception != null) {
-				throw exception;
+
+			long nanos = unit.toNanos(timeout);
+			lock.lock();
+			try {
+				while (!done) {
+					if (nanos <= 0) {
+						throw new TimeoutException();
+					}
+					nanos = condition.awaitNanos(nanos);
+				}
+
+				if (exception != null) {
+					throw exception;
+				}
+				return object;
+			} finally {
+				lock.unlock();
 			}
-			
-			return object;
+
 		}
 		
-		public synchronized void onComplete(T result) {
-			object = result;
-			done = true;
-			this.notify();
+		public void onComplete(T result) {
+			lock.lock();
+			try {
+				object = result;
+				done = true;
+				condition.signal();
+			} finally {
+				lock.unlock();
+			}
 		}
 		
-		public synchronized void onError(Throwable t) {
-			exception = new ExecutionException(t);
-			done = true;
-			this.notify();
+		public void onError(Throwable t) {
+			lock.lock();
+			try {
+				exception = new ExecutionException(t);
+				done = true;
+				condition.signal();
+			} finally {
+				lock.unlock();
+			}
 		}
 	}
 	
