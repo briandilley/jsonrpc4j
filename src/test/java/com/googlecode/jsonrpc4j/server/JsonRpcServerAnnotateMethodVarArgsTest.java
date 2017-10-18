@@ -30,10 +30,10 @@ import static org.hamcrest.core.IsEqual.equalTo;
 public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 	private ServiceWithVarArgsImpl mockService = new ServiceWithVarArgsImpl();
-	
+
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcBasicServer jsonRpcServerAnnotatedMethod;
-	
+
 	@Before
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
@@ -42,49 +42,49 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 	@Test
 	public void callMethodWithVarArgParameters() throws Exception {
-	    Map<String,Object> paramsMap = new HashMap<>();
-        paramsMap.put("argOne","one");
-        paramsMap.put("argTwo",2);
-        paramsMap.put("argThree","three");
-        paramsMap.put("argFour", 4);
-        paramsMap.put("argFive", (Object)"five");
-        paramsMap.put("argSix", 6.0f);
-        paramsMap.put("argSeven", 7d);
-        Object[] callParams = new Object[paramsMap.size() * 2];
-        int i=0;
-        for (Map.Entry<String,Object> entry : paramsMap.entrySet()) {
-            callParams[i++] = entry.getKey();
-            callParams[i++] = entry.getValue();
-        }
+		Map<String, Object> paramsMap = new HashMap<>();
+		paramsMap.put("argOne", "one");
+		paramsMap.put("argTwo", 2);
+		paramsMap.put("argThree", "three");
+		paramsMap.put("argFour", 4);
+		paramsMap.put("argFive", (Object) "five");
+		paramsMap.put("argSix", 6.0f);
+		paramsMap.put("argSeven", 7d);
+		Object[] callParams = new Object[paramsMap.size() * 2];
+		int i = 0;
+		for (Map.Entry<String, Object> entry : paramsMap.entrySet()) {
+			callParams[i++] = entry.getKey();
+			callParams[i++] = entry.getValue();
+		}
 
-        jsonRpcServerAnnotatedMethod.handleRequest(
-                messageWithMapParamsStream("testMethodVararg", callParams),
-				byteArrayOutputStream
+		jsonRpcServerAnnotatedMethod.handleRequest(
+			messageWithMapParamsStream("varargObjectMethod", callParams),
+			byteArrayOutputStream
 		);
-        JsonNode res = result();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode resultNode = mapper.readTree(res.asText());
-        // params order saved during call, but order not guaranteed
-        ObjectNode expectedResult = mapper.valueToTree(paramsMap);
-        expectedResult.set("argTwo", mapper.valueToTree(2));
-        expectedResult.set("argFour", mapper.valueToTree(4));
-        Assert.assertEquals(expectedResult.toString(), resultNode.toString());
-    }
+		JsonNode res = result();
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode resultNode = mapper.readTree(res.asText());
+		// params order saved during call, but order not guaranteed
+		ObjectNode expectedResult = mapper.valueToTree(paramsMap);
+		expectedResult.set("argTwo", mapper.valueToTree(2));
+		expectedResult.set("argFour", mapper.valueToTree(4));
+		Assert.assertEquals(expectedResult.toString(), resultNode.toString());
+	}
 
 	@Test
 	public void callMethodWithVarArgStringAndWebParam() throws Exception {
-		testVarargMethodWithParamAnnotation("testMethodVarargStringWebParam");
+		testVarargMethodWithParamAnnotation("varargStringMethodWithWebParam");
 	}
 
 	@Test
 	public void callMethodWithVarArgStringAndJsonRpcParam() throws Exception {
-		testVarargMethodWithParamAnnotation("testMethodVarargStringJsonRpcParam");
+		testVarargMethodWithParamAnnotation("varargStringMethodWithJsonRpcParam");
 	}
 
 	@Test
 	public void callMethodWithVarArgPrimitive() throws Exception {
 		jsonRpcServerAnnotatedMethod.handleRequest(
-			messageWithListParamsStream(1, "testMethodVarargPrimitive", 1, 2),
+			messageWithListParamsStream(1, "varargPrimitiveMethod", 1, 2),
 			byteArrayOutputStream
 		);
 
@@ -98,16 +98,36 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 	@Test
 	public void callMethodWithVarArgPrimitiveAndWebParam() throws Exception {
-		testVarargMethodWithPrimitiveParamAnnotation("testMethodVarargPrimitiveWebParam");
+		testVarargMethodWithPrimitiveParamAnnotation("varargPrimitiveMethodWithWebParam");
 	}
 
 	@Test
 	public void callMethodWithVarArgPrimitiveAndJsonRpcParam() throws Exception {
-		testVarargMethodWithPrimitiveParamAnnotation("testMethodVarargPrimitiveJsonRpcParam");
+		testVarargMethodWithPrimitiveParamAnnotation("varargPrimitiveMethodWithJsonRpcParam");
+	}
+
+	@Test
+	public void callMethodWithMixedStringVarargAndWebParam() throws Exception {
+		testMixedMethod("mixedObjectStringVarargMethodWithWebParam");
+	}
+
+	@Test
+	public void callMethodWithMixedStringVarargAndJsonRpcParam() throws Exception {
+		testMixedMethod("mixedObjectStringVarargMethodWithJsonRpcParam");
+	}
+
+	@Test
+	public void callMethodWithMixedPrimitiveVarargAndWebParam() throws Exception {
+		testMixedMethodWithPrimitive("mixedObjectPrimitiveVarargMethodWithWebParam");
+	}
+
+	@Test
+	public void callMethodWithMixedPrimitiveVarargAndJsonRpcParam() throws Exception {
+		testMixedMethodWithPrimitive("mixedObjectPrimitiveVarargMethodWithJsonRpcParam");
 	}
 
 	private void testVarargMethodWithParamAnnotation(String methodName) throws Exception {
-		String[] strings = new String[] {
+		String[] strings = new String[]{
 			"foo",
 			"bar"
 		};
@@ -131,7 +151,7 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 	}
 
 	private void testVarargMethodWithPrimitiveParamAnnotation(String methodName) throws Exception {
-		int[] ints = new int[] {
+		int[] ints = new int[]{
 			1,
 			2
 		};
@@ -154,9 +174,73 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		Assert.assertThat(resultNode.get(1).asInt(), is(equalTo(2)));
 	}
 
+	@SuppressWarnings("unchecked")
+	private void testMixedMethod(String methodName) throws Exception {
+		Map<String, String> map = new HashMap<>();
+		map.put("test", "value");
+
+		String[] strings = new String[]{
+			"foo",
+			"bar"
+		};
+
+		Object[] args = {
+			"object",
+			map,
+			"strings",
+			strings
+		};
+
+		jsonRpcServerAnnotatedMethod.handleRequest(
+			messageWithMapParamsStream(methodName, args),
+			byteArrayOutputStream
+		);
+
+		JsonNode res = result();
+		ObjectMapper mapper = new ObjectMapper();
+		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
+		Map<String, String> outputMap = mapper.convertValue(resultNode.get(0), Map.class);
+		Assert.assertThat(outputMap, is(equalTo(map)));
+		String[] outputStrings = mapper.convertValue(resultNode.get(1), String[].class);
+		Assert.assertThat(outputStrings[0], is(equalTo(strings[0])));
+		Assert.assertThat(outputStrings[1], is(equalTo(strings[1])));
+	}
+
+	@SuppressWarnings("unchecked")
+	private void testMixedMethodWithPrimitive(String methodName) throws Exception {
+		Map<String, String> map = new HashMap<>();
+		map.put("test", "value");
+
+		int[] ints = new int[]{
+			1,
+			2
+		};
+
+		Object[] args = {
+			"object",
+			map,
+			"ints",
+			ints
+		};
+
+		jsonRpcServerAnnotatedMethod.handleRequest(
+			messageWithMapParamsStream(methodName, args),
+			byteArrayOutputStream
+		);
+
+		JsonNode res = result();
+		ObjectMapper mapper = new ObjectMapper();
+		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
+		Map<String, String> outputMap = mapper.convertValue(resultNode.get(0), Map.class);
+		Assert.assertThat(outputMap, is(equalTo(map)));
+		int[] outputInts = mapper.convertValue(resultNode.get(1), int[].class);
+		Assert.assertThat(outputInts[0], is(1));
+		Assert.assertThat(outputInts[1], is(2));
+	}
+
 	private JsonNode result() throws IOException {
-        return decodeAnswer(byteArrayOutputStream).get(RESULT);
-    }
+		return decodeAnswer(byteArrayOutputStream).get(RESULT);
+	}
 
 	public class ServiceWithVarArgsImpl implements ServiceInterfaceWithCustomMethodNameWithVarArgsAnnotation {
 		@Override
@@ -166,24 +250,15 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 		@Override
 		public String customMethod2(String stringParam1) {
-            throw new AssertionError("this is not expected method");
+			throw new AssertionError("this is not expected method");
 		}
 
 		@Override
-		public String testMethodVararg(Object... params) {
-            Map<String, Object> map = VarArgsUtil.convertArgs(params);
-            try {
-                return new ObjectMapper().writeValueAsString(map);
-            } catch (JsonProcessingException e) {
-                Assert.fail(e.getMessage());
-                return null;
-            }
-        }
-
-		@Override
-		public String testMethodVarargPrimitive(int... ints) {
+		public String varargObjectMethod(Object... params) {
+			Map<String, Object> map = VarArgsUtil.convertArgs(params);
+			
 			try {
-				return new ObjectMapper().writeValueAsString(ints);
+				return new ObjectMapper().writeValueAsString(map);
 			} catch (JsonProcessingException e) {
 				Assert.fail(e.getMessage());
 				return null;
@@ -191,39 +266,87 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		}
 
 		@Override
-		public String testMethodVarargPrimitiveWebParam(int... ints) {
-			try {
-				return new ObjectMapper().writeValueAsString(ints);
-			} catch (JsonProcessingException e) {
-				Assert.fail(e.getMessage());
-				return null;
-			}
+		public String varargPrimitiveMethod(int... ints) {
+			return writeInts(ints);
 		}
 
 		@Override
-		public String testMethodVarargPrimitiveJsonRpcParam(int... ints) {
-			try {
-				return new ObjectMapper().writeValueAsString(ints);
-			} catch (JsonProcessingException e) {
-				Assert.fail(e.getMessage());
-				return null;
-			}
+		public String varargPrimitiveMethodWithWebParam(int... ints) {
+			return writeInts(ints);
 		}
 
 		@Override
-		public String testMethodVarargWebParam(String... strings) {
-			try {
-				return new ObjectMapper().writeValueAsString(strings);
-			} catch (JsonProcessingException e) {
-				Assert.fail(e.getMessage());
-				return null;
-			}
+		public String varargPrimitiveMethodWithJsonRpcParam(int... ints) {
+			return writeInts(ints);
 		}
 
 		@Override
-		public String testMethodVarargJsonRpcParam(String... strings) {
+		public String varargStringMethodWithWebParam(String... strings) {
+			return writeStrings(strings);
+		}
+
+		@Override
+		public String varargStringMethodWithJsonRpcParam(String... strings) {
+			return writeStrings(strings);
+		}
+
+		@Override
+		public String mixedObjectStringVarargMethodWithWebParam(Object test, String... strings) {
+			Object[] obj = new Object[]{
+				test,
+				strings
+			};
+
+			return writeObjects(obj);
+		}
+
+		@Override
+		public String mixedObjectStringVarargMethodWithJsonRpcParam(Object test, String... strings) {
+			Object[] obj = new Object[]{
+				test,
+				strings
+			};
+
+			return writeObjects(obj);
+		}
+
+		@Override
+		public String mixedObjectPrimitiveVarargMethodWithWebParam(Object test, int... ints) {
+			Object[] obj = new Object[]{
+				test,
+				ints
+			};
+
+			return writeObjects(obj);
+		}
+
+		@Override
+		public String mixedObjectPrimitiveVarargMethodWithJsonRpcParam(Object test, int... ints) {
+			Object[] obj = new Object[]{
+				test,
+				ints
+			};
+
+			return writeObjects(obj);
+		}
+
+		private String writeInts(int[] ints) {
+			Integer[] boxed = new Integer[ints.length];
+
+			for (int i = 0; i < ints.length; i++) {
+				boxed[i] = ints[i];
+			}
+
+			return writeObjects(boxed);
+		}
+
+		private String writeStrings(String[] strings) {
+			return writeObjects(strings);
+		}
+
+		private String writeObjects(Object[] objects) {
 			try {
-				return new ObjectMapper().writeValueAsString(strings);
+				return new ObjectMapper().writeValueAsString(objects);
 			} catch (JsonProcessingException e) {
 				Assert.fail(e.getMessage());
 				return null;
@@ -234,26 +357,42 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 	public interface ServiceInterfaceWithCustomMethodNameWithVarArgsAnnotation {
 		@JsonRpcMethod("Test.custom")
 		String customMethod();
-		
+
 		@JsonRpcMethod("Test.custom2")
 		String customMethod2(String stringParam1);
 
-        @JsonRpcMethod("testMethodVararg")
-        String testMethodVararg(Object... params);
+		@JsonRpcMethod("varargObjectMethod")
+		String varargObjectMethod(Object... params);
 
-        @JsonRpcMethod("testMethodVarargPrimitive")
-		String testMethodVarargPrimitive(int... ints);
+		@JsonRpcMethod("varargPrimitiveMethod")
+		String varargPrimitiveMethod(int... ints);
 
-        @JsonRpcMethod("testMethodVarargPrimitiveWebParam")
-		String testMethodVarargPrimitiveWebParam(@WebParam(name = "ints") int... ints);
+		@JsonRpcMethod("varargPrimitiveMethodWithWebParam")
+		String varargPrimitiveMethodWithWebParam(@WebParam(name = "ints") int... ints);
 
-		@JsonRpcMethod("testMethodVarargPrimitiveJsonRpcParam")
-		String testMethodVarargPrimitiveJsonRpcParam(@JsonRpcParam("ints") int... ints);
+		@JsonRpcMethod("varargPrimitiveMethodWithJsonRpcParam")
+		String varargPrimitiveMethodWithJsonRpcParam(@JsonRpcParam("ints") int... ints);
 
-        @JsonRpcMethod("testMethodVarargStringWebParam")
-		String testMethodVarargWebParam(@WebParam(name = "strings") String... strings);
+		@JsonRpcMethod("varargStringMethodWithWebParam")
+		String varargStringMethodWithWebParam(@WebParam(name = "strings") String... strings);
 
-        @JsonRpcMethod("testMethodVarargStringJsonRpcParam")
-		String testMethodVarargJsonRpcParam(@JsonRpcParam("strings") String... strings);
+		@JsonRpcMethod("varargStringMethodWithJsonRpcParam")
+		String varargStringMethodWithJsonRpcParam(@JsonRpcParam("strings") String... strings);
+
+		@JsonRpcMethod("mixedObjectStringVarargMethodWithWebParam")
+		String mixedObjectStringVarargMethodWithWebParam(@WebParam(name = "object") Object test,
+														 @WebParam(name = "strings") String... strings);
+
+		@JsonRpcMethod("mixedObjectStringVarargMethodWithJsonRpcParam")
+		String mixedObjectStringVarargMethodWithJsonRpcParam(@JsonRpcParam("object") Object test,
+															 @JsonRpcParam("strings") String... strings);
+
+		@JsonRpcMethod("mixedObjectPrimitiveVarargMethodWithWebParam")
+		String mixedObjectPrimitiveVarargMethodWithWebParam(@WebParam(name = "object") Object test,
+															@WebParam(name = "ints") int... ints);
+
+		@JsonRpcMethod("mixedObjectPrimitiveVarargMethodWithJsonRpcParam")
+		String mixedObjectPrimitiveVarargMethodWithJsonRpcParam(@JsonRpcParam("object") Object test,
+																@JsonRpcParam("ints") int... ints);
 	}
 }

@@ -1007,7 +1007,7 @@ public class JsonRpcBasicServer {
 			for (int i = 0; i < numParameters; i++) {
 				JsonRpcParam param = allNames.get(i);
 				if (param != null && paramNames.contains(param.value())) {
-					if (types[i].isArray() && method.isVarArgs()) {
+					if (types[i].isArray() && method.isVarArgs() && numParameters == 1) {
 						collectVarargsFromNode(paramNodes.get(param.value()));
 					} else {
 						addArgument(paramNodes.get(param.value()));
