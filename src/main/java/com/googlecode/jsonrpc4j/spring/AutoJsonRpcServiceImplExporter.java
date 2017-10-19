@@ -28,17 +28,13 @@ import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
  * implementation beans must also have the {@link JsonRpcService} annotation associated with them; either
  * on the implementation class itself or, preferably, on an interface that the implementation implements.
  * </p>
- * <p>
  * <p>The path for exposing the service is obtained from {@link JsonRpcService#value()}, but it is also
  * possible to define additional paths on {@link AutoJsonRpcServiceImpl#additionalPaths()}.</p>
- * <p>
  * <p>Below is an example of spring context XML snippet that illustrates typical usage;</p>
- * <p>
  * <pre>
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter&quot;/&gt;
  * &lt;bean class="MyServiceBean"/&gt;
  * </pre>
- * <p>
  * <p>Note that this class replaces {@link AutoJsonRpcServiceExporter}.  See that class' javadoc
  * for details.</p>
  */
