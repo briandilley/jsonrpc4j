@@ -138,8 +138,16 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		};
 
 		ArrayNode resultNode = callMethod(methodName, args);
-		Assert.assertThat(resultNode.get(0).asText(), is(equalTo("foo")));
-		Assert.assertThat(resultNode.get(1).asText(), is(equalTo("bar")));
+		Assert.assertThat(resultNode.get(0).asText(), is(equalTo(strings[0])));
+		Assert.assertThat(resultNode.get(1).asText(), is(equalTo(strings[1])));
+
+		args = new Object[] {
+			"strings",
+			strings[0]
+		};
+
+		resultNode = callMethod(methodName, args);
+		Assert.assertThat(resultNode.get(0).asText(), is(equalTo(strings[0])));
 	}
 
 	private void testVarargMethodWithPrimitiveParamAnnotation(String methodName) throws Exception {
@@ -154,8 +162,16 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		};
 
 		ArrayNode resultNode = callMethod(methodName, args);
-		Assert.assertThat(resultNode.get(0).asInt(), is(equalTo(1)));
-		Assert.assertThat(resultNode.get(1).asInt(), is(equalTo(2)));
+		Assert.assertThat(resultNode.get(0).asInt(), is(equalTo(ints[0])));
+		Assert.assertThat(resultNode.get(1).asInt(), is(equalTo(ints[1])));
+
+		args = new Object[] {
+			"ints",
+			ints[0]
+		};
+
+		resultNode = callMethod(methodName, args);
+		Assert.assertThat(resultNode.get(0).asInt(), is(equalTo(ints[0])));
 	}
 
 	@SuppressWarnings("unchecked")
