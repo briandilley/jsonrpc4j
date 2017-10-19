@@ -86,6 +86,8 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 				throw new RuntimeException(mue);
 			}
 		}
+
+		ReflectionUtil.clearCache();
 	}
 
 	/**

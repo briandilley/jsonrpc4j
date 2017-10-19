@@ -78,6 +78,8 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 			jsonRpcServer.setInterceptorList(interceptorList);
 		}
 
+		ReflectionUtil.clearCache();
+
 		exportService();
 	}
 
