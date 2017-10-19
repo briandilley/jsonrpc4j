@@ -43,22 +43,22 @@ public abstract class ReflectionUtil {
 		}
 		Set<Method> methods = new HashSet<>();
 		for (Class<?> clazz : classes) {
-			for (Method method : clazz.getMethods()) {
-			  if (method.isAnnotationPresent(JsonRpcMethod.class)) {
-		      JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
-		      
-		      if (methodAnnotation.required()) {
-		        if (methodAnnotation.value().equals(name)) {
-		          methods.add(method);
-		        }
-		      } else if (methodAnnotation.value().equals(name) || method.getName().equals(name)) {
-		        methods.add(method);
-		      }
-			  } else if (method.getName().equals(name)) {
-          methods.add(method);
-			  }
-			}
-		}
+            for (Method method : clazz.getMethods()) {
+                if (method.isAnnotationPresent(JsonRpcMethod.class)) {
+                    JsonRpcMethod methodAnnotation = method.getAnnotation(JsonRpcMethod.class);
+
+                    if (methodAnnotation.required()) {
+                        if (methodAnnotation.value().equals(name)) {
+                            methods.add(method);
+                        }
+                    } else if (methodAnnotation.value().equals(name) || method.getName().equals(name)) {
+                        methods.add(method);
+                    }
+                } else if (method.getName().equals(name)) {
+                    methods.add(method);
+                }
+            }
+        }
 		methods = Collections.unmodifiableSet(methods);
 		methodCache.put(cacheKey, methods);
 		return methods;
@@ -197,34 +197,35 @@ public abstract class ReflectionUtil {
 		Map<String, Object> namedParams = getNamedParameters(method, arguments);
 
 		switch (paramsPassMode) {
-		case ARRAY:
-			if (namedParams.size() > 0) {
-				Object[] parsed = new Object[namedParams.size()];
-				int i = 0;
-				for (Object value : namedParams.values()) {
-					parsed[i++] = value;
+			case ARRAY:
+				if (namedParams.size() > 0) {
+					Object[] parsed = new Object[namedParams.size()];
+					int i = 0;
+					for (Object value : namedParams.values()) {
+						parsed[i++] = value;
+					}
+					return parsed;
+				} else {
+					return arguments != null ? arguments : new Object[]{};
 				}
-				return parsed;
-			} else {
-				return arguments != null ? arguments : new Object[] {};
-			}
-		case OBJECT:
-			if (namedParams.size() > 0) {
-				return namedParams;
-			} else {
-				if (arguments == null)
-					return new Object[] {};
-				throw new RuntimeException(
-						"OBJECT parameters pass mode is impossible without declaring JsonRpcParam annotations for all parameters on method "
-								+ method.getName());
-			}
-		case AUTO:
-		default:
-			if (namedParams.size() > 0) {
-				return namedParams;
-			} else {
-				return arguments != null ? arguments : new Object[] {};
-			}
+			case OBJECT:
+				if (namedParams.size() > 0) {
+					return namedParams;
+				} else {
+					if (arguments == null) {
+                        return new Object[]{};
+                    }
+					throw new IllegalArgumentException(
+							"OBJECT parameters pass mode is impossible without declaring JsonRpcParam annotations for all parameters on method "
+									+ method.getName());
+				}
+			case AUTO:
+			default:
+				if (namedParams.size() > 0) {
+					return namedParams;
+				} else {
+					return arguments != null ? arguments : new Object[]{};
+				}
 		}
 	}
 	
@@ -234,7 +235,7 @@ public abstract class ReflectionUtil {
 	 * @param method    the method
 	 * @param arguments the arguments
 	 * @return named parameters or empty if no annotations found
-	 * @throws RuntimeException if some parameters are annotated and others not
+	 * @throws IllegalArgumentException if some parameters are annotated and others not
 	 */
 	private static Map<String, Object> getNamedParameters(Method method, Object[] arguments) {
 		
@@ -253,7 +254,7 @@ public abstract class ReflectionUtil {
 		}
 		
 		if (arguments != null && arguments.length > 0 && namedParams.size() > 0 && namedParams.size() != arguments.length) {
-			throw new RuntimeException("JsonRpcParam annotations were not found for all parameters on method " + method.getName());
+			throw new IllegalArgumentException("JsonRpcParam annotations were not found for all parameters on method " + method.getName());
 		}
 		
 		return namedParams;

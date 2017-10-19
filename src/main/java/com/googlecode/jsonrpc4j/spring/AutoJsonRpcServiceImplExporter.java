@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -45,8 +45,8 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	
 	private static final String PATH_PREFIX = "/";
 	
-	private final static Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
-	
+	private static final Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
+
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
 	private Boolean registerTraceInterceptor;
@@ -90,9 +90,10 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 						throw new RuntimeException("the path [" + path + "] for the bean [" + beanName + "] is not valid");
 					}
 					
-					logger.info(String.format("exporting bean [%s] ---> [%s]", beanName, path));
-					if (isNotDuplicateService(serviceBeanNames, beanName, path))
-						serviceBeanNames.put(path, beanName);
+					logger.info("exporting bean [{}] ---> [{}]", beanName, path);
+					if (isNotDuplicateService(serviceBeanNames, beanName, path)) {
+                        serviceBeanNames.put(path, beanName);
+                    }
 				}
 				
 			}
@@ -107,8 +108,9 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
 		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
 			for (Entry<String, String> entry : findServiceBeanDefinitions((ConfigurableListableBeanFactory) parentBeanFactory).entrySet()) {
-				if (isNotDuplicateService(serviceBeanNames, entry.getKey(), entry.getValue()))
-					serviceBeanNames.put(entry.getKey(), entry.getValue());
+				if (isNotDuplicateService(serviceBeanNames, entry.getKey(), entry.getValue())) {
+                    serviceBeanNames.put(entry.getKey(), entry.getValue());
+                }
 			}
 		}
 	}
@@ -126,7 +128,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		return jsonRpcPath != null;
 	}
 	
-	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) beanFactory;
 		Map<String, String> servicePathToBeanName = findServiceBeanDefinitions(defaultListableBeanFactory);
 		for (Entry<String, String> entry : servicePathToBeanName.entrySet()) {
@@ -210,11 +212,14 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	 * Find a {@link BeanDefinition} in the {@link BeanFactory} or it's parents.
 	 */
 	private BeanDefinition findBeanDefinition(ConfigurableListableBeanFactory beanFactory, String serviceBeanName) {
-		if (beanFactory.containsLocalBean(serviceBeanName)) return beanFactory.getBeanDefinition(serviceBeanName);
+		if (beanFactory.containsLocalBean(serviceBeanName)) {
+			return beanFactory.getBeanDefinition(serviceBeanName);
+		}
 		BeanFactory parentBeanFactory = beanFactory.getParentBeanFactory();
-		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory))
+		if (parentBeanFactory != null && ConfigurableListableBeanFactory.class.isInstance(parentBeanFactory)) {
 			return findBeanDefinition((ConfigurableListableBeanFactory) parentBeanFactory, serviceBeanName);
-		throw new RuntimeException(format("Bean with name '%s' can no longer be found.", serviceBeanName));
+		}
+		throw new NoSuchBeanDefinitionException(serviceBeanName);
 	}
 	
 	private Class<?>[] getBeanInterfaces(BeanDefinition serviceBeanDefinition, ClassLoader beanClassLoader) {
@@ -223,7 +228,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 			Class<?> beanClass = forName(beanClassName, beanClassLoader);
 			return getAllInterfacesForClass(beanClass, beanClassLoader);
 		} catch (ClassNotFoundException | LinkageError e) {
-			throw new RuntimeException(format("Cannot find bean class '%s'.", beanClassName), e);
+			throw new IllegalStateException(format("Cannot find bean class '%s'.", beanClassName), e);
 		}
 	}
 	

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -39,7 +38,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 	private String contentType;
 	
 	@Override
-	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		SimpleMetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory(applicationContext);
 		DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) beanFactory;
 		String resolvedPath = resolvePackageToScan();
@@ -60,7 +59,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 				}
 			}
 		} catch (IOException e) {
-			throw new RuntimeException(format("Cannot scan package '%s' for classes.", resolvedPath), e);
+			throw new IllegalStateException(format("Cannot scan package '%s' for classes.", resolvedPath), e);
 		}
 	}
 	
@@ -98,12 +97,12 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 		try {
 			return new URL(baseUrl, path).toString();
 		} catch (MalformedURLException e) {
-			throw new RuntimeException(format("Cannot combine URLs '%s' and '%s' to valid URL.", baseUrl, path), e);
+			throw new IllegalArgumentException(format("Cannot combine URLs '%s' and '%s' to valid URL.", baseUrl, path), e);
 		}
 	}
 	
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 	

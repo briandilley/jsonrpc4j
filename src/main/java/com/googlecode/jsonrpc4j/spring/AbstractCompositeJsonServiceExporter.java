@@ -44,6 +44,7 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	public final void afterPropertiesSet()
 			throws Exception {
 
