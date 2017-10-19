@@ -2,9 +2,7 @@ package com.googlecode.jsonrpc4j;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import net.iharder.Base64;
@@ -525,7 +523,10 @@ public class JsonRpcBasicServer {
 		for (int i = 0; i < parameterTypes.length; i++) {
 			JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
 			JavaType paramJavaType = mapper.getTypeFactory().constructType(parameterTypes[i]);
-			convertedParams[i] = mapper.readValue(paramJsonParser, paramJavaType);
+
+			convertedParams[i] = mapper.readerFor(paramJavaType)
+				.with(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+				.readValue(paramJsonParser);
 		}
 		return convertedParams;
 	}

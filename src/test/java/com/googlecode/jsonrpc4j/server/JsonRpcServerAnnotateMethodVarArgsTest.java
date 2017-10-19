@@ -132,20 +132,12 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 			"bar"
 		};
 
-		Object[] args = {
+		Object[] args = new Object[] {
 			"strings",
 			strings
 		};
 
-		jsonRpcServerAnnotatedMethod.handleRequest(
-			messageWithMapParamsStream(methodName, args),
-			byteArrayOutputStream
-		);
-
-		JsonNode res = result();
-		ObjectMapper mapper = new ObjectMapper();
-		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
-
+		ArrayNode resultNode = callMethod(methodName, args);
 		Assert.assertThat(resultNode.get(0).asText(), is(equalTo("foo")));
 		Assert.assertThat(resultNode.get(1).asText(), is(equalTo("bar")));
 	}
@@ -156,20 +148,12 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 			2
 		};
 
-		Object[] args = {
+		Object[] args = new Object[] {
 			"ints",
 			ints
 		};
 
-		jsonRpcServerAnnotatedMethod.handleRequest(
-			messageWithMapParamsStream(methodName, args),
-			byteArrayOutputStream
-		);
-
-		JsonNode res = result();
-		ObjectMapper mapper = new ObjectMapper();
-		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
-
+		ArrayNode resultNode = callMethod(methodName, args);
 		Assert.assertThat(resultNode.get(0).asInt(), is(equalTo(1)));
 		Assert.assertThat(resultNode.get(1).asInt(), is(equalTo(2)));
 	}
@@ -184,26 +168,34 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 			"bar"
 		};
 
-		Object[] args = {
+		Object[] args = new Object[] {
 			"object",
 			map,
 			"strings",
 			strings
 		};
 
-		jsonRpcServerAnnotatedMethod.handleRequest(
-			messageWithMapParamsStream(methodName, args),
-			byteArrayOutputStream
-		);
-
-		JsonNode res = result();
-		ObjectMapper mapper = new ObjectMapper();
-		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
+		ArrayNode resultNode = callMethod(methodName, args);
 		Map<String, String> outputMap = mapper.convertValue(resultNode.get(0), Map.class);
 		Assert.assertThat(outputMap, is(equalTo(map)));
 		String[] outputStrings = mapper.convertValue(resultNode.get(1), String[].class);
 		Assert.assertThat(outputStrings[0], is(equalTo(strings[0])));
 		Assert.assertThat(outputStrings[1], is(equalTo(strings[1])));
+
+		// test single item, non-array varargs
+
+		args = new Object[] {
+			"object",
+			map,
+			"strings",
+			strings[0]
+		};
+
+		resultNode = callMethod(methodName, args);
+		outputMap = mapper.convertValue(resultNode.get(0), Map.class);
+		Assert.assertThat(outputMap, is(equalTo(map)));
+		outputStrings = mapper.convertValue(resultNode.get(1), String[].class);
+		Assert.assertThat(outputStrings[0], is(equalTo(strings[0])));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -216,13 +208,36 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 			2
 		};
 
-		Object[] args = {
+		Object[] args = new Object[] {
 			"object",
 			map,
 			"ints",
 			ints
 		};
 
+		ArrayNode resultNode = callMethod(methodName, args);
+		Map<String, String> outputMap = mapper.convertValue(resultNode.get(0), Map.class);
+		Assert.assertThat(outputMap, is(equalTo(map)));
+		int[] outputInts = mapper.convertValue(resultNode.get(1), int[].class);
+		Assert.assertThat(outputInts[0], is(ints[0]));
+		Assert.assertThat(outputInts[1], is(ints[1]));
+
+		// test single item, non-array varargs
+
+		args = new Object[]{
+			"object",
+			map,
+			"ints",
+			ints[0]
+		};
+
+		resultNode = callMethod(methodName, args);
+		Assert.assertThat(outputMap, is(equalTo(map)));
+		outputInts = mapper.convertValue(resultNode.get(1), int[].class);
+		Assert.assertThat(outputInts[0], is(ints[0]));
+	}
+
+	private ArrayNode callMethod(String methodName, Object[] args) throws Exception {
 		jsonRpcServerAnnotatedMethod.handleRequest(
 			messageWithMapParamsStream(methodName, args),
 			byteArrayOutputStream
@@ -230,12 +245,7 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 
 		JsonNode res = result();
 		ObjectMapper mapper = new ObjectMapper();
-		ArrayNode resultNode = (ArrayNode) mapper.readTree(res.asText());
-		Map<String, String> outputMap = mapper.convertValue(resultNode.get(0), Map.class);
-		Assert.assertThat(outputMap, is(equalTo(map)));
-		int[] outputInts = mapper.convertValue(resultNode.get(1), int[].class);
-		Assert.assertThat(outputInts[0], is(1));
-		Assert.assertThat(outputInts[1], is(2));
+		return (ArrayNode) mapper.readTree(res.asText());
 	}
 
 	private JsonNode result() throws IOException {
@@ -256,7 +266,7 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		@Override
 		public String varargObjectMethod(Object... params) {
 			Map<String, Object> map = VarArgsUtil.convertArgs(params);
-			
+
 			try {
 				return new ObjectMapper().writeValueAsString(map);
 			} catch (JsonProcessingException e) {
