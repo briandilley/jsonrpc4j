@@ -41,7 +41,6 @@ public interface JsonRpcInterceptor {
      *      }
      * }
      * </pre>
-     * </p>
      * <p>
      * For changing exception handling custom {@link ErrorResolver} could be generated.
      * </p>
