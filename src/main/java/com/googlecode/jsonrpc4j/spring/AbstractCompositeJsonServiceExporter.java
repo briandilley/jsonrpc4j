@@ -7,7 +7,6 @@ import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.ProxyUtil;
-import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -47,10 +46,11 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	 */
 	public final void afterPropertiesSet()
 			throws Exception {
-		objectMapper = null;
 
 		// find the ObjectMapper
-		if (applicationContext != null && applicationContext.containsBean("objectMapper")) {
+		if (objectMapper == null
+				&& applicationContext != null
+				&& applicationContext.containsBean("objectMapper")) {
 			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
 		}
 		if (objectMapper == null && applicationContext != null) {
@@ -86,8 +86,7 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 			jsonRpcServer.setContentType(contentType);
 		}
 
-		ReflectionUtil.clearCache();
-
+		
 		// export
 		exportService();
 	}

@@ -54,40 +54,38 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 		super.afterPropertiesSet();
 		proxyObject = ProxyFactory.getProxy(getServiceInterface(), this);
 
-		objectMapper = null;
-
-		if (applicationContext != null && applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
-		}
-		if (objectMapper == null && applicationContext != null) {
+		if (jsonRpcHttpClient==null) {
+			if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
+				objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+			}
+			if (objectMapper == null && applicationContext != null) {
+				try {
+					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+				} catch (Exception e) {
+					logger.debug(e);
+				}
+			}
+			if (objectMapper == null) {
+				objectMapper = new ObjectMapper();
+			}
+	
 			try {
-				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-			} catch (Exception e) {
-				logger.debug(e);
+				jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
+				jsonRpcHttpClient.setRequestListener(requestListener);
+				jsonRpcHttpClient.setSslContext(sslContext);
+				jsonRpcHttpClient.setHostNameVerifier(hostNameVerifier);
+	
+				if (contentType != null) {
+					jsonRpcHttpClient.setContentType(contentType);
+				}
+				
+				if (exceptionResolver!=null) {
+					jsonRpcHttpClient.setExceptionResolver(exceptionResolver);
+				}
+			} catch (MalformedURLException mue) {
+				throw new RuntimeException(mue);
 			}
 		}
-		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
-		}
-
-		try {
-			jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
-			jsonRpcHttpClient.setRequestListener(requestListener);
-			jsonRpcHttpClient.setSslContext(sslContext);
-			jsonRpcHttpClient.setHostNameVerifier(hostNameVerifier);
-
-			if (contentType != null) {
-				jsonRpcHttpClient.setContentType(contentType);
-			}
-
-			if (exceptionResolver!=null) {
-				jsonRpcHttpClient.setExceptionResolver(exceptionResolver);
-			}
-		} catch (MalformedURLException mue) {
-			throw new RuntimeException(mue);
-		}
-
-		ReflectionUtil.clearCache();
 	}
 
 	/**
