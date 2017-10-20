@@ -89,7 +89,8 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 			}
 			
 		}
-		
+
+		ReflectionUtil.clearCache();
 	}
 
 	/**
