@@ -17,7 +17,9 @@ public enum AnnotationsErrorResolver implements ErrorResolver {
 	@Override
 	public JsonError resolveError(Throwable thrownException, Method method, List<JsonNode> arguments) {
 		JsonRpcError resolver = getResolverForException(thrownException, method);
-		if (notFoundResolver(resolver)) return null;
+		if (notFoundResolver(resolver)) {
+			return null;
+		}
 		
 		String message = hasErrorMessage(resolver) ? resolver.message() : thrownException.getMessage();
 		return new JsonError(resolver.code(), message, new ErrorData(resolver.exception().getName(), message));

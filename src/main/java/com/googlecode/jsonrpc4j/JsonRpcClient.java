@@ -196,7 +196,9 @@ public class JsonRpcClient {
 		handleErrorResponse(jsonObject);
 		
 		if (hasResult(jsonObject)) {
-			if (isReturnTypeInvalid(returnType)) return null;
+			if (isReturnTypeInvalid(returnType)) {
+				return null;
+			}
 			return constructResponseObject(returnType, jsonObject);
 		}
 		
@@ -308,7 +310,7 @@ public class JsonRpcClient {
 	private JsonNode readResponseNode(ReadContext context) throws IOException {
 		context.assertReadable();
 		JsonNode response = context.nextValue();
-		logger.debug("JSON-PRC Response: {}", response.toString());
+		logger.debug("JSON-PRC Response: {}", response);
 		return response;
 	}
 	
@@ -445,7 +447,7 @@ public class JsonRpcClient {
 	}
 	
 	private String generateRandomId() {
-		return random.nextInt(Integer.MAX_VALUE) + "";
+		return Integer.toString(random.nextInt(Integer.MAX_VALUE));
 	}
 	
 	/**
@@ -580,7 +582,9 @@ public class JsonRpcClient {
 		notifyAnswerListener(jsonObject);
 		handleErrorResponse(jsonObject);
 		if (hasResult(jsonObject)) {
-			if (isReturnTypeInvalid(returnType)) return null;
+			if (isReturnTypeInvalid(returnType)) {
+				return null;
+			}
 			return constructResponseObject(returnType, jsonObject);
 		}
 		return null;

@@ -33,6 +33,7 @@ public class CompositeJsonStreamServiceExporter extends AbstractCompositeJsonSer
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	protected void exportService() throws Exception {
 		if (streamServer == null) {
 			if (serverSocketFactory == null) {

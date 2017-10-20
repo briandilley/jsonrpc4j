@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import org.springframework.web.client.ResponseErrorHandler;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
@@ -89,8 +88,9 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 		}
 
 		// use specific JSON-RPC error handler if it has not been changed to custom 
-		if (restTemplate.getErrorHandler() instanceof org.springframework.web.client.DefaultResponseErrorHandler)
+		if (restTemplate.getErrorHandler() instanceof org.springframework.web.client.DefaultResponseErrorHandler) {
 			restTemplate.setErrorHandler(JsonRpcResponseErrorHandler.INSTANCE);
+		}
 	}
 
 	public JsonRpcRestClient(URL serviceUrl, Map<String, String> headers) {
@@ -222,8 +222,9 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 					, httpStatusCodeException.getResponseBodyAsString()
 			);
 			Integer jsonErrorCode = DefaultHttpStatusCodeProvider.INSTANCE.getJsonRpcCode(httpStatusCodeException.getStatusCode().value());
-			if (jsonErrorCode == null)
+			if (jsonErrorCode == null) {
 				jsonErrorCode = httpStatusCodeException.getStatusCode().value();
+			}
 			throw new JsonRpcClientException(jsonErrorCode, httpStatusCodeException.getStatusText(), null);
 		} catch (HttpMessageConversionException httpMessageConversionException) {
 			logger.error("Can not convert (request/response)", httpMessageConversionException);

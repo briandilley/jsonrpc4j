@@ -20,7 +20,8 @@ public class CompositeJsonServiceExporter extends AbstractCompositeJsonServiceEx
 	/**
 	 * {@inheritDoc}
 	 */
-	protected void exportService() throws Exception {
+	@Override
+	protected void exportService() {
 		jsonRpcServer = getJsonRpcServer();
 	}
 

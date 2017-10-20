@@ -99,8 +99,9 @@ public class JsonRpcBasicServer {
 		this.mapper = mapper;
 		this.handler = handler;
 		this.remoteInterface = remoteInterface;
-		if (handler != null)
+		if (handler != null) {
 			logger.debug("created server for interface {} with handler {}", remoteInterface, handler.getClass());
+		}
 	}
 	
 	/**
@@ -158,7 +159,7 @@ public class JsonRpcBasicServer {
 		
 		// the 'id' value is assumed to be numerical.
 		
-		if (null != id && 0 != id.length()) {
+		if (null != id && !id.isEmpty()) {
 			envelope.append(id);
 		} else {
 			envelope.append("null");
@@ -168,7 +169,7 @@ public class JsonRpcBasicServer {
 		envelope.append(METHOD);
 		envelope.append("\":");
 		
-		if (null != method && 0 != method.length()) {
+		if (null != method && !method.isEmpty()) {
 			envelope.append('"');
 			envelope.append(method);
 			envelope.append('"');
@@ -179,7 +180,7 @@ public class JsonRpcBasicServer {
 		envelope.append(PARAMS);
 		envelope.append("\":");
 		
-		if (null != params && 0 != params.length()) {
+		if (null != params && !params.isEmpty()) {
 			String decodedParams;
 			
 			// some specifications suggest that the GET "params" query parameter should be Base64 encoded and
@@ -270,8 +271,12 @@ public class JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	protected JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
-		if (node.isArray()) return handleArray(ArrayNode.class.cast(node), output);
-		if (node.isObject()) return handleObject(ObjectNode.class.cast(node), output);
+		if (node.isArray()) {
+			return handleArray(ArrayNode.class.cast(node), output);
+		}
+		if (node.isObject()) {
+			return handleObject(ObjectNode.class.cast(node), output);
+		}
 		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
 	}
 	
@@ -295,7 +300,9 @@ public class JsonRpcBasicServer {
 				result = JsonError.BULK_ERROR;
 				errorCount += 1;
 			}
-			if (i != node.size() - 1) output.write(',');
+			if (i != node.size() - 1) {
+				output.write(',');
+			}
 		}
 		output.write(']');
 		logger.debug("served {} requests, error {}, result {}", node.size(), errorCount, result);
@@ -319,27 +326,33 @@ public class JsonRpcBasicServer {
 	private JsonError handleObject(final ObjectNode node, final OutputStream output) throws IOException {
 		logger.debug("Request: {}", node);
 		
-		if (!isValidRequest(node))
+		if (!isValidRequest(node)) {
 			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
+		}
 		Object id = parseId(node.get(ID));
 		
 		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get(JSONRPC).asText() : VERSION;
-		if (!hasNonNullData(node, METHOD))
+		if (!hasNonNullData(node, METHOD)) {
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
-		
+		}
+
 		final String fullMethodName = node.get(METHOD).asText();
 		final String partialMethodName = getMethodName(fullMethodName);
 		final String serviceName = getServiceName(fullMethodName);
 		
 		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName);
-		if (methods.isEmpty())
+		if (methods.isEmpty()) {
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
+		}
 		AMethodWithItsArgs methodArgs = findBestMethodByParamsNode(methods, node.get(PARAMS));
-		if (methodArgs == null)
+		if (methodArgs == null) {
 			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_PARAMS_INVALID));
+		}
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
-				if (this.requestInterceptor != null) this.requestInterceptor.interceptRequest(node);
+				if (this.requestInterceptor != null) {
+					this.requestInterceptor.interceptRequest(node);
+				}
 				Object target = getHandler(serviceName);
 				// interceptors preHandle
 				for (JsonRpcInterceptor interceptor : interceptorList) {
@@ -491,7 +504,7 @@ public class JsonRpcBasicServer {
 			JsonNode jsonNode = params.get(i);
 			Class<?> type = JsonUtil.getJavaTypeForJsonType(jsonNode);
 			Object object = mapper.convertValue(jsonNode, type);
-			logger.debug(String.format("[%s] param: %s -> %s", method.getName(), i, type.getName()));
+			logger.debug("[{}] param: {} -> {}", method.getName(), i, type.getName());
 			Array.set(convertedParams, i, object);
 		}
 
@@ -505,13 +518,13 @@ public class JsonRpcBasicServer {
 			JsonNode jsonNode = params.get(i);
 			Class<?> type = JsonUtil.getJavaTypeForJsonType(jsonNode);
 			Object object = mapper.convertValue(jsonNode, type);
-			logger.debug(String.format("[%s] param: %s -> %s", method.getName(), i, type.getName()));
+			logger.debug("[{}] param: {} -> {}", method.getName(), i, type.getName());
 			convertedParams[i] = object;
 		}
 
 		return method.invoke(target, new Object[] { convertedParams });
 	}
-	
+
 	private boolean hasReturnValue(Method m) {
 		return m.getGenericReturnType() != null;
 	}
@@ -647,13 +660,17 @@ public class JsonRpcBasicServer {
 		int numParams = isNullNodeOrValue(paramNodes) ? 0 : paramNodes.size();
 		int bestParamNumDiff = Integer.MAX_VALUE;
 		Set<Method> matchedMethods = collectMethodsMatchingParamCount(methods, paramCount, bestParamNumDiff);
-		if (matchedMethods.isEmpty()) return null;
+		if (matchedMethods.isEmpty()) {
+			return null;
+		}
 		Method bestMethod = getBestMatchingArgTypeMethod(paramNodes, numParams, matchedMethods);
 		return new AMethodWithItsArgs(bestMethod, paramCount, paramNodes);
 	}
 	
 	private Method getBestMatchingArgTypeMethod(ArrayNode paramNodes, int numParams, Set<Method> matchedMethods) {
-		if (matchedMethods.size() == 1 || numParams == 0) return matchedMethods.iterator().next();
+		if (matchedMethods.size() == 1 || numParams == 0) {
+			return matchedMethods.iterator().next();
+		}
 		Method bestMethod = null;
 		int mostMatches = Integer.MIN_VALUE;
 		for (Method method : matchedMethods) {
@@ -705,7 +722,9 @@ public class JsonRpcBasicServer {
 			Class<?>[] paramTypes = method.getParameterTypes();
 			final int paramNumDiff = paramTypes.length - paramCount;
 			if (hasLessOrEqualAbsParamDiff(bestParamNumDiff, paramNumDiff) && acceptParamCount(paramNumDiff)) {
-				if (hasLessAbsParamDiff(bestParamNumDiff, paramNumDiff)) matchedMethods.clear();
+				if (hasLessAbsParamDiff(bestParamNumDiff, paramNumDiff)) {
+					matchedMethods.clear();
+				}
 				matchedMethods.add(method);
 				bestParamNumDiff = paramNumDiff;
 			}
@@ -753,14 +772,21 @@ public class JsonRpcBasicServer {
 			List<Class<?>> parameterTypes = getParameterTypes(method);
 			
 			int typeNameCountDiff = parameterTypes.size() - paramNames.size();
-			if (!acceptParamCount(typeNameCountDiff)) continue;
+			if (!acceptParamCount(typeNameCountDiff)) {
+				continue;
+			}
 			
 			ParameterCount parStat = new ParameterCount(paramNames, paramNodes, parameterTypes, method);
-			if (!acceptParamCount(parStat.nameCount - paramNames.size())) continue;
-			if (hasMoreMatches(max.nameCount, parStat.nameCount) || parStat.nameCount == max.nameCount && hasMoreMatches(max.typeCount, parStat.typeCount))
+			if (!acceptParamCount(parStat.nameCount - paramNames.size())) {
+				continue;
+			}
+			if (hasMoreMatches(max.nameCount, parStat.nameCount) || parStat.nameCount == max.nameCount && hasMoreMatches(max.typeCount, parStat.typeCount)) {
 				max = parStat;
+			}
 		}
-		if (max.method == null) return null;
+		if (max.method == null) {
+			return null;
+		}
 		return new AMethodWithItsArgs(max.method, paramNames, max.allNames, paramNodes);
 		
 	}
@@ -785,14 +811,27 @@ public class JsonRpcBasicServer {
 	 */
 	@SuppressWarnings("SimplifiableIfStatement")
 	private boolean isMatchingType(JsonNode node, Class<?> type) {
-		if (node.isNull()) return true;
-		if (node.isTextual()) return String.class.isAssignableFrom(type);
-		if (node.isNumber()) return isNumericAssignable(type);
-		if (node.isArray() && type.isArray())
+		if (node.isNull()) {
+			return true;
+		}
+		if (node.isTextual()) {
+			return String.class.isAssignableFrom(type);
+		}
+		if (node.isNumber()) {
+			return isNumericAssignable(type);
+		}
+		if (node.isArray() && type.isArray()) {
 			return node.size() > 0 && isMatchingType(node.get(0), type.getComponentType());
-		if (node.isArray()) return type.isArray() || Collection.class.isAssignableFrom(type);
-		if (node.isBinary()) return byteOrCharAssignable(type);
-		if (node.isBoolean()) return boolean.class.isAssignableFrom(type) || Boolean.class.isAssignableFrom(type);
+		}
+		if (node.isArray()) {
+			return type.isArray() || Collection.class.isAssignableFrom(type);
+		}
+		if (node.isBinary()) {
+			return byteOrCharAssignable(type);
+		}
+		if (node.isBoolean()) {
+			return boolean.class.isAssignableFrom(type) || Boolean.class.isAssignableFrom(type);
+		}
 		if (node.isObject() || node.isPojo()) {
 			return !type.isPrimitive() && !String.class.isAssignableFrom(type) &&
 					!Number.class.isAssignableFrom(type) && !Boolean.class.isAssignableFrom(type);
@@ -835,14 +874,28 @@ public class JsonRpcBasicServer {
 	}
 	
 	private Object parseId(JsonNode node) {
-		if (isNullNodeOrValue(node)) return null;
-		if (node.isDouble()) return node.asDouble();
-		if (node.isFloatingPointNumber()) return node.asDouble();
-		if (node.isInt()) return node.asInt();
-		if (node.isLong()) return node.asLong();
+		if (isNullNodeOrValue(node)) {
+			return null;
+		}
+		if (node.isDouble()) {
+			return node.asDouble();
+		}
+		if (node.isFloatingPointNumber()) {
+			return node.asDouble();
+		}
+		if (node.isInt()) {
+			return node.asInt();
+		}
+		if (node.isLong()) {
+			return node.asLong();
+		}
 		//TODO(donequis): consider parsing bigints
-		if (node.isIntegralNumber()) return node.asInt();
-		if (node.isTextual()) return node.asText();
+		if (node.isIntegralNumber()) {
+			return node.asInt();
+		}
+		if (node.isTextual()) {
+			return node.asText();
+		}
 		throw new IllegalArgumentException("Unknown id type");
 	}
 	
@@ -1001,7 +1054,7 @@ public class JsonRpcBasicServer {
 			this(method);
 			collectVarargsFromNode(jsonNode);
 		}
-		
+
 		private void collectArgumentsBasedOnName(Method method, Set<String> paramNames, List<JsonRpcParam> allNames, ObjectNode paramNodes) {
 			Class<?>[] types = method.getParameterTypes();
 			int numParameters = types.length;
@@ -1018,7 +1071,7 @@ public class JsonRpcBasicServer {
 				}
 			}
 		}
-		
+
 		private void collectVarargsFromNode(JsonNode node) {
 			if (node.isArray()) {
 				ArrayNode arrayNode = ArrayNode.class.cast(node);
@@ -1082,11 +1135,17 @@ public class JsonRpcBasicServer {
 			int at = 0;
 			
 			for (JsonRpcParam name : this.allNames) {
-				if (missingAnnotation(name)) continue;
+				if (missingAnnotation(name)) {
+					continue;
+				}
 				String paramName = name.value();
 				boolean hasParamName = paramNames.contains(paramName);
-				if (hasParamName) nameCount += 1;
-				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(at))) typeCount += 1;
+				if (hasParamName) {
+					nameCount += 1;
+				}
+				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(at))) {
+					typeCount += 1;
+				}
 				at += 1;
 			}
 			this.typeCount = typeCount;
@@ -1097,17 +1156,22 @@ public class JsonRpcBasicServer {
 		private List<JsonRpcParam> getAnnotatedParameterNames(Method method) {
 			List<JsonRpcParam> parameterNames = new ArrayList<>();
 			for (List<? extends Annotation> webParamAnnotation : getWebParameterAnnotations(method)) {
-				if (!webParamAnnotation.isEmpty())
+				if (!webParamAnnotation.isEmpty()) {
 					parameterNames.add(createNewJsonRcpParamType(webParamAnnotation.get(0)));
+				}
 			}
 			for (List<JsonRpcParam> annotation : getJsonRpcParamAnnotations(method)) {
-				if (!annotation.isEmpty()) parameterNames.add(annotation.get(0));
+				if (!annotation.isEmpty()) {
+					parameterNames.add(annotation.get(0));
+				}
 			}
 			return parameterNames;
 		}
 		
 		private List<? extends List<? extends Annotation>> getWebParameterAnnotations(Method method) {
-			if (WEB_PARAM_ANNOTATION_CLASS == null) return new ArrayList<>();
+			if (WEB_PARAM_ANNOTATION_CLASS == null) {
+				return new ArrayList<>();
+			}
 			return ReflectionUtil.getParameterAnnotations(method, WEB_PARAM_ANNOTATION_CLASS);
 		}
 		
