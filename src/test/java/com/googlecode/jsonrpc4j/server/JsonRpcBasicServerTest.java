@@ -2,6 +2,7 @@ package com.googlecode.jsonrpc4j.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
+import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import com.googlecode.jsonrpc4j.InvocationListener;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcInterceptor;
@@ -201,7 +202,19 @@ public class JsonRpcBasicServerTest {
 		assertTrue(byteArrayOutputStream.toString(Util.JSON_ENCODING).isEmpty());
 		assertEquals(ok_code, JsonRpcBasicServer.CODE_OK);
 	}
-	
+
+	@Test
+	public void receiveInvalidJson() throws IOException {
+		jsonRpcServer.handleRequest(invalidJsonStream(), byteArrayOutputStream);
+		assertEquals(JsonError.PARSE_ERROR.code, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.ERROR_CODE).intValue());
+	}
+
+	@Test
+	public void receiveEmptyLine() throws IOException {
+		jsonRpcServer.handleRequest(emptyLineStream(), byteArrayOutputStream);
+		assertEquals(JsonError.PARSE_ERROR.code, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.ERROR).get(JsonRpcBasicServer.ERROR_CODE).intValue());
+	}
+
 	/**
 	 * The {@link com.googlecode.jsonrpc4j.JsonRpcBasicServer} is able to have an instance of
 	 * {@link com.googlecode.jsonrpc4j.InvocationListener} configured for it.  Prior to a
