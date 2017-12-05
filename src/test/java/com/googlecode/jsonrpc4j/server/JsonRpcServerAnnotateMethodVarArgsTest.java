@@ -268,7 +268,7 @@ public class JsonRpcServerAnnotateMethodVarArgsTest {
 		return decodeAnswer(byteArrayOutputStream).get(RESULT);
 	}
 
-	public class ServiceWithVarArgsImpl implements ServiceInterfaceWithCustomMethodNameWithVarArgsAnnotation {
+	public static class ServiceWithVarArgsImpl implements ServiceInterfaceWithCustomMethodNameWithVarArgsAnnotation {
 		@Override
 		public String customMethod() {
 			throw new AssertionError("this is not expected method");
