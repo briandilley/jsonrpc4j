@@ -35,6 +35,7 @@ public class Util {
 			" \"id\": \n" +
 			" }\n" +
 			" ";
+	private static final String emptyLine = "\n";
 	
 	public static InputStream invalidJsonRpcRequestStream() {
 		return new ByteArrayInputStream(invalidJsonRpcRequest.getBytes(StandardCharsets.UTF_8));
@@ -42,6 +43,10 @@ public class Util {
 	
 	public static InputStream invalidJsonStream() {
 		return new ByteArrayInputStream(invalidJson.getBytes(StandardCharsets.UTF_8));
+	}
+
+	public static InputStream emptyLineStream() {
+		return new ByteArrayInputStream(emptyLine.getBytes(StandardCharsets.UTF_8));
 	}
 	
 	public static InputStream messageWithListParamsStream(final Object id, final String methodName, final Object... args) throws JsonProcessingException {

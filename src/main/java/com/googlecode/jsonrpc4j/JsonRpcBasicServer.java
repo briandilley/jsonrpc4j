@@ -241,7 +241,7 @@ public class JsonRpcBasicServer {
 				interceptor.preHandleJson(jsonNode);
 			}
 			return handleJsonNodeRequest(jsonNode, output).code;
-		} catch (JsonParseException e) {
+		} catch (JsonParseException | JsonMappingException e) {
 			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.PARSE_ERROR)).code;
 		}
 	}
