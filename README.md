@@ -9,8 +9,8 @@ JSON-RPC).
 [![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.5.0/)
 [![Download](https://img.shields.io/maven-central/v/com.github.briandilley.jsonrpc4j/jsonrpc4j.svg) ](https://repo1.maven.org/maven2/com/github/briandilley/jsonrpc4j/jsonrpc4j/1.5.2/)
 [![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
-[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.5.2.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.5.2...master)
-[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
+[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.5.3.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.5.3...master)
+[![Maintenance](https://img.shields.io/maintenance/yes/2018.svg)](https://github.com/briandilley/jsonrpc4j/commits/master)
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
@@ -43,7 +43,7 @@ In `<dependencies>`:
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.5.2</version>
+		<version>1.5.3</version>
 	</dependency>
 
 ```
@@ -91,7 +91,7 @@ public class UserServiceImpl
         user.setUserName(userName);
         user.setFirstName(firstName);
         user.setPassword(password);
-        database.saveUser(user)
+        database.saveUser(user);
         return user;
     }
 
