@@ -77,7 +77,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	private JsonRpcServer(Object handler, Class<?> remoteInterface) {
+	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
 		super(new ObjectMapper(), handler, remoteInterface);
 		this.gzipResponses = false;
 	}
