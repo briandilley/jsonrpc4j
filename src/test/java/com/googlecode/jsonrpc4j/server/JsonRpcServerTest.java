@@ -187,6 +187,25 @@ public class JsonRpcServerTest {
 	}
 
 	@Test
+	public void testGzipResponseMultipleAcceptEncoding() throws IOException {
+		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
+		request.addHeader(ACCEPT_ENCODING, "gzip,deflate");
+		request.setContentType("application/json");
+		request.setContent("{\"jsonrpc\":\"2.0\",\"id\":123,\"method\":\"testMethod\",\"params\":[\"Whir?inaki\"]}".getBytes(StandardCharsets.UTF_8));
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class, true);
+		jsonRpcServer.handle(request, response);
+
+		byte[] compressed = response.getContentAsByteArray();
+		String sb = getCompressedResponseContent(compressed);
+
+		Assert.assertEquals(sb, "{\"jsonrpc\":\"2.0\",\"id\":123,\"result\":null}");
+		Assert.assertEquals("gzip", response.getHeader(CONTENT_ENCODING));
+	}
+
+	@Test
 	public void testCorruptRequest() throws Exception {
 		MockHttpServletRequest request = new MockHttpServletRequest("POST", "/test-post");
 		request.setContentType("application/json");

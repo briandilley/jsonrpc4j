@@ -174,7 +174,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
 		int result;
 
-		boolean canGzipResponse = contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding);
+		boolean canGzipResponse = contentEncoding != null && contentEncoding.contains(GZIP);
 		// Use gzip if client's accept-encoding is set to gzip and gzipResponses is enabled.
 		if (gzipResponses && canGzipResponse) {
 			response.addHeader(CONTENT_ENCODING, GZIP);
