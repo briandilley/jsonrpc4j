@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 import com.googlecode.jsonrpc4j.ExceptionResolver;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+import com.googlecode.jsonrpc4j.ProxyUtil;
 import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -104,7 +105,7 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 		Type retType = (invocation.getMethod().getGenericReturnType() != null) ? invocation.getMethod().getGenericReturnType() : invocation.getMethod().getReturnType();
 		Object arguments = ReflectionUtil.parseArguments(invocation.getMethod(), invocation.getArguments());
 
-		return jsonRpcHttpClient.invoke(invocation.getMethod().getName(), arguments, retType, extraHttpHeaders);
+		return jsonRpcHttpClient.invoke(ProxyUtil.getMethodName(method), arguments, retType, extraHttpHeaders);
 	}
 
 	/**
