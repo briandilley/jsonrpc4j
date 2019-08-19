@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     ext {
-        jacksonVersion = '2.8.5'
+        jacksonVersion = '2.9.8'
         springVersion = '4.3.5.RELEASE'
         springBotVersion = '1.4.3.RELEASE'
         jettyVersion = '9.4.0.RC3'
