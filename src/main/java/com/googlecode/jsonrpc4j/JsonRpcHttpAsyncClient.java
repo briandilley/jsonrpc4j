@@ -295,7 +295,7 @@ public class JsonRpcHttpAsyncClient {
 			request.set(PARAMS, mapper.valueToTree(arguments));
 		}
 		
-		logger.debug("JSON-PRC Request: {}", request);
+		logger.debug("JSON-RPC Request: {}", request);
 		
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(512);
 		mapper.writeValue(byteArrayOutputStream, request);
@@ -369,7 +369,7 @@ public class JsonRpcHttpAsyncClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server. This blocks until a response
+	 * Reads a JSON-RPC response from the server. This blocks until a response
 	 * is received.
 	 *
 	 * @param returnType the expected return type
@@ -379,7 +379,7 @@ public class JsonRpcHttpAsyncClient {
 	 */
 	private <T> T readResponse(Type returnType, InputStream ips) throws Throwable {
 		JsonNode response = mapper.readTree(new NoCloseInputStream(ips));
-		logger.debug("JSON-PRC Response: {}", response);
+		logger.debug("JSON-RPC Response: {}", response);
 		if (!response.isObject()) {
 			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
 		}
