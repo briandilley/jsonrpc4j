@@ -178,7 +178,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received. If an id is given, responses that do
 	 * not correspond, are disregarded.
 	 *
@@ -310,7 +310,7 @@ public class JsonRpcClient {
 	private JsonNode readResponseNode(ReadContext context) throws IOException {
 		context.assertReadable();
 		JsonNode response = context.nextValue();
-		logger.debug("JSON-PRC Response: {}", response);
+		logger.debug("JSON-RPC Response: {}", response);
 		return response;
 	}
 	
@@ -504,7 +504,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param clazz the expected return type
@@ -519,7 +519,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received.
 	 *
 	 * @param returnType the expected return type
@@ -532,7 +532,7 @@ public class JsonRpcClient {
 	}
 	
 	/**
-	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * Reads a JSON-RPC response from the server.  This blocks until
 	 * a response is received. If an id is given, responses that do
 	 * not correspond, are disregarded.
 	 *
