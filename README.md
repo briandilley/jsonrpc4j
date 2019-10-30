@@ -271,8 +271,11 @@ User user = userService.createUser("bob", "the builder");
 The server can be used without spring as well:
 
 ```java
+// userService can be any object with publicly visible methods. No annotations
+// or interfaces are required.
+
 // create it
-JsonRpcServer server = new JsonRpcServer(userService, UserService.class);
+JsonRpcServer server = new JsonRpcServer(userService);
 ```
 
 After having created the server it's simply a matter of calling one of the
@@ -292,7 +295,7 @@ class UserServiceServlet
 
     public void init(ServletConfig config) {
         //this.userService = ...
-        this.jsonRpcServer = new JsonRpcServer(this.userService, UserService.class);
+        this.jsonRpcServer = new JsonRpcServer(this.userService);
     }
 
 }
@@ -341,9 +344,9 @@ JsonRpcServer jsonRpcServer = new JsonRpcServer(...);
 // create the stream server
 int maxThreads = 50;
 int port = 1420;
-InetAddress bindAddress = InetAddress.getByName("...");
+ServerSocket sock = new ServerSocket(port);
 StreamServer streamServer = new StreamServer(
-    jsonRpcServer, maxThreads, port, bindAddress);
+    jsonRpcServer, maxThreads, sock);
 
 // start it, this method doesn't block
 streamServer.start();
