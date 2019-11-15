@@ -325,7 +325,7 @@ public class JsonRpcClient {
 	}
 	
 	protected boolean hasError(ObjectNode jsonObject) {
-		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull();
+		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull() && !(jsonObject.get(ERROR).isInt() && jsonObject.intValue()==0) ;
 	}
 	
 	/**
