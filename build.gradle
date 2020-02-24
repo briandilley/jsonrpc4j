@@ -33,7 +33,10 @@ compileTestJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
+apply plugin: "maven"
+
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
