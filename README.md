@@ -384,6 +384,7 @@ The following settings apply to both the `JsonRpcServer` and `JsonServiceExporte
   * `rethrowExceptions` - Boolean specifying whether or not the server should re-throw exceptions after sending them back to the client.
   * `backwardsComaptible` - Boolean specifying whether or not the server should allow for jsonrpc 1.0 calls.  This only includes the omission of the jsonrpc property of the request object, it will not enable class hinting.
   * `errorResolver` - An implementation of the `ErrorResolver` interface that resolves exception thrown by services into meaningful responses to be sent to clients.  Multiple `ErrorResolver`s can be configured using the `MultipleErrorResolver` implementation of this interface.
+  * `batchExecutorService` - A configured `ExecutorService` to use for parallel JSON-RPC batch processing. By default batch requests are handled sequentially.
 
 ### Server Method resolution
 Methods are resolved in the following way, each step immediately short circuits the
