@@ -18,8 +18,8 @@ description = 'This project aims to provide the facility to easily implement JSO
 version = '1.5.3'
 group = 'com.github.briandilley.jsonrpc4j'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 compileJava {
     options.encoding = 'UTF-8'
