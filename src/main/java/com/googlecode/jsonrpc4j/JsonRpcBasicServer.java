@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
@@ -78,6 +79,7 @@ public class JsonRpcBasicServer {
 	private boolean shouldLogInvocationErrors = true;
 	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
     private ExecutorService batchExecutorService = null;
+    private long parallelBatchProcessingTimeout;
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -389,7 +391,7 @@ public class JsonRpcBasicServer {
     private JsonResponse getSingleJsonResponse(Map.Entry<Object, Future<JsonResponse>> responseFuture) {
         JsonResponse response;
 	    try {
-            response = responseFuture.getValue().get();
+            response = responseFuture.getValue().get(parallelBatchProcessingTimeout, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
             JsonError jsonError = new JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName());
             return createResponseError(VERSION, responseFuture.getKey(), jsonError);
@@ -1101,8 +1103,12 @@ public class JsonRpcBasicServer {
     public void setBatchExecutorService(ExecutorService batchExecutorService) {
         this.batchExecutorService = batchExecutorService;
     }
-	
-	private static class ErrorObjectWithJsonError {
+
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
+    }
+
+    private static class ErrorObjectWithJsonError {
 		private final ObjectNode node;
 		private final JsonError error;
 		

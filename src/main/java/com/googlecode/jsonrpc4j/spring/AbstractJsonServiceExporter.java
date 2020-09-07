@@ -35,6 +35,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private String contentType = null;
 	private List<JsonRpcInterceptor> interceptorList;
 	private ExecutorService batchExecutorService = null;
+	private long parallelBatchProcessingTimeout;
 
 	/**
 	 * {@inheritDoc}
@@ -73,6 +74,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
 		jsonRpcServer.setShouldLogInvocationErrors(shouldLogInvocationErrors);
 		jsonRpcServer.setBatchExecutorService(batchExecutorService);
+		jsonRpcServer.setParallelBatchProcessingTimeout(parallelBatchProcessingTimeout);
 
 		if (contentType != null) {
 			jsonRpcServer.setContentType(contentType);
