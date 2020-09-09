@@ -62,6 +62,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	private String contentType = null;
 	private List<JsonRpcInterceptor> interceptorList = null;
     private ExecutorService batchExecutorService = null;
+    private long parallelBatchProcessingTimeout;
 	
 	/**
 	 * Finds the beans to expose.
@@ -330,5 +331,12 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
      */
     public void setBatchExecutorService(ExecutorService batchExecutorService) {
         this.batchExecutorService = batchExecutorService;
+    }
+
+    /**
+     * @param parallelBatchProcessingTimeout timeout used for parallel batch processing
+     */
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
     }
 }

@@ -207,4 +207,11 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
     public void setBatchExecutorService(ExecutorService batchExecutorService) {
         this.batchExecutorService = batchExecutorService;
     }
+
+    /**
+     * @param parallelBatchProcessingTimeout timeout used for parallel batch processing
+     */
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
+    }
 }
