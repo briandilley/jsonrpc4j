@@ -10,6 +10,8 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.ClassMetadata;
@@ -28,10 +30,11 @@ import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
  * Auto-creates proxies for service interfaces annotated with {@link JsonRpcService}.
  */
 @SuppressWarnings("unused")
-public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, ApplicationContextAware {
+public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, ApplicationContextAware, EnvironmentAware {
 	
 	private static final Logger logger = LoggerFactory.getLogger(AutoJsonRpcClientProxyCreator.class);
 	private ApplicationContext applicationContext;
+	private Environment environment;
 	private String scanPackage;
 	private URL baseUrl;
 	private ObjectMapper objectMapper;
@@ -53,6 +56,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 					if (annotationMetadata.isAnnotated(jsonRpcPathAnnotation)) {
 						String className = classMetadata.getClassName();
 						String path = (String) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("value");
+						path = this.environment.resolvePlaceholders(path);
 						logger.debug("Found JSON-RPC service to proxy [{}] on path '{}'.", className, path);
 						registerJsonProxyBean(defaultListableBeanFactory, className, path);
 					}
@@ -104,6 +108,12 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
+	}
+
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
 	}
 	
 	public void setBaseUrl(URL baseUrl) {
