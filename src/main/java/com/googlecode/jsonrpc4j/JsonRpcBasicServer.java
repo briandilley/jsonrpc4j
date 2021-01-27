@@ -79,7 +79,7 @@ public class JsonRpcBasicServer {
 	private boolean shouldLogInvocationErrors = true;
 	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
     private ExecutorService batchExecutorService = null;
-    private long parallelBatchProcessingTimeout;
+    private long parallelBatchProcessingTimeout = Long.MAX_VALUE;
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -281,7 +281,8 @@ public class JsonRpcBasicServer {
 	 * @param node the {@link JsonNode}
 	 * @return the {@link JsonResponse} instance
 	 */
-    protected JsonResponse handleJsonNodeRequest(final JsonNode node) {
+    protected JsonResponse handleJsonNodeRequest(final JsonNode node)
+            throws JsonParseException, JsonMappingException {
         if (node.isArray()) {
             return handleArray((ArrayNode) node);
         }
@@ -321,7 +322,12 @@ public class JsonRpcBasicServer {
         JsonResponse response = new JsonResponse();
 
         for (int i = 0; i < node.size(); i++) {
-            JsonResponse nodeResult = handleJsonNodeRequest(node.get(i));
+	        JsonResponse nodeResult;
+        	try {
+		        nodeResult = handleJsonNodeRequest(node.get(i));
+	        } catch(Exception e) {
+		        nodeResult = createResponseError(VERSION, NULL, JsonError.PARSE_ERROR);
+	        }
             handleRethrowException(response, nodeResult);
             batchResult.add(nodeResult.getResponse());
             if (isError(nodeResult)) {
@@ -409,7 +415,8 @@ public class JsonRpcBasicServer {
 	 * @param node   the {@link JsonNode}
 	 * @return the {@link JsonResponse} instance
 	 */
-	private JsonResponse handleObject(final ObjectNode node) {
+	private JsonResponse handleObject(final ObjectNode node)
+			throws JsonParseException, JsonMappingException {
 		logger.debug("Request: {}", node);
 		
 		if (!isValidRequest(node)) {

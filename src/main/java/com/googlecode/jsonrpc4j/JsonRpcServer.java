@@ -25,23 +25,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
 
 	private static final String GZIP = "gzip";
-	protected final boolean gzipResponses;
 	private String contentType = JSONRPC_CONTENT_TYPE;
-
-	/**
-	 * Creates the server with the given {@link ObjectMapper} delegating
-	 * all calls to the given {@code handler} {@link Object} but only
-	 * methods available on the {@code remoteInterface}.
-	 *
-	 * @param mapper          the {@link ObjectMapper}
-	 * @param handler         the {@code handler}
-	 * @param remoteInterface the interface
-	 * @param gzipResponses   whether gzip the response that is sent to the client.
-	 */
-	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface, boolean gzipResponses) {
-		super(mapper, handler, remoteInterface);
-		this.gzipResponses = gzipResponses;
-	}
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -54,7 +38,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
 		super(mapper, handler, remoteInterface);
-		this.gzipResponses = false;
 	}
 
 	/**
@@ -66,7 +49,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public JsonRpcServer(ObjectMapper mapper, Object handler) {
 		super(mapper, handler, null);
-		this.gzipResponses = false;
 	}
 
 	/**
@@ -79,7 +61,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
 		super(new ObjectMapper(), handler, remoteInterface);
-		this.gzipResponses = false;
 	}
 
 	/**
@@ -90,7 +71,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 */
 	public JsonRpcServer(Object handler) {
 		super(new ObjectMapper(), handler, null);
-		this.gzipResponses = false;
 	}
 
 	/**
@@ -162,7 +142,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
 		InputStream input;
 		if (request.getMethod().equals("POST")) {
-			input = createInputStream(request.getInputStream(), request.getHeader(CONTENT_ENCODING));
+			input = request.getInputStream();
 		} else if (request.getMethod().equals("GET")) {
 			input = createInputStream(request);
 		} else {
@@ -172,31 +152,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
-		int result;
-
-		boolean canGzipResponse = contentEncoding != null && contentEncoding.contains(GZIP);
-		// Use gzip if client's accept-encoding is set to gzip and gzipResponses is enabled.
-		if (gzipResponses && canGzipResponse) {
-			response.addHeader(CONTENT_ENCODING, GZIP);
-			try (GZIPOutputStream gos = new GZIPOutputStream(byteOutput)) {
-				result = handleRequest(input, gos);
-			}
-		} else {
-			result = handleRequest(input, byteOutput);
-		}
-
-		return result;
-	}
-
-	private static InputStream createInputStream(InputStream inputStream, String contentEncoding) throws IOException {
-		InputStream input;
-		if (contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding)) {
-			input = new GZIPInputStream(inputStream);
-		} else {
-			input = inputStream;
-		}
-
-		return input;
+		return handleRequest(input, byteOutput);
 	}
 
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {

@@ -8,6 +8,7 @@ build/
 ### Maven template
 ### Eclipse template
 .gradle
+gradle.properties
 tmp/
 # Eclipse Core
 # External tool builders
@@ -26,3 +27,4 @@ tmp/
 /.nb-gradle/
 /target
 out/
+.DS_Store

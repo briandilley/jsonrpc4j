@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 
 @SuppressWarnings("WeakerAccess")
 public class ReadContext {
@@ -26,12 +27,16 @@ public class ReadContext {
 	}
 	
 	public void assertReadable() throws IOException {
-		if (input.markSupported()) {
-			input.mark(1);
-			if (input.read() == -1) {
-				throw new StreamEndedException();
+		try {
+			if (input.markSupported()) {
+				input.mark(1);
+				if (input.read() == -1) {
+					throw new StreamEndedException();
+				}
+				input.reset();
 			}
-			input.reset();
+		} catch(SocketException se) {
+			throw new StreamEndedException();
 		}
 	}
 	

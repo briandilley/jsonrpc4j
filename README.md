@@ -38,14 +38,18 @@ using maven:
 In `<dependencies>`:
 
 ```xml
-
 	<!-- jsonrpc4j -->
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.5.3</version>
+		<version>1.6</version>
 	</dependency>
+```
 
+or with gradle:
+
+```groovy
+    implementation('com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6')
 ```
 
 If you want to just download the projects output JAR and it's dependencies you can

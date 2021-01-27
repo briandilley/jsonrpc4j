@@ -71,10 +71,6 @@ public class JsonRpcErrorsTest {
 		assertNotNull(error);
 		assertEquals(-5678, errorCode(error).intValue());
 		assertEquals("The message", errorMessage(error).textValue());
-		JsonNode data = errorData(error);
-		assertNotNull(data);
-		assertEquals("The message", errorMessage(data).textValue());
-		assertEquals(CustomTestException.class.getName(), exceptionType(data).textValue());
 	}
 	
 	@Test
