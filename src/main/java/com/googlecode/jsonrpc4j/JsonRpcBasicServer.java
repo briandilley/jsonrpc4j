@@ -18,9 +18,13 @@ import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.findCandidateMethods;
 import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
@@ -74,7 +78,9 @@ public class JsonRpcBasicServer {
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private boolean shouldLogInvocationErrors = true;
 	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
-	
+    private ExecutorService batchExecutorService = null;
+    private long parallelBatchProcessingTimeout;
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
@@ -240,9 +246,16 @@ public class JsonRpcBasicServer {
 			for (JsonRpcInterceptor interceptor : interceptorList) {
 				interceptor.preHandleJson(jsonNode);
 			}
-			return handleJsonNodeRequest(jsonNode, output).code;
-		} catch (JsonParseException | JsonMappingException e) {
-			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.PARSE_ERROR)).code;
+            JsonResponse jsonResponse = handleJsonNodeRequest(jsonNode);
+			writeAndFlushValue(output, jsonResponse.getResponse());
+			if (jsonResponse.getExceptionToRethrow() != null) {
+			    throw jsonResponse.getExceptionToRethrow();
+            }
+			return jsonResponse.getCode();
+        } catch (JsonParseException | JsonMappingException e) {
+            JsonResponse responseError = createResponseError(VERSION, NULL, JsonError.PARSE_ERROR);
+            writeAndFlushValue(output, responseError.getResponse());
+            return responseError.getCode();
 		}
 	}
 	
@@ -263,77 +276,150 @@ public class JsonRpcBasicServer {
 	}
 	
 	/**
-	 * Handles the given {@link JsonNode} and writes the responses to the given {@link OutputStream}.
+	 * Handles the given {@link JsonNode} and creates {@link JsonResponse}
 	 *
-	 * @param node   the {@link JsonNode}
-	 * @param output the {@link OutputStream}
-	 * @return the error code, or {@code 0} if none
-	 * @throws IOException on error
+	 * @param node the {@link JsonNode}
+	 * @return the {@link JsonResponse} instance
 	 */
-	protected JsonError handleJsonNodeRequest(final JsonNode node, final OutputStream output) throws IOException {
-		if (node.isArray()) {
-			return handleArray(ArrayNode.class.cast(node), output);
-		}
-		if (node.isObject()) {
-			return handleObject(ObjectNode.class.cast(node), output);
-		}
-		return this.writeAndFlushValueError(output, this.createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
+    protected JsonResponse handleJsonNodeRequest(final JsonNode node) {
+        if (node.isArray()) {
+            return handleArray((ArrayNode) node);
+        }
+        if (node.isObject()) {
+            return handleObject((ObjectNode) node);
+        }
+        return createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST);
+    }
+
+	/**
+	 * Handles the given {@link ArrayNode} and creates {@link JsonResponse}
+	 * if {@code batchExecutorService} is configured, then handles batch in parallel otherwise handles it sequentially
+     *
+	 * @param node the {@link JsonNode}
+	 * @return the {@link JsonResponse} instance
+	 */
+	private JsonResponse handleArray(ArrayNode node) {
+        logger.debug("Handling {} requests", node.size());
+
+        if (batchExecutorService != null) {
+            return getBatchResponseInParallel(node);
+        } else {
+            return getBatchResponseSequentially(node);
+        }
+	}
+
+    /**
+     * Handles the given {@link ArrayNode} sequentially and creates {@link JsonResponse}
+     *
+     * @param node the {@link JsonNode}
+     * @return the {@link JsonResponse} instance
+     */
+    private JsonResponse getBatchResponseSequentially(ArrayNode node) {
+        JsonError result = JsonError.OK;
+        ArrayNode batchResult = mapper.createArrayNode();
+        int errorCount = 0;
+        JsonResponse response = new JsonResponse();
+
+        for (int i = 0; i < node.size(); i++) {
+            JsonResponse nodeResult = handleJsonNodeRequest(node.get(i));
+            handleRethrowException(response, nodeResult);
+            batchResult.add(nodeResult.getResponse());
+            if (isError(nodeResult)) {
+                result = JsonError.BULK_ERROR;
+                errorCount += 1;
+            }
+        }
+
+        logger.debug("served {} requests, error {}, result {}", node.size(), errorCount, result);
+
+        response.setResponse(batchResult);
+        response.setCode(result.getCode());
+        return response;
+    }
+
+    /**
+     * Handles the given {@link ArrayNode} in parallel and creates {@link JsonResponse}
+     *
+     * @param node the {@link JsonNode}
+     * @return the {@link JsonResponse} instance
+     */
+	private JsonResponse getBatchResponseInParallel(ArrayNode node) {
+        JsonError result = JsonError.OK;
+        ArrayNode batchResult = mapper.createArrayNode();
+        int errorCount = 0;
+        JsonResponse response = new JsonResponse();
+
+        Map<Object, Future<JsonResponse>> responses = new HashMap<>();
+        for (int i = 0; i < node.size(); i++) {
+            JsonNode jsonNode = node.get(i);
+            Object id = parseId(jsonNode.get(ID));
+            Future<JsonResponse> responseFuture = batchExecutorService.submit(() -> handleJsonNodeRequest(jsonNode));
+            responses.put(id, responseFuture);
+        }
+
+        for (Map.Entry<Object, Future<JsonResponse>> responseFuture : responses.entrySet()) {
+            JsonResponse singleJsonResponse = getSingleJsonResponse(responseFuture);
+            handleRethrowException(response, singleJsonResponse);
+            batchResult.add(singleJsonResponse.getResponse());
+            if (isError(singleJsonResponse)) {
+                result = JsonError.BULK_ERROR;
+                errorCount += 1;
+            }
+        }
+
+        logger.debug("served {} requests, error {}, result {}", node.size(), errorCount, result);
+
+        response.setResponse(batchResult);
+        response.setCode(result.getCode());
+        return response;
+    }
+
+
+    private void handleRethrowException(JsonResponse response, JsonResponse singleJsonResponse) {
+        if (singleJsonResponse.getExceptionToRethrow() != null && response.getExceptionToRethrow() == null) {
+            response.setExceptionToRethrow(singleJsonResponse.getExceptionToRethrow());
+        }
+    }
+
+    /**
+     * Gets the {@link JsonResponse} from the {@link Future}
+     *
+     * @param responseFuture {@link Map.Entry} with an id of the JSON-RPC request as a key
+     *                       and {@link Future} with {@link JsonResponse} as a value
+     * @return the {@link JsonResponse} instance
+     */
+    private JsonResponse getSingleJsonResponse(Map.Entry<Object, Future<JsonResponse>> responseFuture) {
+        JsonResponse response;
+	    try {
+            response = responseFuture.getValue().get(parallelBatchProcessingTimeout, TimeUnit.MILLISECONDS);
+        } catch (Throwable t) {
+            JsonError jsonError = new JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName());
+            return createResponseError(VERSION, responseFuture.getKey(), jsonError);
+        }
+	    return response;
+    }
+
+    private boolean isError(JsonResponse result) {
+		return result.getCode() != JsonError.OK.code;
 	}
 	
 	/**
-	 * Handles the given {@link ArrayNode} and writes the
-	 * responses to the given {@link OutputStream}.
+	 * Handles the given {@link ObjectNode} and creates {@link JsonResponse}
 	 *
 	 * @param node   the {@link JsonNode}
-	 * @param output the {@link OutputStream}
-	 * @return the error code, or {@code 0} if none
-	 * @throws IOException on error
+	 * @return the {@link JsonResponse} instance
 	 */
-	private JsonError handleArray(ArrayNode node, OutputStream output) throws IOException {
-		logger.debug("Handling {} requests", node.size());
-		JsonError result = JsonError.OK;
-		output.write('[');
-		int errorCount = 0;
-		for (int i = 0; i < node.size(); i++) {
-			JsonError nodeResult = handleJsonNodeRequest(node.get(i), output);
-			if (isError(nodeResult)) {
-				result = JsonError.BULK_ERROR;
-				errorCount += 1;
-			}
-			if (i != node.size() - 1) {
-				output.write(',');
-			}
-		}
-		output.write(']');
-		logger.debug("served {} requests, error {}, result {}", node.size(), errorCount, result);
-		// noinspection unchecked
-		return result;
-	}
-	
-	private boolean isError(JsonError result) {
-		return result.code != JsonError.OK.code;
-	}
-	
-	/**
-	 * Handles the given {@link ObjectNode} and writes the
-	 * responses to the given {@link OutputStream}.
-	 *
-	 * @param node   the {@link JsonNode}
-	 * @param output the {@link OutputStream}
-	 * @return the error code, or {@code 0} if none
-	 * @throws IOException on error
-	 */
-	private JsonError handleObject(final ObjectNode node, final OutputStream output) throws IOException {
+	private JsonResponse handleObject(final ObjectNode node) {
 		logger.debug("Request: {}", node);
 		
 		if (!isValidRequest(node)) {
-			return writeAndFlushValueError(output, createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST));
+			return createResponseError(VERSION, NULL, JsonError.INVALID_REQUEST);
 		}
 		Object id = parseId(node.get(ID));
 		
 		String jsonRpc = hasNonNullData(node, JSONRPC) ? node.get(JSONRPC).asText() : VERSION;
 		if (!hasNonNullData(node, METHOD)) {
-			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
+			return createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND);
 		}
 
 		final String fullMethodName = node.get(METHOD).asText();
@@ -342,11 +428,11 @@ public class JsonRpcBasicServer {
 		
 		Set<Method> methods = findCandidateMethods(getHandlerInterfaces(serviceName), partialMethodName);
 		if (methods.isEmpty()) {
-			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND));
+			return createResponseError(jsonRpc, id, JsonError.METHOD_NOT_FOUND);
 		}
 		AMethodWithItsArgs methodArgs = findBestMethodByParamsNode(methods, node.get(PARAMS));
 		if (methodArgs == null) {
-			return writeAndFlushValueError(output, createResponseError(jsonRpc, id, JsonError.METHOD_PARAMS_INVALID));
+			return createResponseError(jsonRpc, id, JsonError.METHOD_PARAMS_INVALID);
 		}
 		try (InvokeListenerHandler handler = new InvokeListenerHandler(methodArgs, invocationListener)) {
 			try {
@@ -366,20 +452,19 @@ public class JsonRpcBasicServer {
 					interceptor.postHandle(target, methodArgs.method, methodArgs.arguments, result);
 				}
 				if (!isNotificationRequest(id)) {
-					ObjectNode response = createResponseSuccess(jsonRpc, id, handler.result);
-					writeAndFlushValue(output, response);
+					return createResponseSuccess(jsonRpc, id, handler.result);
 				}
-				return JsonError.OK;
+				return new JsonResponse(null, JsonError.OK.code);
 			} catch (JsonParseException | JsonMappingException e) {
 				throw e; // rethrow this, it will be handled as PARSE_ERROR later
 			} catch (Throwable e) {
 				handler.error = e;
-				return handleError(output, id, jsonRpc, methodArgs, e);
+				return handleError(id, jsonRpc, methodArgs, e);
 			}
 		}
 	}
-	
-	private JsonError handleError(OutputStream output, Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) throws IOException {
+
+    private JsonResponse handleError(Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) {
 		Throwable unwrappedException = getException(e);
 		
 		if (shouldLogInvocationErrors) {
@@ -387,21 +472,22 @@ public class JsonRpcBasicServer {
 		}
 		
 		JsonError error = resolveError(methodArgs, unwrappedException);
-		writeAndFlushValueError(output, createResponseError(jsonRpc, id, error));
-		if (rethrowExceptions) {
-			throw new RuntimeException(unwrappedException);
-		}
-		return error;
+        JsonResponse responseError = createResponseError(jsonRpc, id, error);
+        if (rethrowExceptions) {
+            responseError.setExceptionToRethrow(new RuntimeException(unwrappedException));
+        }
+        return responseError;
+
 	}
 	
 	private Throwable getException(final Throwable thrown) {
 		Throwable e = thrown;
-		while (InvocationTargetException.class.isInstance(e)) {
+		while (e instanceof InvocationTargetException) {
 			// noinspection ThrowableResultOfMethodCallIgnored
-			e = InvocationTargetException.class.cast(e).getTargetException();
-			while (UndeclaredThrowableException.class.isInstance(e)) {
+			e = ((InvocationTargetException) e).getTargetException();
+			while (e instanceof UndeclaredThrowableException) {
 				// noinspection ThrowableResultOfMethodCallIgnored
-				e = UndeclaredThrowableException.class.cast(e).getUndeclaredThrowable();
+				e = ((UndeclaredThrowableException) e).getUndeclaredThrowable();
 			}
 		}
 		return e;
@@ -545,7 +631,54 @@ public class JsonRpcBasicServer {
 		}
 		return convertedParams;
 	}
-	
+
+    /**
+     * Creates a response.
+     *
+     * @param jsonRpc the version string
+     * @param id      the id of the request
+     * @param result  the result object
+     * @param errorObject the error data (if any)
+     * @return the response object
+     */
+    private JsonResponse createResponse(String jsonRpc, Object id, JsonNode result, JsonError errorObject) {
+        ObjectNode response = mapper.createObjectNode();
+        response.put(JSONRPC, jsonRpc);
+        if (id instanceof Integer) {
+            response.put(ID, ((Integer) id).intValue());
+        } else if (id instanceof Long) {
+            response.put(ID, ((Long) id).longValue());
+        } else if (id instanceof Float) {
+            response.put(ID, ((Float) id).floatValue());
+        } else if (id instanceof Double) {
+            response.put(ID, ((Double) id).doubleValue());
+        } else if (id instanceof BigDecimal) {
+            response.put(ID, (BigDecimal) id);
+        } else {
+            response.put(ID, (String) id);
+        }
+
+        int responseCode = JsonError.OK.code;
+        if (errorObject != null) {
+            ObjectNode error = mapper.createObjectNode();
+            error.put(ERROR_CODE, errorObject.code);
+            error.put(ERROR_MESSAGE, errorObject.message);
+            if (errorObject.data != null) {
+                error.set(DATA, mapper.valueToTree(errorObject.data));
+            }
+            responseCode = errorObject.getCode();
+            response.set(ERROR, error);
+        } else {
+            response.set(RESULT, result);
+        }
+
+        for (JsonRpcInterceptor interceptor : interceptorList) {
+            interceptor.postHandleJson(response);
+        }
+
+        return new JsonResponse(response, responseCode);
+    }
+
 	/**
 	 * Convenience method for creating an error response.
 	 *
@@ -554,32 +687,10 @@ public class JsonRpcBasicServer {
 	 * @param errorObject the error data (if any)
 	 * @return the error response
 	 */
-	private ErrorObjectWithJsonError createResponseError(String jsonRpc, Object id, JsonError errorObject) {
-		ObjectNode response = mapper.createObjectNode();
-		ObjectNode error = mapper.createObjectNode();
-		error.put(ERROR_CODE, errorObject.code);
-		error.put(ERROR_MESSAGE, errorObject.message);
-		if (errorObject.data != null) {
-			error.set(DATA, mapper.valueToTree(errorObject.data));
-		}
-		response.put(JSONRPC, jsonRpc);
-		if (Integer.class.isInstance(id)) {
-			response.put(ID, Integer.class.cast(id).intValue());
-		} else if (Long.class.isInstance(id)) {
-			response.put(ID, Long.class.cast(id).longValue());
-		} else if (Float.class.isInstance(id)) {
-			response.put(ID, Float.class.cast(id).floatValue());
-		} else if (Double.class.isInstance(id)) {
-			response.put(ID, Double.class.cast(id).doubleValue());
-		} else if (BigDecimal.class.isInstance(id)) {
-			response.put(ID, BigDecimal.class.cast(id));
-		} else {
-			response.put(ID, String.class.cast(id));
-		}
-		response.set(ERROR, error);
-		return new ErrorObjectWithJsonError(response, errorObject);
-	}
-	
+    private JsonResponse createResponseError(String jsonRpc, Object id, JsonError errorObject) {
+        return createResponse(jsonRpc, id, null, errorObject);
+    }
+
 	/**
 	 * Creates a success response.
 	 *
@@ -588,26 +699,10 @@ public class JsonRpcBasicServer {
 	 * @param result  the result object
 	 * @return the response object
 	 */
-	private ObjectNode createResponseSuccess(String jsonRpc, Object id, JsonNode result) {
-		ObjectNode response = mapper.createObjectNode();
-		response.put(JSONRPC, jsonRpc);
-		if (Integer.class.isInstance(id)) {
-			response.put(ID, Integer.class.cast(id).intValue());
-		} else if (Long.class.isInstance(id)) {
-			response.put(ID, Long.class.cast(id).longValue());
-		} else if (Float.class.isInstance(id)) {
-			response.put(ID, Float.class.cast(id).floatValue());
-		} else if (Double.class.isInstance(id)) {
-			response.put(ID, Double.class.cast(id).doubleValue());
-		} else if (BigDecimal.class.isInstance(id)) {
-			response.put(ID, BigDecimal.class.cast(id));
-		} else {
-			response.put(ID, String.class.cast(id));
-		}
-		response.set(RESULT, result);
-		return response;
-	}
-	
+    private JsonResponse createResponseSuccess(String jsonRpc, Object id, JsonNode result) {
+        return createResponse(jsonRpc, id, result, null);
+    }
+
 	/**
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
@@ -623,9 +718,9 @@ public class JsonRpcBasicServer {
 		}
 		AMethodWithItsArgs matchedMethod;
 		if (paramsNode.isArray()) {
-			matchedMethod = findBestMethodUsingParamIndexes(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode));
+			matchedMethod = findBestMethodUsingParamIndexes(methods, paramsNode.size(), (ArrayNode) paramsNode);
 		} else if (paramsNode.isObject()) {
-			matchedMethod = findBestMethodUsingParamNames(methods, collectFieldNames(paramsNode), ObjectNode.class.cast(paramsNode));
+			matchedMethod = findBestMethodUsingParamNames(methods, collectFieldNames(paramsNode), (ObjectNode) paramsNode);
 		} else {
 			throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
 		}
@@ -865,13 +960,13 @@ public class JsonRpcBasicServer {
 	 * @param value  the value to write
 	 * @throws IOException on error
 	 */
-	private void writeAndFlushValue(OutputStream output, ObjectNode value) throws IOException {
+	private void writeAndFlushValue(OutputStream output, JsonNode value) throws IOException {
+	    if (value == null) {
+	        return;
+        }
 		logger.debug("Response: {}", value);
 
-		for (JsonRpcInterceptor interceptor : interceptorList) {
-			interceptor.postHandleJson(value);
-		}
-		mapper.writeValue(new NoCloseOutputStream(output), value);
+	    mapper.writeValue(new NoCloseOutputStream(output), value);
 		output.write('\n');
 	}
 	
@@ -1001,8 +1096,21 @@ public class JsonRpcBasicServer {
 	public void setShouldLogInvocationErrors(boolean shouldLogInvocationErrors) {
 		this.shouldLogInvocationErrors = shouldLogInvocationErrors;
 	}
-	
-	private static class ErrorObjectWithJsonError {
+
+    /**
+     * Sets the configured {@link ExecutorService} to use it for parallel JSON-RPC batch processing
+     *
+     * @param batchExecutorService configured {@link ExecutorService}
+     */
+    public void setBatchExecutorService(ExecutorService batchExecutorService) {
+        this.batchExecutorService = batchExecutorService;
+    }
+
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
+    }
+
+    private static class ErrorObjectWithJsonError {
 		private final ObjectNode node;
 		private final JsonError error;
 		
@@ -1076,14 +1184,14 @@ public class JsonRpcBasicServer {
 
 		private void collectVarargsFromNode(JsonNode node) {
 			if (node.isArray()) {
-				ArrayNode arrayNode = ArrayNode.class.cast(node);
+				ArrayNode arrayNode = (ArrayNode) node;
 				for (int i = 0; i < node.size(); i++) {
 					addArgument(arrayNode.get(i));
 				}
 			}
 
 			if (node.isObject()) {
-				ObjectNode objectNode = ObjectNode.class.cast(node);
+				ObjectNode objectNode = (ObjectNode) node;
 				Iterator<Map.Entry<String,JsonNode>> items = objectNode.fields();
 				while (items.hasNext()) {
 					Map.Entry<String,JsonNode> item = items.next();

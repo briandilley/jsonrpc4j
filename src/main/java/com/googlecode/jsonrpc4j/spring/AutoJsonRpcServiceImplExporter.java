@@ -14,6 +14,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 import static java.lang.String.format;
@@ -40,11 +41,11 @@ import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
  */
 @SuppressWarnings("unused")
 public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(AutoJsonRpcServiceImplExporter.class);
-	
+
 	private static final String PATH_PREFIX = "/";
-	
+
 	private static final Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
 
 	private ObjectMapper objectMapper;
@@ -60,6 +61,8 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private String contentType = null;
 	private List<JsonRpcInterceptor> interceptorList = null;
+    private ExecutorService batchExecutorService = null;
+    private long parallelBatchProcessingTimeout;
 	
 	/**
 	 * Finds the beans to expose.
@@ -198,7 +201,11 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		if (interceptorList != null) {
 			builder.addPropertyValue("interceptorList", interceptorList);
 		}
-		
+
+		if (batchExecutorService != null) {
+		    builder.addPropertyValue("batchExecutorService", batchExecutorService);
+        }
+
 		builder.addPropertyValue("backwardsCompatible", backwardsCompatible);
 		builder.addPropertyValue("rethrowExceptions", rethrowExceptions);
 		builder.addPropertyValue("allowExtraParams", allowExtraParams);
@@ -318,4 +325,18 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		}
 		this.interceptorList = interceptorList;
 	}
+
+    /**
+     * @param batchExecutorService the {@link ExecutorService} to set
+     */
+    public void setBatchExecutorService(ExecutorService batchExecutorService) {
+        this.batchExecutorService = batchExecutorService;
+    }
+
+    /**
+     * @param parallelBatchProcessingTimeout timeout used for parallel batch processing
+     */
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
+    }
 }

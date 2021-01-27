@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 /**
  * {@link RemoteExporter} that exports services using Json
@@ -33,6 +34,8 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private ConvertedParameterTransformer convertedParameterTransformer = null;
 	private String contentType = null;
 	private List<JsonRpcInterceptor> interceptorList;
+	private ExecutorService batchExecutorService = null;
+	private long parallelBatchProcessingTimeout;
 
 	/**
 	 * {@inheritDoc}
@@ -70,6 +73,8 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 		jsonRpcServer.setHttpStatusCodeProvider(httpStatusCodeProvider);
 		jsonRpcServer.setConvertedParameterTransformer(convertedParameterTransformer);
 		jsonRpcServer.setShouldLogInvocationErrors(shouldLogInvocationErrors);
+		jsonRpcServer.setBatchExecutorService(batchExecutorService);
+		jsonRpcServer.setParallelBatchProcessingTimeout(parallelBatchProcessingTimeout);
 
 		if (contentType != null) {
 			jsonRpcServer.setContentType(contentType);
@@ -195,4 +200,18 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
 		this.interceptorList = interceptorList;
 	}
+
+    /**
+     * @param batchExecutorService the {@link ExecutorService} to set
+     */
+    public void setBatchExecutorService(ExecutorService batchExecutorService) {
+        this.batchExecutorService = batchExecutorService;
+    }
+
+    /**
+     * @param parallelBatchProcessingTimeout timeout used for parallel batch processing
+     */
+    public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
+        this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
+    }
 }
