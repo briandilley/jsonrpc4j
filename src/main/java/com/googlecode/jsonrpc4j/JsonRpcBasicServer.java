@@ -370,6 +370,8 @@ public class JsonRpcBasicServer {
 					writeAndFlushValue(output, response);
 				}
 				return JsonError.OK;
+			} catch (JsonParseException | JsonMappingException e) {
+				throw e; // rethrow this, it will be handled as PARSE_ERROR later
 			} catch (Throwable e) {
 				handler.error = e;
 				return handleError(output, id, jsonRpc, methodArgs, e);
