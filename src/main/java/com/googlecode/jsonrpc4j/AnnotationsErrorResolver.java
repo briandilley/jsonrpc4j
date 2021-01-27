@@ -22,7 +22,8 @@ public enum AnnotationsErrorResolver implements ErrorResolver {
 		}
 		
 		String message = hasErrorMessage(resolver) ? resolver.message() : thrownException.getMessage();
-		return new JsonError(resolver.code(), message, new ErrorData(resolver.exception().getName(), message));
+		Object data = hasErrorData(resolver) ? resolver.data() : new ErrorData(resolver.exception().getName(), message);
+		return new JsonError(resolver.code(), message, data);
 	}
 	
 	private JsonRpcError getResolverForException(Throwable thrownException, Method method) {
@@ -44,6 +45,11 @@ public enum AnnotationsErrorResolver implements ErrorResolver {
 	private boolean hasErrorMessage(JsonRpcError em) {
 		// noinspection ConstantConditions
 		return em.message() != null && em.message().trim().length() > 0;
+	}
+        
+        private boolean hasErrorData(JsonRpcError em) {
+		// noinspection ConstantConditions
+		return em.data() != null && em.data().trim().length() > 0;
 	}
 	
 	private boolean hasAnnotations(JsonRpcErrors errors) {
