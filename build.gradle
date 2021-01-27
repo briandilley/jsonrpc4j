@@ -36,7 +36,7 @@ apply plugin: "java"
 apply plugin: "com.adarshr.test-logger"
 
 group = "com.github.briandilley.jsonrpc4j"
-version = "1.6"
+version = "1.6.1-SNAPSHOT"
 description = """
 This project aims to provide the facility to easily implement JSON-RPC for the java programming language.
 """
