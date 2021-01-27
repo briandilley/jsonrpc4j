@@ -23,11 +23,11 @@ import java.util.zip.GZIPOutputStream;
 @SuppressWarnings("unused")
 public class JsonRpcServer extends JsonRpcBasicServer {
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
-	
+
 	private static final String GZIP = "gzip";
-	private final boolean gzipResponses;
+	protected final boolean gzipResponses;
 	private String contentType = JSONRPC_CONTENT_TYPE;
-	
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
@@ -42,7 +42,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		super(mapper, handler, remoteInterface);
 		this.gzipResponses = gzipResponses;
 	}
-	
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
@@ -56,7 +56,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		super(mapper, handler, remoteInterface);
 		this.gzipResponses = false;
 	}
-	
+
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
@@ -68,7 +68,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		super(mapper, handler, null);
 		this.gzipResponses = false;
 	}
-	
+
 	/**
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
@@ -81,7 +81,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		super(new ObjectMapper(), handler, remoteInterface);
 		this.gzipResponses = false;
 	}
-	
+
 	/**
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
@@ -92,7 +92,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		super(new ObjectMapper(), handler, null);
 		this.gzipResponses = false;
 	}
-	
+
 	/**
 	 * Handles a portlet request.
 	 *
@@ -109,7 +109,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		// fix to not flush within handleRequest() but outside so http status code can be set
 		output.flush();
 	}
-	
+
 	private InputStream getRequestStream(ResourceRequest request) throws IOException {
 		if (request.getMethod().equals("POST")) {
 			return request.getPortletInputStream();
@@ -119,11 +119,11 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 			throw new IOException("Invalid request method, only POST and GET is supported");
 		}
 	}
-	
+
 	private static InputStream createInputStream(ResourceRequest request) throws IOException {
 		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
 	}
-	
+
 	/**
 	 * Handles a servlet request.
 	 *
@@ -158,7 +158,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		byteOutput.writeTo(output);
 		output.flush();
 	}
-	
+
 	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
 		InputStream input;
 		if (request.getMethod().equals("POST")) {
@@ -170,7 +170,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		}
 		return input;
 	}
-	
+
 	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
 		int result;
 
@@ -187,7 +187,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 
 		return result;
 	}
-	
+
 	private static InputStream createInputStream(InputStream inputStream, String contentEncoding) throws IOException {
 		InputStream input;
 		if (contentEncoding != null && GZIP.equalsIgnoreCase(contentEncoding)) {
@@ -195,10 +195,10 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		} else {
 			input = inputStream;
 		}
-		
+
 		return input;
 	}
-	
+
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
 		String method = request.getParameter(METHOD);
 		String id = request.getParameter(ID);
@@ -209,9 +209,9 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 			return createInputStream(method, id, params);
 		}
 	}
-	
+
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
-	
+
 }
