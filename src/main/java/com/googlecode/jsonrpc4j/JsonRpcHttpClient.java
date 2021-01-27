@@ -6,16 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +19,8 @@ import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ACCEPT_ENCODING;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.CONTENT_ENCODING;
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.JSONRPC_CONTENT_TYPE;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A JSON-RPC client that uses the HTTP protocol.
@@ -155,10 +150,14 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 					throw new HttpException("Caught error with no response body.", e);
 				}
 
+				byte[] errorText = e.getMessage().getBytes(UTF_8);
 				try (InputStream answer = getStream(connection.getErrorStream(), useGzip)) {
-					return super.readResponse(returnType, answer);
+					errorText = readErrorStream(answer, 1024);
+					PushbackInputStream wrappedStream = new PushbackInputStream(answer, errorText.length);
+					wrappedStream.unread(errorText);
+					return super.readResponse(returnType, wrappedStream);
 				} catch (IOException ef) {
-					throw new HttpException(readErrorString(connection), ef);
+					throw new HttpException(new String(errorText, UTF_8), ef);
 				}
 			}
 		} finally {
@@ -221,18 +220,17 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 		return useGzip ? new GZIPInputStream(inputStream) : inputStream;
 	}
 	
-	private static String readErrorString(final HttpURLConnection connection) {
-		try (InputStream stream = connection.getErrorStream()) {
-			StringBuilder buffer = new StringBuilder();
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"))) {
-				for (int ch = reader.read(); ch >= 0; ch = reader.read()) {
-					buffer.append((char) ch);
-				}
-			}
-			return buffer.toString();
-		} catch (IOException e) {
-			return e.getMessage();
+	private static byte[] readErrorStream(InputStream errorStream, int maxLength) throws IOException {
+		int b;
+		int pos = 0;
+		byte[] buffer = new byte[maxLength];
+		while (pos < buffer.length && (b = errorStream.read(buffer, pos, buffer.length - pos)) != -1) {
+			pos += b;
 		}
+		if (pos == 0) {
+			throw new IOException("Empty error stream");
+		}
+		return pos < buffer.length? Arrays.copyOf(buffer, pos): buffer;
 	}
 	
 	private void setupSsl(HttpURLConnection connection) {

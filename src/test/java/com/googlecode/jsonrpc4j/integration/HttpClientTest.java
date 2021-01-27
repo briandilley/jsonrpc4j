@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.integration;
 
+import com.googlecode.jsonrpc4j.JsonRpcClientException;
 import com.googlecode.jsonrpc4j.ProxyUtil;
 import com.googlecode.jsonrpc4j.util.BaseRestTest;
 import com.googlecode.jsonrpc4j.util.FakeServiceInterface;
@@ -8,6 +9,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * HttpClientTest
@@ -36,7 +40,25 @@ public class HttpClientTest extends BaseRestTest {
 		int i = service.returnPrimitiveInt(2);
 		Assert.assertEquals(2, i);
 	}
-	
+
+	@Test
+	public void testCustomException() throws Exception {
+		expectedEx.expectMessage(equalTo("Custom exception"));
+		expectedEx.expect(JsonRpcClientException.class);
+
+		service = ProxyUtil.createClientProxy(this.getClass().getClassLoader(), FakeServiceInterface.class, getHttpClient(false, false));
+		service.throwSomeException("Custom exception");
+	}
+
+	@Test
+	public void testHttpError() throws Exception {
+		expectedEx.expectMessage(containsString("405 HTTP method POST is not supported by this URL"));
+		expectedEx.expect(Exception.class);
+
+		service = ProxyUtil.createClientProxy(this.getClass().getClassLoader(), FakeServiceInterface.class, getHttpClient("error", false, false));
+		service.doSomething();
+	}
+
 	@Override
 	protected Class service() {
 		return FakeServiceInterfaceImpl.class;
