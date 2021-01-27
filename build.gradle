@@ -15,7 +15,7 @@ plugins {
 }
 
 description = 'This project aims to provide the facility to easily implement JSON-RPC for the java programming language.'
-version = '1.5.3'
+version = '1.5.3-2'
 group = 'com.github.briandilley.jsonrpc4j'
 
 sourceCompatibility = 1.8
@@ -33,17 +33,20 @@ compileTestJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
+apply plugin: "maven"
+
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     ext {
-        jacksonVersion = '2.8.5'
-        springVersion = '4.3.5.RELEASE'
-        springBotVersion = '1.4.3.RELEASE'
+        jacksonVersion = '2.10.2'
+        springVersion = '4.3.26.RELEASE'
+        springBotVersion = '1.4.7.RELEASE'
         jettyVersion = '9.4.0.RC3'
-        slf4jVersion = '1.7.22'
+        slf4jVersion = '1.7.30'
     }
 
     compile 'net.iharder:base64:2.3.9'

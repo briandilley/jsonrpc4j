@@ -38,29 +38,35 @@ import java.util.Map;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class JsonRpcMultiServer extends JsonRpcServer {
-	
+
 	public static final char DEFAULT_SEPARATOR = '.';
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcMultiServer.class);
-	
+
 	private final Map<String, Object> handlerMap;
 	private final Map<String, Class<?>> interfaceMap;
 	private char separator = DEFAULT_SEPARATOR;
-	
+
 	public JsonRpcMultiServer() {
 		this(new ObjectMapper());
 		logger.debug("created empty multi server");
 	}
-	
+
 	public JsonRpcMultiServer(ObjectMapper mapper) {
 		super(mapper, null);
 		this.handlerMap = new HashMap<>();
 		this.interfaceMap = new HashMap<>();
 	}
-	
+
+	public JsonRpcMultiServer(ObjectMapper mapper, boolean gzipResponses) {
+		super(mapper, null, null, gzipResponses);
+		this.handlerMap = new HashMap<>();
+		this.interfaceMap = new HashMap<>();
+	}
+
 	public JsonRpcMultiServer addService(String name, Object handler) {
 		return addService(name, handler, null);
 	}
-	
+
 	public JsonRpcMultiServer addService(String name, Object handler, Class<?> remoteInterface) {
 		logger.debug("add service interface {} with handler {}", remoteInterface, handler);
 		handlerMap.put(name, handler);
@@ -69,15 +75,15 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 		}
 		return this;
 	}
-	
+
 	public char getSeparator() {
 		return this.separator;
 	}
-	
+
 	public void setSeparator(char separator) {
 		this.separator = separator;
 	}
-	
+
 	/**
 	 * Returns the handler's class or interfaces.  The serviceName is used
 	 * to look up a registered handler.
@@ -96,7 +102,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 			return new Class<?>[]{getHandler(serviceName).getClass()};
 		}
 	}
-	
+
 	/**
 	 * Get the service name from the methodNode.  JSON-RPC methods with the form
 	 * Service.method will result in "Service" being returned in this case.
@@ -114,7 +120,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 		}
 		return methodName;
 	}
-	
+
 	/**
 	 * Get the method name from the methodNode, stripping off the service name.
 	 *
@@ -131,7 +137,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 		}
 		return methodName;
 	}
-	
+
 	/**
 	 * Get the handler (object) that should be invoked to execute the specified
 	 * RPC method based on the specified service name.

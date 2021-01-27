@@ -455,6 +455,8 @@ public class JsonRpcBasicServer {
 					return createResponseSuccess(jsonRpc, id, handler.result);
 				}
 				return new JsonResponse(null, JsonError.OK.code);
+			} catch (JsonParseException | JsonMappingException e) {
+				throw e; // rethrow this, it will be handled as PARSE_ERROR later
 			} catch (Throwable e) {
 				handler.error = e;
 				return handleError(id, jsonRpc, methodArgs, e);

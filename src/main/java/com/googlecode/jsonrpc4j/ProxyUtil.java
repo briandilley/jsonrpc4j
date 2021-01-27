@@ -163,7 +163,7 @@ public abstract class ProxyUtil {
 		return method.getDeclaringClass() == Object.class;
 	}
 	
-	private static String getMethodName(Method method) {
+	public static String getMethodName(Method method) {
 		final JsonRpcMethod jsonRpcMethod = ReflectionUtil.getAnnotation(method, JsonRpcMethod.class);
 		if (jsonRpcMethod == null) {
 			return method.getName();

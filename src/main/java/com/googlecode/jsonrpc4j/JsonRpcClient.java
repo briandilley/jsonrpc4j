@@ -325,7 +325,7 @@ public class JsonRpcClient {
 	}
 	
 	protected boolean hasError(ObjectNode jsonObject) {
-		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull();
+		return jsonObject.has(ERROR) && jsonObject.get(ERROR) != null && !jsonObject.get(ERROR).isNull() && !(jsonObject.get(ERROR).isInt() && jsonObject.intValue()==0) ;
 	}
 	
 	/**
@@ -343,6 +343,7 @@ public class JsonRpcClient {
 		addParameters(arguments, request);
 		addAdditionalHeaders(request);
 		notifyBeforeRequestListener(request);
+		addNoneArguments(request);
 		return request;
 	}
 	
@@ -421,6 +422,13 @@ public class JsonRpcClient {
 	
 	private boolean isCollectionArguments(Object arguments) {
 		return arguments != null && Collection.class.isInstance(arguments);
+	}
+	
+	private void addNoneArguments(ObjectNode request){
+		if (!request.has(PARAMS)){
+			//for none params add an empty array
+			request.set(PARAMS,mapper.valueToTree(new String[0]));
+		}
 	}
 	
 	private void addCollectionArguments(Object arguments, ObjectNode request) {
