@@ -46,7 +46,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 
 	private static final String PATH_PREFIX = "/";
 
-	private static final Pattern PATTERN_JSONRPC_PATH = Pattern.compile("^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$");
+	private static final Pattern PATTERN_JSONRPC_PATH = Pattern.compile("/|(^/?[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$)");
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
