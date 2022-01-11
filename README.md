@@ -457,6 +457,54 @@ public interface LibraryService {
 ```json
 {"jsonrpc":"2.0", "method": "VideoLibrary.GetTVShows", "params": { "properties": ["title"] }, "id":1}
 ```
+#### Fixed parameters
+
+You may need to pass some fixed parameters to a JsonRpc method. In this case, use the annotation @JsonRpcFixedParam on the service method.  You may also use @JsonRpcFixedParams to pass a collection of fixed parameters.
+
+```java
+@JsonRpcService("/jsonrpc")
+public interface LibraryService {
+    @JsonRpcMethod("VideoLibrary.GetTVShows")
+    @JsonRpcFixedParam(name = "status", value = "published")
+    List<TVShow> fetchTVShows(@JsonRpcParam(value="properties") final List<String> properties);
+}
+```
+
+```json
+{
+    "jsonrpc":"2.0", 
+    "method": "VideoLibrary.GetTVShows", 
+    "params": { 
+        "status": "published", 
+        "properties": ["title"] 
+    }, 
+    "id":1
+}
+```
+
+```java
+@JsonRpcService("/jsonrpc")
+public interface LibraryService {
+    @JsonRpcMethod("VideoLibrary.GetTVShows")
+    @JsonRpcFixedParams(fixedParams = { 
+        @JsonRpcFixedParam(name = "status", value = "published"), 
+        @JsonRpcFixedParam(name = "order_by", value = "recent") })
+    List<TVShow> fetchTVShows(@JsonRpcParam(value="properties") final List<String> properties);
+}
+```
+
+```json
+{
+    "jsonrpc":"2.0", 
+    "method": "VideoLibrary.GetTVShows", 
+    "params": { 
+        "status": "published", 
+        "order_by": "recent", 
+        "properties": ["title"] 
+    }, 
+    "id":1
+}
+```
 
 [Google Group]: http://groups.google.com/group/json-rpc
 [Jackson page]: https://github.com/FasterXML/jackson
