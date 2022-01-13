@@ -90,7 +90,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 				
 				for (String path : paths) {
 					if (!PATTERN_JSONRPC_PATH.matcher(path).matches()) {
-						throw new RuntimeException("the path [" + path + "] for the bean [" + beanName + "] is not valid");
+						//throw new RuntimeException("the path [" + path + "] for the bean [" + beanName + "] is not valid");
 					}
 					
 					logger.info("exporting bean [{}] ---> [{}]", beanName, path);
