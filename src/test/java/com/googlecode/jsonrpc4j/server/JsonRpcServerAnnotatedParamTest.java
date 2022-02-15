@@ -16,6 +16,8 @@ import static com.googlecode.jsonrpc4j.util.Util.param3;
 import static com.googlecode.jsonrpc4j.util.Util.param4;
 import static org.junit.Assert.assertEquals;
 
+import javax.validation.constraints.NotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -31,8 +33,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcParam;
 import com.googlecode.jsonrpc4j.util.Util;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 
 @RunWith(EasyMockRunner.class)
 public class JsonRpcServerAnnotatedParamTest {
@@ -226,7 +226,6 @@ public class JsonRpcServerAnnotatedParamTest {
 		String methodWithoutRequiredParam(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam(value = "param2") String stringParam2);
 	}
 
-	@ApiModel
 	public static class TestRequestObj {
 
 		public TestRequestObj(String requiredValue, String anotherRequiredValue,
@@ -242,13 +241,12 @@ public class JsonRpcServerAnnotatedParamTest {
 
 		}
 
-		@ApiModelProperty(required = true)
+		@NotNull
 		public String requiredValue;
 
-		@ApiModelProperty(required = true)
+		@NotNull
 		public String anotherRequiredValue;
 
-		@ApiModelProperty(required = false)
 		public String nonRequiredValue;
 
 		public String getRequiredValue() {

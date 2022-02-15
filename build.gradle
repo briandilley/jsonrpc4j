@@ -109,7 +109,7 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.10'
     implementation 'org.apache.httpcomponents:httpcore-nio:4.4.5'
 
-    implementation 'io.swagger:swagger-core:1.5.12'
+    implementation 'javax.validation:validation-api:2.0.1.Final'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.easymock:easymock:3.4'

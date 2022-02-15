@@ -7,6 +7,7 @@ import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
 import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
 
 import javax.validation.ValidationException;
+import javax.validation.constraints.NotNull;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -56,8 +57,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import net.iharder.Base64;
 
 /**
@@ -633,8 +632,7 @@ public class JsonRpcBasicServer {
 	private void collectApiModelsAndValidate(Object[] params) {
 
 		List<Object> requestModels = Arrays.stream(params)
-				.filter(model -> Arrays.stream(model.getClass().getAnnotations())
-						.anyMatch(annotation -> annotation.annotationType() == ApiModel.class))
+				.filter(param -> !param.getClass().isPrimitive())
 				.collect(Collectors.toList());
 		requestModels.forEach(this::validateFields);
 	}
@@ -681,8 +679,7 @@ public class JsonRpcBasicServer {
 
 	private boolean fieldIsRequired(Field field) {
 
-		return Arrays.stream(field.getAnnotationsByType(ApiModelProperty.class))
-				.anyMatch(ApiModelProperty::required);
+		return field.getAnnotationsByType(NotNull.class).length > 0;
 	}
 
 	private Object invokePrimitiveVarargs(Object target, Method method, List<JsonNode> params, Class<?> componentType) throws IllegalAccessException, InvocationTargetException {
