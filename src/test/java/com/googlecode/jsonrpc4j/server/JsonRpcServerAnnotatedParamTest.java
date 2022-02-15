@@ -1,20 +1,5 @@
 package com.googlecode.jsonrpc4j.server;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
-import com.googlecode.jsonrpc4j.JsonRpcParam;
-import com.googlecode.jsonrpc4j.util.Util;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.Mock;
-import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
@@ -30,6 +15,24 @@ import static com.googlecode.jsonrpc4j.util.Util.param2;
 import static com.googlecode.jsonrpc4j.util.Util.param3;
 import static com.googlecode.jsonrpc4j.util.Util.param4;
 import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.JsonRpcParam;
+import com.googlecode.jsonrpc4j.util.Util;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 @RunWith(EasyMockRunner.class)
 public class JsonRpcServerAnnotatedParamTest {
@@ -180,9 +183,35 @@ public class JsonRpcServerAnnotatedParamTest {
 		jsonRpcServerAnnotatedParam.handleRequest(Util.invalidJsonStream(), byteArrayOutputStream);
 		assertEquals(PARSE_ERROR.code, errorCode(error(byteArrayOutputStream)).asInt());
 	}
+
+	@Test
+	public void callMethodWithAllRequiredParametersInObjectAsParam() throws Exception {
+		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+		EasyMock.replay(mockService);
+		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2","3")), byteArrayOutputStream);
+		assertEquals("success", result().textValue());
+	}
+
+	@Test
+	public void callMethodWithNullInRequiredParametersInObjectAsParam() throws Exception {
+		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+		EasyMock.replay(mockService);
+		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj(null,"2","3")), byteArrayOutputStream);
+		assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+	}
+
+	@Test
+	public void callMethodWithNullInNonRequiredParametersInObjectAsParam() throws Exception {
+		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+		EasyMock.replay(mockService);
+		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2",null)), byteArrayOutputStream);
+		assertEquals("success", result().textValue());
+	}
 	
 	public interface ServiceInterfaceWithParamNameAnnotation {
 		String testMethod(@JsonRpcParam("param1") String param1);
+
+		String testMethodWithObjParam(@JsonRpcParam("param1") String param1,@JsonRpcParam("obj") TestRequestObj obj);
 		
 		String overloadedMethod();
 		
@@ -195,5 +224,61 @@ public class JsonRpcServerAnnotatedParamTest {
 		String overloadedMethod(@JsonRpcParam("param1") int intParam1, @JsonRpcParam("param2") int intParam2);
 		
 		String methodWithoutRequiredParam(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam(value = "param2") String stringParam2);
+	}
+
+	@ApiModel
+	public static class TestRequestObj {
+
+		public TestRequestObj(String requiredValue, String anotherRequiredValue,
+				String nonRequiredValue) {
+
+			this.requiredValue = requiredValue;
+			this.anotherRequiredValue = anotherRequiredValue;
+			this.nonRequiredValue = nonRequiredValue;
+		}
+
+		// for serialization
+		public TestRequestObj() {
+
+		}
+
+		@ApiModelProperty(required = true)
+		public String requiredValue;
+
+		@ApiModelProperty(required = true)
+		public String anotherRequiredValue;
+
+		@ApiModelProperty(required = false)
+		public String nonRequiredValue;
+
+		public String getRequiredValue() {
+
+			return requiredValue;
+		}
+
+		public void setRequiredValue(String requiredValue) {
+
+			this.requiredValue = requiredValue;
+		}
+
+		public String getAnotherRequiredValue() {
+
+			return anotherRequiredValue;
+		}
+
+		public void setAnotherRequiredValue(String anotherRequiredValue) {
+
+			this.anotherRequiredValue = anotherRequiredValue;
+		}
+
+		public String getNonRequiredValue() {
+
+			return nonRequiredValue;
+		}
+
+		public void setNonRequiredValue(String nonRequiredValue) {
+
+			this.nonRequiredValue = nonRequiredValue;
+		}
 	}
 }
