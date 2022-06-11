@@ -729,7 +729,7 @@ public class JsonRpcBasicServer {
 		} else if (paramsNode.isObject()) {
 			matchedMethod = findBestMethodUsingParamNames(methods, collectFieldNames(paramsNode), (ObjectNode) paramsNode);
 		} else {
-			throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
+			throw new IllegalArgumentException("Unknown params node type: " + paramsNode);
 		}
         if (matchedMethod == null) {
             matchedMethod = findBestMethodForVarargs(methods, paramsNode);
