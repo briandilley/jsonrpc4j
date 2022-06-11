@@ -1295,15 +1295,6 @@ public class JsonRpcBasicServer {
 			allNames = null;
 			method = null;
 		}
-		
-		public int getTypeCount() {
-			return typeCount;
-		}
-		
-		public int getNameCount() {
-			return nameCount;
-		}
-		
 	}
 
 	public List<JsonRpcInterceptor> getInterceptorList() {
