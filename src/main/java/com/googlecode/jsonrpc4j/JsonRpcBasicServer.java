@@ -953,12 +953,6 @@ public class JsonRpcBasicServer {
 				|| long.class.isAssignableFrom(type) || float.class.isAssignableFrom(type) || double.class.isAssignableFrom(type);
 	}
 	
-	private JsonError writeAndFlushValueError(OutputStream output, ErrorObjectWithJsonError value) throws IOException {
-		logger.debug("failed {}", value);
-		writeAndFlushValue(output, value.node);
-		return value.error;
-	}
-	
 	/**
 	 * Writes and flushes a value to the given {@link OutputStream}
 	 * and prevents Jackson from closing it. Also writes newline.
@@ -1117,23 +1111,6 @@ public class JsonRpcBasicServer {
         this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
     }
 
-    private static class ErrorObjectWithJsonError {
-		private final ObjectNode node;
-		private final JsonError error;
-		
-		public ErrorObjectWithJsonError(ObjectNode node, JsonError error) {
-			this.node = node;
-			this.error = error;
-		}
-		
-		@Override
-		public String toString() {
-			return "ErrorObjectWithJsonError{" +
-					"node=" + node +
-					", error=" + error +
-					'}';
-		}
-	}
 	
 	/**
 	 * Simple inner class for the {@code findXXX} methods.
