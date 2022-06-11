@@ -56,7 +56,7 @@ public class JsonRpcBasicServer {
 	public static final String NULL = "null";
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcBasicServer.class);
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
-	private static Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
+	private static final Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
 	private static Class<? extends Annotation> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
 	
