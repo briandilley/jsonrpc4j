@@ -33,7 +33,6 @@ import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
  * Can even run on Android system.
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class JsonRpcBasicServer {
 	
 	public static final String JSONRPC_CONTENT_TYPE = "application/json-rpc";
@@ -217,14 +216,6 @@ public class JsonRpcBasicServer {
 		envelope.append('}');
 		
 		return new ByteArrayInputStream(envelope.toString().getBytes(StandardCharsets.UTF_8));
-	}
-	
-	public RequestInterceptor getRequestInterceptor() {
-		return requestInterceptor;
-	}
-	
-	public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
-		this.requestInterceptor = requestInterceptor;
 	}
 	
 	/**
@@ -1110,7 +1101,6 @@ public class JsonRpcBasicServer {
     public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
         this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
     }
-
 	
 	/**
 	 * Simple inner class for the {@code findXXX} methods.
@@ -1297,10 +1287,44 @@ public class JsonRpcBasicServer {
 		}
 	}
 
+	/**
+	 * Gets the {@link RequestInterceptor} instance.
+	 *
+	 * @return previously set request interceptor object instance. There are no interceptors
+	 * by default, and this method returns {@code null}, if interceptor was not previously set.
+	 */
+	public RequestInterceptor getRequestInterceptor() {
+		return requestInterceptor;
+	}
+
+	/**
+	 * Sets the {@link RequestInterceptor} instance
+	 *
+	 * @param requestInterceptor interceptor object instance,
+	 *                           which will be invoked prior to any JSON-RPC service being invoked.
+	 */
+	public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
+		this.requestInterceptor = requestInterceptor;
+	}
+
+	/**
+	 * Gets the collection of {@link JsonRpcInterceptor} instances.
+	 *
+	 * @return collection of previously set {@link JsonRpcInterceptor} instances.
+	 * There are no interceptors by default, and this method returns empty collection, if
+	 * interceptors were not previously set.
+	 */
 	public List<JsonRpcInterceptor> getInterceptorList() {
 		return interceptorList;
 	}
 
+	/**
+	 * Sets the collection of {@link JsonRpcInterceptor} instances.
+	 *
+	 * @param interceptorList collection of {@link JsonRpcInterceptor} instances, which are
+	 *                        called at different stages of request handling.
+	 *                        Parameter cannot be {@code null}.
+	 */
 	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
 		if (interceptorList == null) {
 			throw new IllegalArgumentException("Interceptors list can't be null");
