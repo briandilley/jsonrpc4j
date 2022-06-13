@@ -612,7 +612,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private boolean hasReturnValue(Method m) {
-		return m.getGenericReturnType() != null;
+		return !"void".equalsIgnoreCase(m.getGenericReturnType().getTypeName());
 	}
 	
 	private Object[] convertJsonToParameters(Method m, List<JsonNode> params) throws IOException {
