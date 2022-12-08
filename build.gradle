@@ -127,6 +127,12 @@ dependencies {
 }
 
 
+jar {
+    manifest {
+       attributes 'Automatic-Module-Name': 'jsonrpc4j'
+   }
+}
+
 task documentationJar(type: Jar) {
     archiveClassifier.set("javadoc")
     from javadoc
