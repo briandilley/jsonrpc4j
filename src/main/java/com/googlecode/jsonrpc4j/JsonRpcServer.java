@@ -117,26 +117,31 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
 		int result = ErrorResolver.JsonError.PARSE_ERROR.code;
-		int contentLength = 0;
+
 		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
 		try {
-			String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
-			result = handleRequest0(input, output, acceptEncoding, response, byteOutput);
-
-			contentLength = byteOutput.size();
+			result = handleRequest(input, byteOutput);
 		} catch (Throwable t) {
-			if (StreamEndedException.class.isInstance(t)) {
+			if (t instanceof StreamEndedException) {
 				logger.debug("Bad request: empty contents!");
 			} else {
 				logger.error(t.getMessage(), t);
 			}
 		}
-		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
-				: httpStatusCodeProvider.getHttpStatusCode(result);
-		response.setStatus(httpStatusCode);
-		response.setContentLength(contentLength);
+
+		response.setStatus(resolveHttpStatusCode(result));
+		response.setContentLength(byteOutput.size());
 		byteOutput.writeTo(output);
 		output.flush();
+	}
+
+	private int resolveHttpStatusCode(int result) {
+		int httpStatusCode;
+		if (this.httpStatusCodeProvider != null) {
+			return this.httpStatusCodeProvider.getHttpStatusCode(result);
+		} else {
+			return DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result);
+		}
 	}
 
 	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
@@ -149,10 +154,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 			throw new IOException("Invalid request method, only POST and GET is supported");
 		}
 		return input;
-	}
-
-	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
-		return handleRequest(input, byteOutput);
 	}
 
 	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
