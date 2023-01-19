@@ -13,18 +13,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
  * Supports handler and servlet requests.
  */
-@SuppressWarnings("unused")
 public class JsonRpcServer extends JsonRpcBasicServer {
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
 
-	private static final String GZIP = "gzip";
 	private String contentType = JSONRPC_CONTENT_TYPE;
 
 	/**
@@ -162,7 +158,6 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	private int resolveHttpStatusCode(int result) {
-		int httpStatusCode;
 		if (this.httpStatusCodeProvider != null) {
 			return this.httpStatusCodeProvider.getHttpStatusCode(result);
 		} else {
