@@ -96,6 +96,9 @@ dependencies {
 
     servletSupportImplementation 'javax.portlet:portlet-api:3.0.1'
     servletSupportImplementation 'javax.servlet:javax.servlet-api:4.0.1'
+    // TODO: Jakarta EE 9 and jakarta.servlet-api 5.x are still compatible with Java SE 8,
+    // update jakarta.servlet-api to version 6+ when JDK baseline is increased to 11+
+    servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
