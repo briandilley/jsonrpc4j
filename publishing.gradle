@@ -8,7 +8,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.11.0'
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0'
         classpath 'gradle.plugin.net.wooga.gradle:atlas-github:1.0.1'
         classpath 'net.researchgate:gradle-release:2.7.0'
         classpath 'org.ajoberstar:grgit:2.3.0'

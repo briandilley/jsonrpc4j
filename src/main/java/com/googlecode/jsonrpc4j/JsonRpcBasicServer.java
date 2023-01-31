@@ -1252,7 +1252,7 @@ public class JsonRpcBasicServer {
 			int at = 0;
 			
 			for (JsonRpcParam name : this.allNames) {
-				if (missingAnnotation(name)) {
+				if (missingAnnotation(name) || !name.required()) {
 					continue;
 				}
 				String paramName = name.value();
@@ -1301,6 +1301,14 @@ public class JsonRpcBasicServer {
 				public String value() {
 					try {
 						return (String) WEB_PARAM_NAME_METHOD.invoke(annotation);
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				}
+
+				public boolean required() {
+					try {
+						return (Boolean) WEB_PARAM_NAME_METHOD.invoke(annotation);
 					} catch (Exception e) {
 						throw new RuntimeException(e);
 					}

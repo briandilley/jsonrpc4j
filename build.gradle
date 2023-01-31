@@ -16,8 +16,8 @@ buildscript {
     }
 
     dependencies {
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
-        classpath("com.adarshr:gradle-test-logger-plugin:1.6.0")
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
+        classpath "com.adarshr:gradle-test-logger-plugin:3.2.0"
     }
 }
 
@@ -89,10 +89,8 @@ java {
 }
 
 dependencies {
-
     implementation 'net.iharder:base64:2.3.9'
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
-
 
     servletSupportImplementation 'javax.portlet:portlet-api:3.0.1'
     servletSupportImplementation 'javax.servlet:javax.servlet-api:4.0.1'
@@ -121,8 +119,8 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.7'
-    testRuntime 'org.apache.logging.log4j:log4j-core:2.7'
+    testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.7'
+    testImplementation 'org.apache.logging.log4j:log4j-core:2.7'
 
 }
 

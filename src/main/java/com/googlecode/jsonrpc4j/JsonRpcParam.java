@@ -17,5 +17,7 @@ public @interface JsonRpcParam {
 	 * @return the parameter's name.
 	 */
 	String value();
+
+	boolean required() default true;
 	
 }
