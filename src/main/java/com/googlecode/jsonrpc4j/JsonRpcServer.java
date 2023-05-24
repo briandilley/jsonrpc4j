@@ -74,12 +74,17 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	/**
-	 * Handles a portlet request.
+	 * (Deprecated) Handles a portlet request.
+	 * <p>
+	 * Note: this method is marked for removal.
+	 * Please use {@link JsonRpcBasicServer#handleRequest(InputStream, OutputStream)} instead,
+	 * and propagate request and response data streams to it.
 	 *
 	 * @param request  the {@link ResourceRequest}
 	 * @param response the {@link ResourceResponse}
 	 * @throws IOException on error
 	 */
+	@Deprecated
 	public void handle(ResourceRequest request, ResourceResponse response) throws IOException {
 		logger.debug("Handing ResourceRequest {}", request.getMethod());
 		response.setContentType(contentType);

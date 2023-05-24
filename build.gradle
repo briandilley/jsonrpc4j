@@ -92,7 +92,7 @@ dependencies {
 
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
 
-
+    // TODO: remove deprecated portlet-api when support is removed from the code
     servletSupportImplementation 'javax.portlet:portlet-api:3.0.1'
     servletSupportImplementation 'javax.servlet:javax.servlet-api:4.0.1'
 
