@@ -99,6 +99,8 @@ dependencies {
     // update jakarta.servlet-api to version 6+ when JDK baseline is increased to 11+
     servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 
+    implementation group: 'jakarta.jws', name: 'jakarta.jws-api', version: '3.0.0'
+
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
