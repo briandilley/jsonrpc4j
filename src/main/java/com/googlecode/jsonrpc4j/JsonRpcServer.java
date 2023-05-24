@@ -13,18 +13,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
  * Supports handler and servlet requests.
  */
-@SuppressWarnings("unused")
 public class JsonRpcServer extends JsonRpcBasicServer {
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcServer.class);
 
-	private static final String GZIP = "gzip";
 	private String contentType = JSONRPC_CONTENT_TYPE;
 
 	/**
@@ -92,6 +88,8 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		OutputStream output = response.getPortletOutputStream();
 		handleRequest(input, output);
 		// fix to not flush within handleRequest() but outside so http status code can be set
+		// TODO: this logic may be changed to use handleCommon() method,
+		//  HTTP status code may be provided by the HttpStatusCodeProvider extension
 		output.flush();
 	}
 
@@ -117,38 +115,66 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 * @throws IOException on error
 	 */
 	public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		logger.debug("Handling HttpServletRequest {}", request);
+		handleCommon(
+			new JavaxHttpServletRequest(request),
+			new JavaxHttpServletResponse(response)
+		);
+	}
+
+	/**
+	 * Handles a servlet request.
+	 *
+	 * @param request  the {@link jakarta.servlet.http.HttpServletRequest}
+	 * @param response the {@link jakarta.servlet.http.HttpServletResponse}
+	 * @throws IOException on error
+	 */
+	public void handle(
+		jakarta.servlet.http.HttpServletRequest request,
+		jakarta.servlet.http.HttpServletResponse response
+	) throws IOException {
+		handleCommon(
+			new JakartaHttpServletRequest(request),
+			new JakartaHttpServletResponse(response)
+		);
+	}
+
+	private void handleCommon(CommonHttpServletRequest request, CommonHttpServletResponse response) throws IOException {
+		logger.debug("Handling HttpServletRequest {}", request.unwrap());
 		response.setContentType(contentType);
 		OutputStream output = response.getOutputStream();
 		InputStream input = getRequestStream(request);
 		int result = ErrorResolver.JsonError.PARSE_ERROR.code;
-		int contentLength = 0;
+
 		ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
 		try {
-			String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
-			result = handleRequest0(input, output, acceptEncoding, response, byteOutput);
-
-			contentLength = byteOutput.size();
+			result = handleRequest(input, byteOutput);
 		} catch (Throwable t) {
-			if (StreamEndedException.class.isInstance(t)) {
+			if (t instanceof StreamEndedException) {
 				logger.debug("Bad request: empty contents!");
 			} else {
 				logger.error(t.getMessage(), t);
 			}
 		}
-		int httpStatusCode = httpStatusCodeProvider == null ? DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result)
-				: httpStatusCodeProvider.getHttpStatusCode(result);
-		response.setStatus(httpStatusCode);
-		response.setContentLength(contentLength);
+
+		response.setStatus(resolveHttpStatusCode(result));
+		response.setContentLength(byteOutput.size());
 		byteOutput.writeTo(output);
 		output.flush();
 	}
 
-	private InputStream getRequestStream(HttpServletRequest request) throws IOException {
+	private int resolveHttpStatusCode(int result) {
+		if (this.httpStatusCodeProvider != null) {
+			return this.httpStatusCodeProvider.getHttpStatusCode(result);
+		} else {
+			return DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result);
+		}
+	}
+
+	private InputStream getRequestStream(CommonHttpServletRequest request) throws IOException {
 		InputStream input;
-		if (request.getMethod().equals("POST")) {
+		if ("POST".equals(request.getMethod())) {
 			input = request.getInputStream();
-		} else if (request.getMethod().equals("GET")) {
+		} else if ("GET".equals(request.getMethod())) {
 			input = createInputStream(request);
 		} else {
 			throw new IOException("Invalid request method, only POST and GET is supported");
@@ -156,11 +182,7 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		return input;
 	}
 
-	private int handleRequest0(InputStream input, OutputStream output, String contentEncoding, HttpServletResponse response, ByteArrayOutputStream byteOutput) throws IOException {
-		return handleRequest(input, byteOutput);
-	}
-
-	private static InputStream createInputStream(HttpServletRequest request) throws IOException {
+	private static InputStream createInputStream(CommonHttpServletRequest request) throws IOException {
 		String method = request.getParameter(METHOD);
 		String id = request.getParameter(ID);
 		String params = request.getParameter(PARAMS);
@@ -175,4 +197,133 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 		this.contentType = contentType;
 	}
 
+	private interface CommonHttpServletRequest {
+		Object unwrap();
+		InputStream getInputStream() throws IOException;
+		String getMethod();
+		String getParameter(String name);
+	}
+
+	private static class JavaxHttpServletRequest implements CommonHttpServletRequest {
+
+		private final HttpServletRequest request;
+
+		private JavaxHttpServletRequest(HttpServletRequest request) {
+			this.request = request;
+		}
+
+		@Override
+		public Object unwrap() {
+			return this.request;
+		}
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			return this.request.getInputStream();
+		}
+
+		@Override
+		public String getMethod() {
+			return this.request.getMethod();
+		}
+
+		@Override
+		public String getParameter(String name) {
+			return this.request.getParameter(name);
+		}
+	}
+
+	private static class JakartaHttpServletRequest implements CommonHttpServletRequest {
+
+		private final jakarta.servlet.http.HttpServletRequest request;
+
+		private JakartaHttpServletRequest(jakarta.servlet.http.HttpServletRequest request) {
+			this.request = request;
+		}
+
+		@Override
+		public Object unwrap() {
+			return this.request;
+		}
+
+		@Override
+		public InputStream getInputStream() throws IOException {
+			return this.request.getInputStream();
+		}
+
+		@Override
+		public String getMethod() {
+			return this.request.getMethod();
+		}
+
+		@Override
+		public String getParameter(String name) {
+			return this.request.getParameter(name);
+		}
+	}
+
+	private interface CommonHttpServletResponse {
+		void setContentType(String type);
+		void setStatus(int sc);
+		void setContentLength(int len);
+		OutputStream getOutputStream() throws IOException;
+	}
+
+	private static class JavaxHttpServletResponse implements CommonHttpServletResponse {
+
+		private final HttpServletResponse response;
+
+		private JavaxHttpServletResponse(HttpServletResponse response) {
+			this.response = response;
+		}
+
+		@Override
+		public void setContentType(String type) {
+			this.response.setContentType(type);
+		}
+
+		@Override
+		public void setStatus(int sc) {
+			this.response.setStatus(sc);
+		}
+
+		@Override
+		public void setContentLength(int len) {
+			this.response.setContentLength(len);
+		}
+
+		@Override
+		public OutputStream getOutputStream() throws IOException {
+			return this.response.getOutputStream();
+		}
+	}
+
+	private static class JakartaHttpServletResponse implements CommonHttpServletResponse {
+
+		private final jakarta.servlet.http.HttpServletResponse response;
+
+		private JakartaHttpServletResponse(jakarta.servlet.http.HttpServletResponse response) {
+			this.response = response;
+		}
+
+		@Override
+		public void setContentType(String type) {
+			this.response.setContentType(type);
+		}
+
+		@Override
+		public void setStatus(int sc) {
+			this.response.setStatus(sc);
+		}
+
+		@Override
+		public void setContentLength(int len) {
+			this.response.setContentLength(len);
+		}
+
+		@Override
+		public OutputStream getOutputStream() throws IOException {
+			return this.response.getOutputStream();
+		}
+	}
 }
