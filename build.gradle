@@ -1,11 +1,11 @@
 buildscript {
 
     ext {
-        set("jacksonVersion", "2.10.2")
-        set("springVersion", "4.3.26.RELEASE")
-        set("springBotVersion", "1.4.7.RELEASE")
-        set("jettyVersion", "9.4.0.RC3")
-        set("slf4jVersion", "1.7.30")
+        set("jacksonVersion", "2.13.4")
+        set("springVersion", "5.3.23")
+        set("springBotVersion", "2.7.4")
+        set("jettyVersion", "9.4.49.v20220914")
+        set("slf4jVersion", "2.0.3")
     }
 
     repositories {
@@ -106,11 +106,11 @@ dependencies {
     springSupportImplementation "org.springframework:spring-web:${springVersion}"
     springSupportImplementation "org.springframework:spring-webmvc:${springVersion}"
 
-    implementation 'commons-codec:commons-codec:1.10'
-    implementation 'org.apache.httpcomponents:httpcore-nio:4.4.5'
+    implementation 'commons-codec:commons-codec:1.15'
+    implementation 'org.apache.httpcomponents:httpcore-nio:4.4.15'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.easymock:easymock:3.4'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.easymock:easymock:4.3'
     testImplementation("org.springframework.boot:spring-boot-starter-web:${springBotVersion}") {
         exclude module: 'logback-classic'
     }
@@ -121,8 +121,8 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.7'
-    testRuntime 'org.apache.logging.log4j:log4j-core:2.7'
+    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
+    testRuntime 'org.apache.logging.log4j:log4j-core:2.19.0'
 
 }
 
