@@ -137,7 +137,7 @@ public class JsonRpcBasicServer {
 			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
 			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
-			logger.error("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME, e);
+			logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
 		}
 	}
 	
@@ -455,11 +455,24 @@ public class JsonRpcBasicServer {
 				return new JsonResponse(null, JsonError.OK.code);
 			} catch (JsonParseException | JsonMappingException e) {
 				throw e; // rethrow this, it will be handled as PARSE_ERROR later
+			} catch (ParameterConvertException pce) {
+				handler.error = pce.getCause();
+				return handleParameterConvertError(pce, id, jsonRpc);
 			} catch (Throwable e) {
 				handler.error = e;
 				return handleError(id, jsonRpc, methodArgs, e);
 			}
 		}
+	}
+
+	private JsonResponse handleParameterConvertError(ParameterConvertException pce, Object id, String jsonRpc) {
+		String errorMsg = "Failed to read method parameter at index " + pce.paramIndex;
+		JsonError jsonError = new JsonError(
+			JsonError.METHOD_PARAMS_INVALID.code,
+			errorMsg,
+			null
+		);
+		return createResponseError(jsonRpc, id, jsonError);
 	}
 
     private JsonResponse handleError(Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) {
@@ -587,10 +600,7 @@ public class JsonRpcBasicServer {
 		Object convertedParams = Array.newInstance(componentType, params.size());
 
 		for (int i = 0; i < params.size(); i++) {
-			JsonNode jsonNode = params.get(i);
-			Class<?> type = JsonUtil.getJavaTypeForJsonType(jsonNode);
-			Object object = mapper.convertValue(jsonNode, type);
-			logger.debug("[{}] param: {} -> {}", method.getName(), i, type.getName());
+			Object object = convertAndLogParam(method, params, i);
 			Array.set(convertedParams, i, object);
 		}
 
@@ -601,14 +611,30 @@ public class JsonRpcBasicServer {
 		Object[] convertedParams = (Object[]) Array.newInstance(componentType, params.size());
 
 		for (int i = 0; i < params.size(); i++) {
-			JsonNode jsonNode = params.get(i);
-			Class<?> type = JsonUtil.getJavaTypeForJsonType(jsonNode);
-			Object object = mapper.convertValue(jsonNode, type);
-			logger.debug("[{}] param: {} -> {}", method.getName(), i, type.getName());
+			Object object = convertAndLogParam(method, params, i);
 			convertedParams[i] = object;
 		}
 
 		return method.invoke(target, new Object[] { convertedParams });
+	}
+
+	private Object convertAndLogParam(Method method, List<JsonNode> params, int paramIndex) {
+		JsonNode jsonNode = params.get(paramIndex);
+		Class<?> type = JsonUtil.getJavaTypeForJsonType(jsonNode);
+		Object object;
+		try {
+			object = mapper.convertValue(jsonNode, type);
+		} catch (IllegalArgumentException e) {
+			logger.debug(
+				"[{}] Failed to convert param: {} -> {}",
+				method.getName(),
+				paramIndex,
+				type.getName()
+			);
+			throw new ParameterConvertException(paramIndex, e);
+		}
+		logger.debug("[{}] param: {} -> {}", method.getName(), paramIndex, type.getName());
+		return object;
 	}
 
 	private boolean hasReturnValue(Method m) {
@@ -622,10 +648,21 @@ public class JsonRpcBasicServer {
 		for (int i = 0; i < parameterTypes.length; i++) {
 			JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
 			JavaType paramJavaType = mapper.getTypeFactory().constructType(parameterTypes[i]);
-
-			convertedParams[i] = mapper.readerFor(paramJavaType)
-				.with(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-				.readValue(paramJsonParser);
+			ObjectReader reader =
+				mapper
+					.readerFor(paramJavaType)
+					.with(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+			try {
+				convertedParams[i] = reader.readValue(paramJsonParser);
+			} catch (JsonParseException | JsonMappingException e) {
+				logger.debug(
+					"[{}] Failed to convert param: {} -> {}",
+					m.getName(),
+					i,
+					parameterTypes[i].getTypeName()
+				);
+				throw new ParameterConvertException(i, e);
+			}
 		}
 		return convertedParams;
 	}
@@ -1330,5 +1367,14 @@ public class JsonRpcBasicServer {
 			throw new IllegalArgumentException("Interceptors list can't be null");
 		}
 		this.interceptorList = interceptorList;
+	}
+  
+  private static class ParameterConvertException extends RuntimeException {
+		private final int paramIndex;
+
+		private ParameterConvertException(int index, Throwable throwable) {
+			super(throwable);
+			this.paramIndex = index;
+		}
 	}
 }
