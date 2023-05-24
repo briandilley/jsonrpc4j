@@ -33,7 +33,6 @@ import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
  * Can even run on Android system.
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
 public class JsonRpcBasicServer {
 	
 	public static final String JSONRPC_CONTENT_TYPE = "application/json-rpc";
@@ -56,7 +55,7 @@ public class JsonRpcBasicServer {
 	public static final String NULL = "null";
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcBasicServer.class);
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
-	private static Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
+	private static final Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
 	private static Class<? extends Annotation> WEB_PARAM_ANNOTATION_CLASS;
 	private static Method WEB_PARAM_NAME_METHOD;
 	
@@ -217,14 +216,6 @@ public class JsonRpcBasicServer {
 		envelope.append('}');
 		
 		return new ByteArrayInputStream(envelope.toString().getBytes(StandardCharsets.UTF_8));
-	}
-	
-	public RequestInterceptor getRequestInterceptor() {
-		return requestInterceptor;
-	}
-	
-	public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
-		this.requestInterceptor = requestInterceptor;
 	}
 	
 	/**
@@ -647,7 +638,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private boolean hasReturnValue(Method m) {
-		return m.getGenericReturnType() != null;
+		return !"void".equalsIgnoreCase(m.getGenericReturnType().getTypeName());
 	}
 	
 	private Object[] convertJsonToParameters(Method m, List<JsonNode> params) throws IOException {
@@ -766,7 +757,7 @@ public class JsonRpcBasicServer {
 		} else if (paramsNode.isObject()) {
 			matchedMethod = findBestMethodUsingParamNames(methods, collectFieldNames(paramsNode), (ObjectNode) paramsNode);
 		} else {
-			throw new IllegalArgumentException("Unknown params node type: " + paramsNode.toString());
+			throw new IllegalArgumentException("Unknown params node type: " + paramsNode);
 		}
         if (matchedMethod == null) {
             matchedMethod = findBestMethodForVarargs(methods, paramsNode);
@@ -990,12 +981,6 @@ public class JsonRpcBasicServer {
 				|| long.class.isAssignableFrom(type) || float.class.isAssignableFrom(type) || double.class.isAssignableFrom(type);
 	}
 	
-	private JsonError writeAndFlushValueError(OutputStream output, ErrorObjectWithJsonError value) throws IOException {
-		logger.debug("failed {}", value);
-		writeAndFlushValue(output, value.node);
-		return value.error;
-	}
-	
 	/**
 	 * Writes and flushes a value to the given {@link OutputStream}
 	 * and prevents Jackson from closing it. Also writes newline.
@@ -1153,24 +1138,6 @@ public class JsonRpcBasicServer {
     public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
         this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
     }
-
-    private static class ErrorObjectWithJsonError {
-		private final ObjectNode node;
-		private final JsonError error;
-		
-		public ErrorObjectWithJsonError(ObjectNode node, JsonError error) {
-			this.node = node;
-			this.error = error;
-		}
-		
-		@Override
-		public String toString() {
-			return "ErrorObjectWithJsonError{" +
-					"node=" + node +
-					", error=" + error +
-					'}';
-		}
-	}
 	
 	/**
 	 * Simple inner class for the {@code findXXX} methods.
@@ -1355,34 +1322,59 @@ public class JsonRpcBasicServer {
 			allNames = null;
 			method = null;
 		}
-		
-		public int getTypeCount() {
-			return typeCount;
-		}
-		
-		public int getNameCount() {
-			return nameCount;
-		}
-		
 	}
 
-	private static class ParameterConvertException extends RuntimeException {
+	/**
+	 * Gets the {@link RequestInterceptor} instance.
+	 *
+	 * @return previously set request interceptor object instance. There are no interceptors
+	 * by default, and this method returns {@code null}, if interceptor was not previously set.
+	 */
+	public RequestInterceptor getRequestInterceptor() {
+		return requestInterceptor;
+	}
+
+	/**
+	 * Sets the {@link RequestInterceptor} instance
+	 *
+	 * @param requestInterceptor interceptor object instance,
+	 *                           which will be invoked prior to any JSON-RPC service being invoked.
+	 */
+	public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
+		this.requestInterceptor = requestInterceptor;
+	}
+
+	/**
+	 * Gets the collection of {@link JsonRpcInterceptor} instances.
+	 *
+	 * @return collection of previously set {@link JsonRpcInterceptor} instances.
+	 * There are no interceptors by default, and this method returns empty collection, if
+	 * interceptors were not previously set.
+	 */
+	public List<JsonRpcInterceptor> getInterceptorList() {
+		return interceptorList;
+	}
+
+	/**
+	 * Sets the collection of {@link JsonRpcInterceptor} instances.
+	 *
+	 * @param interceptorList collection of {@link JsonRpcInterceptor} instances, which are
+	 *                        called at different stages of request handling.
+	 *                        Parameter cannot be {@code null}.
+	 */
+	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
+		if (interceptorList == null) {
+			throw new IllegalArgumentException("Interceptors list can't be null");
+		}
+		this.interceptorList = interceptorList;
+	}
+  
+  private static class ParameterConvertException extends RuntimeException {
 		private final int paramIndex;
 
 		private ParameterConvertException(int index, Throwable throwable) {
 			super(throwable);
 			this.paramIndex = index;
 		}
-	}
-
-	public List<JsonRpcInterceptor> getInterceptorList() {
-		return interceptorList;
-	}
-
-	public void setInterceptorList(List<JsonRpcInterceptor> interceptorList) {
-		if (interceptorList == null) {
-			throw new IllegalArgumentException("Interceptors list can't be null");
-		}
-		this.interceptorList = interceptorList;
 	}
 }
