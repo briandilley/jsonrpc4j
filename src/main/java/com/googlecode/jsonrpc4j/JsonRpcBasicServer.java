@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
-import net.iharder.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -195,7 +194,7 @@ public class JsonRpcBasicServer {
 			// http://www.jsonrpc.org/historical/json-rpc-over-http.html#encoded-parameters
 			
 			if (BASE64_PATTERN.matcher(params).matches()) {
-				decodedParams = new String(Base64.decode(params), StandardCharsets.UTF_8);
+				decodedParams = new String(Base64.getDecoder().decode(params), StandardCharsets.UTF_8);
 			} else {
 				switch (params.charAt(0)) {
 					case '[':

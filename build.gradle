@@ -90,7 +90,6 @@ java {
 
 dependencies {
 
-    implementation 'net.iharder:base64:2.3.9'
     implementation "org.slf4j:slf4j-api:${slf4jVersion}"
 
 
