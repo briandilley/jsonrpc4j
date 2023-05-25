@@ -50,6 +50,7 @@ public class JsonRpcBasicServer {
 	public static final String VERSION = "2.0";
 	public static final int CODE_OK = 0;
 	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER = "javax.jws.WebParam";
+	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA = "jakarta.jws.WebParam";
 	public static final String NAME = "name";
 	public static final String NULL = "null";
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcBasicServer.class);
@@ -136,7 +137,15 @@ public class JsonRpcBasicServer {
 			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
 			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
-			logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
+            logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
+            logger.debug("Try to load it from jakarta package");
+            try {
+                WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA).asSubclass(Annotation.class);
+                WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
+            } catch (ClassNotFoundException | NoSuchMethodException ex) {
+                logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA, NAME);
+            }
+
 		}
 	}
 	
