@@ -1,20 +1,26 @@
 package com.googlecode.jsonrpc4j.server;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.JsonRpcParam;
+import com.googlecode.jsonrpc4j.util.Util;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.Mock;
+import org.easymock.MockType;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.UUID;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
-import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
-import static com.googlecode.jsonrpc4j.util.Util.error;
-import static com.googlecode.jsonrpc4j.util.Util.errorCode;
-import static com.googlecode.jsonrpc4j.util.Util.intParam1;
-import static com.googlecode.jsonrpc4j.util.Util.intParam2;
-import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
-import static com.googlecode.jsonrpc4j.util.Util.param3;
-import static com.googlecode.jsonrpc4j.util.Util.param4;
-import static org.junit.Assert.assertEquals;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.junit.Assert.*;
 
 import javax.validation.constraints.NotNull;
 
@@ -36,7 +42,9 @@ import com.googlecode.jsonrpc4j.util.Util;
 
 @RunWith(EasyMockRunner.class)
 public class JsonRpcServerAnnotatedParamTest {
-	
+
+	static final String METHOD_WITH_DIFFERENT_TYPES = "methodWithDifferentTypes";
+
 	@Mock(type = MockType.NICE)
 	private ServiceInterfaceWithParamNameAnnotation mockService;
 	private ByteArrayOutputStream byteArrayOutputStream;
@@ -184,30 +192,65 @@ public class JsonRpcServerAnnotatedParamTest {
 		assertEquals(PARSE_ERROR.code, errorCode(error(byteArrayOutputStream)).asInt());
 	}
 
-	@Test
-	public void callMethodWithAllRequiredParametersInObjectAsParam() throws Exception {
-		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
-		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2","3")), byteArrayOutputStream);
-		assertEquals("success", result().textValue());
-	}
+  @Test
+  public void callMethodWithAllRequiredParametersInObjectAsParam() throws Exception {
+      EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+      EasyMock.replay(mockService);
+      jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2","3")), byteArrayOutputStream);
+      assertEquals("success", result().textValue());
+    }
+
+  @Test
+  public void callMethodWithNullInRequiredParametersInObjectAsParam() throws Exception {
+    EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+    EasyMock.replay(mockService);
+    jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj(null,"2","3")), byteArrayOutputStream);
+    assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+  }
+
+  @Test
+  public void callMethodWithNullInNonRequiredParametersInObjectAsParam() throws Exception {
+    EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
+    EasyMock.replay(mockService);
+    jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2",null)), byteArrayOutputStream);
+    assertEquals("success", result().textValue());
+  }
+  
+  public void callMethodWithIncompatibleParamTypeAndExpectInvalidParamsError() throws Exception {
+    final Object invalidDouble = "callMeDouble";
+    jsonRpcServerAnnotatedParam.handleRequest(
+      createStream(
+        messageWithListParams(
+          3,
+          METHOD_WITH_DIFFERENT_TYPES,
+          false, invalidDouble, UUID.randomUUID()
+        )
+      ),
+      byteArrayOutputStream
+    );
+    assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).asInt());
+  }
 
 	@Test
-	public void callMethodWithNullInRequiredParametersInObjectAsParam() throws Exception {
-		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
-		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj(null,"2","3")), byteArrayOutputStream);
-		assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+	public void callMethodWithIncompatibleParamTypeAndExpectProperJsonRpcIdResponse() throws Exception {
+		final Object invalidUUID = "iWantToBeAnUUID";
+		final int jsonRpcId = 4;
+		jsonRpcServerAnnotatedParam.handleRequest(
+			createStream(
+				messageWithListParams(
+					jsonRpcId,
+					METHOD_WITH_DIFFERENT_TYPES,
+					true, 3.14, invalidUUID
+				)
+			),
+			byteArrayOutputStream
+		);
+		JsonNode responseId = decodeAnswer(byteArrayOutputStream).get(ID);
+		assertNotNull(responseId);
+		assertTrue(responseId.isInt());
+		assertEquals(4, responseId.asInt());
 	}
 
-	@Test
-	public void callMethodWithNullInNonRequiredParametersInObjectAsParam() throws Exception {
-		EasyMock.expect(mockService.testMethodWithObjParam(EasyMock.anyObject(String.class),EasyMock.anyObject(TestRequestObj.class))).andReturn("success");
-		EasyMock.replay(mockService);
-		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("testMethodWithObjParam", param1, param2,"obj",new TestRequestObj("1","2",null)), byteArrayOutputStream);
-		assertEquals("success", result().textValue());
-	}
-	
 	public interface ServiceInterfaceWithParamNameAnnotation {
 		String testMethod(@JsonRpcParam("param1") String param1);
 
@@ -224,6 +267,12 @@ public class JsonRpcServerAnnotatedParamTest {
 		String overloadedMethod(@JsonRpcParam("param1") int intParam1, @JsonRpcParam("param2") int intParam2);
 		
 		String methodWithoutRequiredParam(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam(value = "param2") String stringParam2);
+
+		String methodWithDifferentTypes(
+			@JsonRpcParam("param1") Boolean booleanParam1,
+			@JsonRpcParam("param2") Double doubleParam2,
+			@JsonRpcParam("param3") UUID doubleParam3
+		);
 	}
 
 	public static class TestRequestObj {

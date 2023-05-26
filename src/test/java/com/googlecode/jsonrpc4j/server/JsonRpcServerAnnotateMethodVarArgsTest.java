@@ -9,13 +9,13 @@ import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcMethod;
 import com.googlecode.jsonrpc4j.JsonRpcParam;
 import com.googlecode.jsonrpc4j.VarArgsUtil;
+import jakarta.jws.WebParam;
 import org.easymock.EasyMockRunner;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.jws.WebParam;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;

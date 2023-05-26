@@ -169,6 +169,18 @@ public class JsonRpcBasicServerTest {
 		jsonRpcServer.handleRequest(messageWithListParamsStream(1, "overloadedMethod", param1, param2, param3), byteArrayOutputStream);
 		assertEquals(param1 + param2, decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
 	}
+
+	@Test
+	public void callVoidMethod() throws Exception {
+		mockService.voidMethod(intParam1);
+		EasyMock.replay(mockService);
+		jsonRpcServer.handleRequest(
+			messageWithListParamsStream(1, "voidMethod", intParam1),
+			byteArrayOutputStream
+		);
+		assertNull(decodeAnswer(byteArrayOutputStream).get(JsonRpcBasicServer.RESULT).textValue());
+		EasyMock.verify(mockService);
+	}
 	
 	@Test
 	public void idIntegerType() throws Exception {
@@ -431,6 +443,8 @@ public class JsonRpcBasicServerTest {
 		String overloadedMethod(int intParam1, int intParam2);
 		
 		String throwsMethod(String param1) throws CustomTestException;
+
+		void voidMethod(int intParam1);
 	}
 	
 }

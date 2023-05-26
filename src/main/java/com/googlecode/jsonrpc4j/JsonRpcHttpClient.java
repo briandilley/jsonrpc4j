@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
@@ -36,6 +37,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	private int connectionTimeoutMillis = 60 * 1000;
 	private int readTimeoutMillis = 60 * 1000 * 2;
 	private SSLContext sslContext = null;
+	private SSLSocketFactory sslSocketFactory = null;
 	private HostnameVerifier hostNameVerifier = null;
 	private String contentType = JSONRPC_CONTENT_TYPE;
 	private boolean gzipRequests = false;
@@ -239,8 +241,10 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 			if (hostNameVerifier != null) {
 				https.setHostnameVerifier(hostNameVerifier);
 			}
-			if (sslContext != null) {
+			if (sslContext  != null) {
 				https.setSSLSocketFactory(sslContext.getSocketFactory());
+			} else if (sslSocketFactory != null) {
+				https.setSSLSocketFactory(sslSocketFactory);
 			}
 		}
 	}
@@ -331,6 +335,13 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 */
 	public void setSslContext(SSLContext sslContext) {
 		this.sslContext = sslContext;
+	}
+	
+	/**
+	 * @param sslSocketFactory the sslContext to set
+	 */
+	public void setSslSocketFactory(SSLSocketFactory sslSocketFactory) {
+		this.sslSocketFactory = sslSocketFactory;
 	}
 	
 	/**
