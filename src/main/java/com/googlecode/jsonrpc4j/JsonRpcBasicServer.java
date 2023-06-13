@@ -134,18 +134,20 @@ public class JsonRpcBasicServer {
 	private static void loadAnnotationSupportEngine() {
 		final ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
 		try {
-			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
+			// javax.jws.WebParam class is part of JDK in Java 1.8, and it is always present.
+			// If Jakarta variant is present in classpath, then needs to be loaded first,
+			// otherwise it will be overridden with javax.jws.WebParam from JDK 1.8
+			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA).asSubclass(Annotation.class);
 			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
 		} catch (ClassNotFoundException | NoSuchMethodException e) {
-            logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
-            logger.debug("Try to load it from jakarta package");
+            logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA, NAME);
+            logger.debug("Try to load it from javax package");
             try {
-                WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA).asSubclass(Annotation.class);
-                WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
+				WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
+				WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
             } catch (ClassNotFoundException | NoSuchMethodException ex) {
-                logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA, NAME);
+                logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
             }
-
 		}
 	}
 	
