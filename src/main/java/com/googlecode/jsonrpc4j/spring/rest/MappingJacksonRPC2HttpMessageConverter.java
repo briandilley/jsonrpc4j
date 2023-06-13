@@ -138,13 +138,17 @@ class MappingJacksonRPC2HttpMessageConverter extends AbstractHttpMessageConverte
 
 	@Override
 	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
-			throws IOException, HttpMessageNotReadableException {
+		throws HttpMessageNotReadableException {
 
 		JavaType javaType = getJavaType(clazz);
 		try {
 			return this.objectMapper.readValue(inputMessage.getBody(), javaType);
 		} catch (IOException ex) {
-			throw new HttpMessageNotReadableException("Could not read JSON: " + ex.getMessage(), ex);
+			throw new HttpMessageNotReadableException(
+				"Could not read JSON: " + ex.getMessage(),
+				ex,
+				inputMessage
+			);
 		}
 	}
 
