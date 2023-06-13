@@ -49,19 +49,11 @@ public class JsonRpcBasicServer {
 	public static final String EXCEPTION_TYPE_NAME = "exceptionTypeName";
 	public static final String VERSION = "2.0";
 	public static final int CODE_OK = 0;
-	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER = "javax.jws.WebParam";
-	public static final String WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA = "jakarta.jws.WebParam";
 	public static final String NAME = "name";
 	public static final String NULL = "null";
 	private static final Logger logger = LoggerFactory.getLogger(JsonRpcBasicServer.class);
 	private static final ErrorResolver DEFAULT_ERROR_RESOLVER = new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
 	private static final Pattern BASE64_PATTERN = Pattern.compile("[A-Za-z0-9_=-]+");
-	private static Class<? extends Annotation> WEB_PARAM_ANNOTATION_CLASS;
-	private static Method WEB_PARAM_NAME_METHOD;
-	
-	static {
-		loadAnnotationSupportEngine();
-	}
 	
 	private final ObjectMapper mapper;
 	private final Class<?> remoteInterface;
@@ -79,6 +71,7 @@ public class JsonRpcBasicServer {
 	private List<JsonRpcInterceptor> interceptorList = new ArrayList<>();
     private ExecutorService batchExecutorService = null;
     private long parallelBatchProcessingTimeout = Long.MAX_VALUE;
+	private final Set<Class<? extends Annotation>> webParamAnnotationClasses;
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -104,6 +97,7 @@ public class JsonRpcBasicServer {
 		this.mapper = mapper;
 		this.handler = handler;
 		this.remoteInterface = remoteInterface;
+		this.webParamAnnotationClasses = loadWebParamAnnotationClasses();
 		if (handler != null) {
 			logger.debug("created server for interface {} with handler {}", remoteInterface, handler.getClass());
 		}
@@ -131,22 +125,31 @@ public class JsonRpcBasicServer {
 		this(new ObjectMapper(), handler, null);
 	}
 	
-	private static void loadAnnotationSupportEngine() {
+	private Set<Class<? extends Annotation>> loadWebParamAnnotationClasses() {
 		final ClassLoader classLoader = JsonRpcBasicServer.class.getClassLoader();
-		try {
-			WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER).asSubclass(Annotation.class);
-			WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
-		} catch (ClassNotFoundException | NoSuchMethodException e) {
-            logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER, NAME);
-            logger.debug("Try to load it from jakarta package");
-            try {
-                WEB_PARAM_ANNOTATION_CLASS = classLoader.loadClass(WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA).asSubclass(Annotation.class);
-                WEB_PARAM_NAME_METHOD = WEB_PARAM_ANNOTATION_CLASS.getMethod(NAME);
-            } catch (ClassNotFoundException | NoSuchMethodException ex) {
-                logger.debug("Could not find {}.{}", WEB_PARAM_ANNOTATION_CLASS_LOADER_JAKARTA, NAME);
-            }
-
+		Set<Class<? extends Annotation>> webParamClasses = new HashSet<>(2);
+		for (String className: Arrays.asList("javax.jws.WebParam", "jakarta.jws.WebParam")) {
+			try {
+				Class<? extends Annotation> clazz =
+					classLoader
+						.loadClass(className)
+						.asSubclass(Annotation.class);
+				// check that method with name "name" is present
+				clazz.getMethod(NAME);
+				webParamClasses.add(clazz);
+			} catch (ClassNotFoundException | NoSuchMethodException e) {
+				logger.debug("Could not find {}.{}", className, NAME);
+			}
 		}
+
+		if (webParamClasses.isEmpty()) {
+			logger.debug(
+				"Could not find any @WebParam classes in classpath." +
+					" @WebParam support is disabled"
+			);
+		}
+
+		return Collections.unmodifiableSet(webParamClasses);
 	}
 	
 	/**
@@ -1297,11 +1300,14 @@ public class JsonRpcBasicServer {
 			return parameterNames;
 		}
 		
-		private List<? extends List<? extends Annotation>> getWebParameterAnnotations(Method method) {
-			if (WEB_PARAM_ANNOTATION_CLASS == null) {
-				return new ArrayList<>();
+		private List<List<? extends Annotation>> getWebParameterAnnotations(Method method) {
+			List<List<? extends Annotation>> annotations = new ArrayList<>();
+			for (Class<? extends Annotation> clazz : JsonRpcBasicServer.this.webParamAnnotationClasses) {
+				annotations.addAll(
+					ReflectionUtil.getParameterAnnotations(method, clazz)
+				);
 			}
-			return ReflectionUtil.getParameterAnnotations(method, WEB_PARAM_ANNOTATION_CLASS);
+			return annotations;
 		}
 		
 		private JsonRpcParam createNewJsonRcpParamType(final Annotation annotation) {
@@ -1312,7 +1318,8 @@ public class JsonRpcBasicServer {
 				
 				public String value() {
 					try {
-						return (String) WEB_PARAM_NAME_METHOD.invoke(annotation);
+						Method method = annotation.getClass().getMethod(NAME);
+						return (String) method.invoke(annotation);
 					} catch (Exception e) {
 						throw new RuntimeException(e);
 					}
