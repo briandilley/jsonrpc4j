@@ -2,23 +2,25 @@ package com.googlecode.jsonrpc4j.spring;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.remoting.support.RemoteExporter;
+import org.springframework.util.ClassUtils;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 /**
- * {@link RemoteExporter} that exports services using Json
- * according to the JSON-RPC proposal specified at:
- * <a href="http://groups.google.com/group/json-rpc">
- * http://groups.google.com/group/json-rpc</a>.
+ * Exports user defined services using JSON-RPC protocol
  */
 @SuppressWarnings("unused")
-abstract class AbstractJsonServiceExporter extends RemoteExporter implements InitializingBean, ApplicationContextAware {
+abstract class AbstractJsonServiceExporter implements InitializingBean, ApplicationContextAware {
+	private static final Logger logger = LoggerFactory.getLogger(AbstractJsonServiceExporter.class);
 
 	private ObjectMapper objectMapper;
 	private JsonRpcServer jsonRpcServer;
@@ -36,6 +38,8 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	private List<JsonRpcInterceptor> interceptorList;
 	private ExecutorService batchExecutorService = null;
 	private long parallelBatchProcessingTimeout;
+	private Object service;
+	private Class<?> serviceInterface;
 
 	/**
 	 * {@inheritDoc}
@@ -49,7 +53,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 			try {
 				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
 			} catch (Exception e) {
-				logger.debug(e);
+				logger.debug("Failed to obtain objectMapper from application context", e);
 			}
 		}
 		if (objectMapper == null) {
@@ -93,7 +97,7 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
 	 *
 	 * @throws Exception on error
 	 */
-	void exportService()
+	protected void exportService()
 			throws Exception {
 		// no-op
 	}
@@ -214,4 +218,96 @@ abstract class AbstractJsonServiceExporter extends RemoteExporter implements Ini
     public void setParallelBatchProcessingTimeout(long parallelBatchProcessingTimeout) {
         this.parallelBatchProcessingTimeout = parallelBatchProcessingTimeout;
     }
+
+	/**
+	 * Set the service to export.
+	 * Typically populated via a bean reference.
+	 */
+	public void setService(Object service) {
+		this.service = service;
+	}
+
+	/**
+	 * Return the service to export.
+	 */
+	public Object getService() {
+		return this.service;
+	}
+
+	/**
+	 * Set the interface of the service to export.
+	 * The interface must be suitable for the particular service and remoting strategy.
+	 */
+	public void setServiceInterface(Class<?> serviceInterface) {
+		if (serviceInterface == null) {
+			throw new IllegalArgumentException("'serviceInterface' must not be null");
+		}
+		if (!serviceInterface.isInterface()) {
+			throw new IllegalArgumentException("'serviceInterface' must be an interface");
+		}
+		this.serviceInterface = serviceInterface;
+	}
+
+	/**
+	 * Return the interface of the service to export.
+	 */
+	public Class<?> getServiceInterface() {
+		return this.serviceInterface;
+	}
+
+
+	/**
+	 * Check whether a service reference has been set,
+	 * and whether it matches the specified service.
+	 * @see #setServiceInterface
+	 * @see #setService
+	 */
+	protected void checkServiceInterface() throws IllegalArgumentException {
+		Class<?> serviceInterface = getServiceInterface();
+		if (serviceInterface == null) {
+			throw new IllegalArgumentException("Property 'serviceInterface' is required");
+		}
+
+		Object service = getService();
+		if (service instanceof String) {
+			throw new IllegalArgumentException(
+				"Service [" + service + "] is a String rather than an actual service reference:"
+					+ " Have you accidentally specified the service bean name as value "
+					+ " instead of as reference?"
+			);
+		}
+		if (!serviceInterface.isInstance(service)) {
+			throw new IllegalArgumentException(
+				"Service interface [" + serviceInterface.getName()
+				+ "] needs to be implemented by service [" + service + "] of class ["
+				+ service.getClass().getName() + "]"
+			);
+		}
+	}
+
+
+	/**
+	 * Get a proxy for the given service object, implementing the specified
+	 * service interface.
+	 * <p>Used to export a proxy that does not expose any internals but just
+	 * a specific interface intended for remote access.
+	 *
+	 * @return the proxy
+	 * @see #setServiceInterface
+	 * @see #setService
+	 */
+	protected Object getProxyForService() {
+		Object targetService = getService();
+		if (targetService == null) {
+			throw new IllegalArgumentException("Property 'service' is required");
+		}
+		checkServiceInterface();
+
+		ProxyFactory proxyFactory = new ProxyFactory();
+		proxyFactory.addInterface(getServiceInterface());
+		proxyFactory.setTarget(targetService);
+		proxyFactory.setOpaque(true);
+
+		return proxyFactory.getProxy(ClassUtils.getDefaultClassLoader());
+	}
 }

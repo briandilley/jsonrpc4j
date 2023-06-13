@@ -16,7 +16,7 @@ JSON-RPC).
   * HTTP Server (`HttpServletRequest` \ `HttpServletResponse`)
   * Portlet Server (`ResourceRequest` \ `ResourceResponse`)
   * Socket Server (`StreamServer`)
-  * Integration with the Spring Framework (`RemoteExporter`)
+  * Integration with the Spring Framework
   * Streaming client
   * HTTP client
   * Dynamic client proxies
@@ -66,7 +66,7 @@ that take `InputStream`s and `OutputStream`s.  Also in the library is a `JsonRpc
 which extends the `JsonRpcClient` to add HTTP support.
 
 ## Spring Framework
-jsonrpc4j provides a `RemoteExporter` to expose java services as JSON-RPC over HTTP without
+jsonrpc4j provides support for exposing java services as JSON-RPC over HTTP without
 requiring any additional work on the part of the programmer.  The following example explains
 how to use the `JsonServiceExporter` within the Spring Framework.
 
@@ -113,7 +113,9 @@ public class UserServiceImpl
 }
 ```
 
-Configure your service in spring as you would any other RemoteExporter:
+Configure your service in Spring as you would do it for any other Beans,
+and then add a reference of your service Bean into `JsonServiceExporter`
+by specifying the `service` and `serviceInterface` properties:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>

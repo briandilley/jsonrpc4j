@@ -11,11 +11,7 @@ import static com.googlecode.jsonrpc4j.Util.DEFAULT_HOSTNAME;
 
 
 /**
- * {@link org.springframework.remoting.support.RemoteExporter RemoteExporter}
- * that exports services using Json according to the JSON-RPC proposal specified
- * at:
- * <a href="http://groups.google.com/group/json-rpc">
- * http://groups.google.com/group/json-rpc</a>.
+ * Exports user defined services as streaming server, which provides JSON-RPC over sockets.
  */
 @SuppressWarnings("unused")
 public class JsonStreamServiceExporter extends AbstractJsonServiceExporter implements DisposableBean {

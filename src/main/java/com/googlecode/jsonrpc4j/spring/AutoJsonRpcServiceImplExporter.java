@@ -50,7 +50,6 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 
 	private ObjectMapper objectMapper;
 	private ErrorResolver errorResolver = null;
-	private Boolean registerTraceInterceptor;
 	private boolean backwardsCompatible = true;
 	private boolean rethrowExceptions = false;
 	private boolean allowExtraParams = false;
@@ -181,11 +180,7 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 		if (invocationListener != null) {
 			builder.addPropertyValue("invocationListener", invocationListener);
 		}
-		
-		if (registerTraceInterceptor != null) {
-			builder.addPropertyValue("registerTraceInterceptor", registerTraceInterceptor);
-		}
-		
+
 		if (httpStatusCodeProvider != null) {
 			builder.addPropertyValue("httpStatusCodeProvider", httpStatusCodeProvider);
 		}
@@ -280,14 +275,18 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
 	}
-	
+
 	/**
-	 * See {@link org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
+	 * See {@code org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
+	 * <p>
+	 * Note: this method is deprecated and marked for removal.
+	 * {@code RemoteExporter} and {@code TraceInterceptor-s} are no longer supported.
 	 *
 	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
 	 */
+	@Deprecated
 	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
-		this.registerTraceInterceptor = registerTraceInterceptor;
+		// NOOP
 	}
 	
 	/**
