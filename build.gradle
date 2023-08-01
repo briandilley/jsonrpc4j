@@ -54,6 +54,7 @@ ext {
 }
 
 test {
+    enabled(false)
     testLogging {
         exceptionFormat 	= "FULL"
         showExceptions 		= true
@@ -151,4 +152,53 @@ artifacts {
     archives documentationJar, sourcesJar
 }
 
-apply from: 'publishing.gradle'
+//apply from: 'publishing.gradle'
+
+//apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+//version = '1.0.30-SNAPSHOT'
+//group = 'com.wxbc.cou.manager'
+//sourceCompatibility = 1.8
+//targetCompatibility = 1.8
+repositories {
+    maven {
+        url "${repo_path}"
+    }
+}
+publishing{
+    publications{
+        mavenJava(MavenPublication){
+            groupId project.group
+            artifactId project.name
+            version project.version
+            from components.java
+            artifact sourcesJar
+            artifact documentationJar
+        }
+    }
+    repositories {
+        mavenLocal()
+        maven {
+            url "${repo_api_path}"
+            credentials {
+                username "${repo_user}"
+                password "${repo_password}"
+            }
+        }
+    }
+}
+publish.dependsOn(build)
+//dependencies {
+//    compile 'com.alibaba:fastjson:1.2.58'
+//    compile 'io.springfox:springfox-swagger2:2.9.2'
+//    compile 'io.springfox:springfox-swagger-ui:2.9.2'
+//    compile "io.springfox:springfox-bean-validators:2.9.2"
+//    compile 'org.apache.commons:commons-lang3:3.6'
+//    annotationProcessor 'org.projectlombok:lombok:1.18.2'
+//    compileOnly 'org.projectlombok:lombok:1.18.2'
+//    compile 'org.hibernate:hibernate-validator:6.0.12.Final'
+//    compile 'com.github.pagehelper:pagehelper-spring-boot-starter:1.3.0'
+//    compile 'org.springframework.cloud:spring-cloud-context:2.2.6.RELEASE'
+//    implementation('com.wxbc:auto.api.plugin:0.0.3-SNAPSHOT')
+//}

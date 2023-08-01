@@ -252,7 +252,8 @@ public class JsonRpcBasicServer {
             }
 			return jsonResponse.getCode();
         } catch (JsonParseException | JsonMappingException e) {
-            JsonResponse responseError = createResponseError(VERSION, NULL, JsonError.PARSE_ERROR);
+			JsonError jsonError = new JsonError(JsonError.METHOD_PARAMS_INVALID.code, e.getMessage(), null);
+            JsonResponse responseError = createResponseError(VERSION, NULL, jsonError);
             writeAndFlushValue(output, responseError.getResponse());
             return responseError.getCode();
 		}
@@ -474,7 +475,7 @@ public class JsonRpcBasicServer {
 	}
 
 	private JsonResponse handleParameterConvertError(ParameterConvertException pce, Object id, String jsonRpc) {
-		String errorMsg = "Failed to read method parameter at index " + pce.paramIndex;
+		String errorMsg = "Failed to read method parameter at index " + pce.paramIndex + ", " + pce.getCause().getMessage();
 		JsonError jsonError = new JsonError(
 			JsonError.METHOD_PARAMS_INVALID.code,
 			errorMsg,
