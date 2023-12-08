@@ -1,19 +1,66 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
+  branches:
+    include:
+      - master
 
-pool:
-  vmImage: ubuntu-latest
+pool: $(AZD_POOL_NAME)
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+  - stage: JavaTestingDockerBuild
+    jobs:
+      - job: MavenDockerBuild
+        steps:
+          - task: MavenAuthenticate@0
+            inputs:
+              artifactsFeeds: 'LendicoArtifacts'
+          - task: JavaToolInstaller@0
+            inputs:
+              versionSpec: "17"
+              jdkArchitectureOption: "x64"
+              jdkSourceOption: AzureStorage
+              azureResourceManagerEndpoint: AzureManagerEndpoint-commons
+              azureStorageAccountName: lendicohost
+              azureContainerName: openjdk
+              azureCommonVirtualFile: "zulu17.38.21-ca-jdk17.0.5-linux_x64.tar.gz"
+              jdkDestinationDirectory: "$(agent.toolsDirectory)/jdk17"
+              cleanDestinationDirectory: false
+            displayName: Install openjdk 17
+          - task: Cache@2
+            inputs:
+              key: 'maven | "$(Agent.OS)" | **/pom.xml'
+              restoreKeys: |
+                maven | "$(Agent.OS)"
+                maven
+              path: $(MAVEN_CACHE_FOLDER)
+            displayName: Cache Maven local repo
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              options: 'test -B $(MAVEN_OPTS)'
+              publishJUnitResults: false
+              javaHomeOption: "JDKVersion"
+              jdkVersionOption: "1.17"
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+            displayName: Mvn test
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              options: 'deploy --settings devops/settings.xml -DskipTests=true --batch-mode --update-snapshots $(MAVEN_OPTS)'
+              publishJUnitResults: false
+              javaHomeOption: "JDKVersion"
+              jdkVersionOption: "1.17"
+              mavenVersionOption: 'Default'
+              mavenAuthenticateFeed: false
+              effectivePomSkip: false
+              sonarQubeRunAnalysis: false
+            env:
+              AZURE_DEVOPS_PASSWORD: $(AZURE_DEVOPS_PASSWORD)
+            condition: ne(variables['Build.Reason'], 'PullRequest')
+            displayName: Publish artifact
