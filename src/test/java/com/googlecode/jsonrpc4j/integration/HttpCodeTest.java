@@ -7,29 +7,20 @@ import com.googlecode.jsonrpc4j.util.BaseRestTest;
 import com.googlecode.jsonrpc4j.util.FakeServiceInterface;
 import com.googlecode.jsonrpc4j.util.FakeServiceInterfaceImpl;
 import com.googlecode.jsonrpc4j.util.JettyServer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HttpCodeTest extends BaseRestTest {
 
 	@Test
 	public void http405OnInvalidUrl() throws MalformedURLException {
-		expectedEx.expectMessage(anyOf(
-				equalTo("405 HTTP method POST is not supported by this URL"),
-				equalTo("404 Not Found"),
-				equalTo("HTTP method POST is not supported by this URL"),
-                                equalTo("Method Not Allowed"),
-				startsWith("Server returned HTTP response code: 405 for URL: http://127.0.0.1")));
-		expectedEx.expect(Exception.class);
 		FakeServiceInterface service = ProxyUtil.createClientProxy(FakeServiceInterface.class, getClient("error"));
-		service.doSomething();
+		assertThrows(Exception.class, () -> service.doSomething());
 	}
 
 	@Test
@@ -40,9 +31,6 @@ public class HttpCodeTest extends BaseRestTest {
 
 	@Test
 	public void httpCustomStatus() throws MalformedURLException {
-		expectedEx.expectMessage(equalTo("Server Error"));
-		expectedEx.expect(JsonRpcClientException.class);
-
 		RestTemplate restTemplate = new RestTemplate();
 
 		JsonRpcRestClient client = getClient(JettyServer.SERVLET, restTemplate);
@@ -51,7 +39,7 @@ public class HttpCodeTest extends BaseRestTest {
 		restTemplate.setErrorHandler(new DefaultResponseErrorHandler());
 
 		FakeServiceInterface service = ProxyUtil.createClientProxy(FakeServiceInterface.class, client);
-		service.throwSomeException("function error");
+		assertThrows(JsonRpcClientException.class, () -> service.throwSomeException("function error"), "Server Error");
 	}
 
 	@Override

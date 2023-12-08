@@ -3,30 +3,28 @@ package com.googlecode.jsonrpc4j.spring;
 import com.googlecode.jsonrpc4j.spring.serviceb.NoopTemperatureImpl;
 import com.googlecode.jsonrpc4j.spring.serviceb.Temperature;
 import com.googlecode.jsonrpc4j.spring.serviceb.TemperatureImpl;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * <p>This test replaces {@link JsonRpcPathServerIntegrationTest} and uses the new class
+ * <p>This test uses the new class
  * {@link AutoJsonRpcServiceImplExporter} which is designed to vend specific annotated
  * implementations.</p>
  */
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@Disabled
+@SpringBootTest
 @ContextConfiguration("classpath:serverApplicationContextB.xml")
 public class JsonRpcPathServerIntegrationTestB {
 

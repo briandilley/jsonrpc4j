@@ -5,16 +5,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.server.JsonRpcServerAnnotatedParamTest.ServiceInterfaceWithParamNameAnnotation;
 import com.googlecode.jsonrpc4j.util.Util;
-
+import jakarta.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.StreamUtils;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -26,7 +25,7 @@ import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INV
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
 import static com.googlecode.jsonrpc4j.server.JsonRpcServerAnnotatedParamTest.METHOD_WITH_DIFFERENT_TYPES;
 import static com.googlecode.jsonrpc4j.util.Util.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class JsonRpcServerBatchTest {
     @Mock(type = MockType.NICE)

@@ -6,32 +6,31 @@ import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcInterceptor;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.util.Util;
+import jakarta.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
-import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
+import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 import static com.googlecode.jsonrpc4j.util.Util.*;
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class JsonRpcServerTest {
 
 	@Mock(type = MockType.NICE)
@@ -41,7 +40,7 @@ public class JsonRpcServerTest {
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcServer jsonRpcServer;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		jsonRpcServer = new JsonRpcServer(Util.mapper, mockService, ServiceInterface.class);
 		jsonRpcServer.setInterceptorList(new ArrayList<JsonRpcInterceptor>() {{

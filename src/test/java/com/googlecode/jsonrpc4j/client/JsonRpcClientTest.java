@@ -3,9 +3,9 @@ package com.googlecode.jsonrpc4j.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.RequestIDGenerator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,23 +15,21 @@ import java.util.Map;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.PARAMS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JsonRpcClientTest {
 
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcClient client;
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		client = new JsonRpcClient();
 		byteArrayOutputStream = new ByteArrayOutputStream();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() {
 		client = null;
 	}
@@ -119,11 +117,7 @@ public class JsonRpcClientTest {
 
 		assertTrue(node.has(PARAMS));
 		assertTrue(node.get(PARAMS).isObject());
-		try {
-			Long.parseLong(node.get(ID).asText());
-		} catch (NumberFormatException e) {
-			fail();
-		}
+		Long.parseLong(node.get(ID).asText());
 	}
 
 }

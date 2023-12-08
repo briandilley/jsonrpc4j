@@ -3,23 +3,20 @@ package com.googlecode.jsonrpc4j.server;
 import com.googlecode.jsonrpc4j.JsonRpcMultiServer;
 import com.googlecode.jsonrpc4j.JsonRpcParam;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayOutputStream;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
-import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
-import static org.junit.Assert.assertEquals;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class MultiServiceTest {
 	
 	private static final String serviceName = "Test";
@@ -27,8 +24,8 @@ public class MultiServiceTest {
 	private ServiceInterfaceWithParamNameAnnotation mockService;
 	private JsonRpcMultiServer multiServer;
 	private ByteArrayOutputStream byteArrayOutputStream;
-	
-	@Before
+
+    @BeforeEach
 	public void setup() {
 		multiServer = new JsonRpcMultiServer();
 		multiServer.addService(serviceName, mockService, ServiceInterfaceWithParamNameAnnotation.class);

@@ -9,12 +9,12 @@ import com.googlecode.jsonrpc4j.JsonRpcInterceptor;
 import com.googlecode.jsonrpc4j.util.CustomTestException;
 import com.googlecode.jsonrpc4j.util.Util;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,9 +30,9 @@ import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INV
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.util.Util.*;
 import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class JsonRpcBasicServerTest {
 	
 	@Mock(type = MockType.NICE)
@@ -41,8 +41,8 @@ public class JsonRpcBasicServerTest {
 	private JsonRpcInterceptor mockInterceptor;
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcBasicServer jsonRpcServer;
-	
-	@Before
+
+	@BeforeEach
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
 		jsonRpcServer = new JsonRpcBasicServer(Util.mapper, mockService, ServiceInterface.class);

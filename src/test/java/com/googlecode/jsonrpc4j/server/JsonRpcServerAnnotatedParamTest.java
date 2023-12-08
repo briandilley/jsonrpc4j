@@ -5,12 +5,12 @@ import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcParam;
 import com.googlecode.jsonrpc4j.util.Util;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,9 +21,9 @@ import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
 import static com.googlecode.jsonrpc4j.util.Util.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class JsonRpcServerAnnotatedParamTest {
 
 	static final String METHOD_WITH_DIFFERENT_TYPES = "methodWithDifferentTypes";
@@ -33,8 +33,8 @@ public class JsonRpcServerAnnotatedParamTest {
 	private ByteArrayOutputStream byteArrayOutputStream;
 	
 	private JsonRpcBasicServer jsonRpcServerAnnotatedParam;
-	
-	@Before
+
+	@BeforeEach
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
 		jsonRpcServerAnnotatedParam = new JsonRpcBasicServer(mapper, mockService, ServiceInterfaceWithParamNameAnnotation.class);

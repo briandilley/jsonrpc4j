@@ -3,10 +3,8 @@ package com.googlecode.jsonrpc4j.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
@@ -16,11 +14,9 @@ import java.util.Map;
 
 public abstract class BaseRestTest {
 	
-	@Rule
-	final public ExpectedException expectedEx = ExpectedException.none();
 	private JettyServer jettyServer;
-	
-	@Before
+
+	@BeforeEach
 	public void setup() throws Exception {
 		this.jettyServer = createServer();
 	}
@@ -56,8 +52,8 @@ public abstract class BaseRestTest {
 		Map<String, String> header = new HashMap<>();
 		return new JsonRpcHttpClient(new ObjectMapper(), new URL(jettyServer.getCustomServerUrlString(servlet)), header, gzipRequests, acceptGzipResponses);
 	}
-	
-	@After
+
+	@AfterEach
 	public void teardown() throws Exception {
 		jettyServer.stop();
 	}

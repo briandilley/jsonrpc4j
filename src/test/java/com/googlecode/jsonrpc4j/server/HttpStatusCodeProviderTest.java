@@ -2,44 +2,29 @@ package com.googlecode.jsonrpc4j.server;
 
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.BULK_ERROR;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_NOT_FOUND;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.*;
 import static com.googlecode.jsonrpc4j.server.DefaultHttpStatusCodeProviderTest.assertHttpStatusCodeForJsonRpcRequest;
-import static com.googlecode.jsonrpc4j.util.Util.intParam1;
-import static com.googlecode.jsonrpc4j.util.Util.intParam2;
-import static com.googlecode.jsonrpc4j.util.Util.invalidJsonRpcRequestStream;
-import static com.googlecode.jsonrpc4j.util.Util.invalidJsonStream;
-import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.multiMessageOfStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
+import static com.googlecode.jsonrpc4j.util.Util.*;
 
 /**
  * These tests validate the functionality of a custom HttpStatusCodeProvider implementation.
  */
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class HttpStatusCodeProviderTest {
 	
 	@Mock(type = MockType.NICE)
 	private JsonRpcBasicServerTest.ServiceInterface mockService;
 	private JsonRpcServer jsonRpcServer;
 	private HttpStatusCodeProvider httpStatusCodeProvider;
-	
-	@Before
+
+	@BeforeEach
 	public void setUp() throws Exception {
 		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcBasicServerTest.ServiceInterface.class);
 		httpStatusCodeProvider = new HttpStatusCodeProvider() {

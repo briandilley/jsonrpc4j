@@ -1,13 +1,12 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReflectionUtilTest {
 	
@@ -26,11 +25,11 @@ public class ReflectionUtilTest {
 		Object[] arguments = {"1", 2};
 		assertSame(arguments, ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("noNamedParams", String.class, int.class), arguments));
 	}
-	
-	@Test(expected = RuntimeException.class)
+
+	@Test
 	public void someNamedParams() throws Exception {
-		
-		ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParams", String.class, int.class), null);
+
+		assertThrows(RuntimeException.class, () -> ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParams", String.class, int.class), null));
 	}
 	
 	@Test
@@ -51,11 +50,11 @@ public class ReflectionUtilTest {
 		Object[] arguments = {"1", 2};
 		assertSame(arguments, ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("noNamedParamsPassParamsAuto", String.class, int.class), arguments));
 	}
-	
-	@Test(expected = RuntimeException.class)
+
+	@Test
 	public void someNamedParamsPassParamsAuto() throws Exception {
-		
-		ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsAuto", String.class, int.class), null);
+
+		assertThrows(RuntimeException.class, () -> ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsAuto", String.class, int.class), null));
 	}
 	
 	@Test
@@ -76,11 +75,11 @@ public class ReflectionUtilTest {
 		Object[] arguments = {"1", 2};
 		assertSame(arguments, ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("noNamedParamsPassParamsArray", String.class, int.class), arguments));
 	}
-	
-	@Test(expected = RuntimeException.class)
+
+	@Test
 	public void someNamedParamsPassParamsArray() throws Exception {
-		
-		ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsArray", String.class, int.class), null);
+
+		assertThrows(RuntimeException.class, () -> ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsArray", String.class, int.class), null));
 	}
 	
 	@Test
@@ -93,18 +92,18 @@ public class ReflectionUtilTest {
 		assertEquals("1", params[0]);
 		assertEquals(2, params[1]);
 	}
-	
-	@Test(expected = RuntimeException.class)
+
+	@Test
 	public void noNamedParamsPassParamsObject() throws Exception {
 		
 		Object[] arguments = {"1", 2};
-		ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("noNamedParamsPassParamsObject", String.class, int.class), arguments);
+		assertThrows(RuntimeException.class, () -> ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("noNamedParamsPassParamsObject", String.class, int.class), arguments));
 	}
-	
-	@Test(expected = RuntimeException.class)
+
+	@Test
 	public void someNamedParamsPassParamsObject() throws Exception {
-		
-		ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsObject", String.class, int.class), null);
+
+		assertThrows(RuntimeException.class, () -> ReflectionUtil.parseArguments(JsonRpcTestService.class.getMethod("someNamedParamsPassParamsObject", String.class, int.class), null));
 	}
 	
 	@Test

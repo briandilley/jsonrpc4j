@@ -4,34 +4,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcMethod;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.RESULT;
-import static com.googlecode.jsonrpc4j.util.Util.decodeAnswer;
-import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithMapParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
-import static org.junit.Assert.assertEquals;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class JsonRpcServerAnnotateMethodTest {
 	@Mock(type = MockType.NICE)
 	private ServiceInterfaceWithCustomMethodNameAnnotation mockService;
 	
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private JsonRpcBasicServer jsonRpcServerAnnotatedMethod;
-	
-	@Before
+
+	@BeforeEach
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
 		jsonRpcServerAnnotatedMethod = new JsonRpcBasicServer(mapper, mockService, ServiceInterfaceWithCustomMethodNameAnnotation.class);

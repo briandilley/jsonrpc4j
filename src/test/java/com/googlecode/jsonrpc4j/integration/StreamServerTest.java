@@ -5,8 +5,8 @@ import com.googlecode.jsonrpc4j.JsonRpcClient;
 import com.googlecode.jsonrpc4j.ProxyUtil;
 import com.googlecode.jsonrpc4j.StreamServer;
 import com.googlecode.jsonrpc4j.StreamServer.Server;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +19,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import static com.googlecode.jsonrpc4j.util.Util.DEFAULT_LOCAL_HOSTNAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class StreamServerTest {
 	
@@ -29,8 +29,8 @@ public class StreamServerTest {
 	private JsonRpcBasicServer jsonRpcServer;
 	private JsonRpcClient jsonRpcClient;
 	private ServiceImpl service;
-	
-	@Before
+
+	@BeforeEach
 	public void setUp() throws Exception {
 		serverSocket = ServerSocketFactory.getDefault().createServerSocket(0, 0, InetAddress.getByName(DEFAULT_LOCAL_HOSTNAME));
 		service = new ServiceImpl();

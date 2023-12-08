@@ -1,42 +1,32 @@
 package com.googlecode.jsonrpc4j.server;
 
 import com.googlecode.jsonrpc4j.JsonRpcServer;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
 import org.easymock.MockType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.InputStream;
 
-import static com.googlecode.jsonrpc4j.util.Util.convertInputStreamToByteArray;
-import static com.googlecode.jsonrpc4j.util.Util.intParam1;
-import static com.googlecode.jsonrpc4j.util.Util.intParam2;
-import static com.googlecode.jsonrpc4j.util.Util.invalidJsonRpcRequestStream;
-import static com.googlecode.jsonrpc4j.util.Util.invalidJsonStream;
-import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParams;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
-import static com.googlecode.jsonrpc4j.util.Util.multiMessageOfStream;
-import static com.googlecode.jsonrpc4j.util.Util.param1;
-import static com.googlecode.jsonrpc4j.util.Util.param2;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * This class validates the mapping of JSON-RPC result codes to HTTP status codes.
  */
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class DefaultHttpStatusCodeProviderTest {
 	
 	@Mock(type = MockType.NICE)
 	private JsonRpcBasicServerTest.ServiceInterface mockService;
 	private JsonRpcServer jsonRpcServer;
-	
-	@Before
+
+	@BeforeEach
 	public void setUp() throws Exception {
 		jsonRpcServer = new JsonRpcServer(mapper, mockService, JsonRpcBasicServerTest.ServiceInterface.class);
 	}
@@ -52,7 +42,7 @@ public class DefaultHttpStatusCodeProviderTest {
 		req.setMethod(HttpMethod.POST.name());
 		req.setContent(convertInputStreamToByteArray(message));
 		server.handle(req, res);
-		Assert.assertEquals(expectedCode, res.getStatus());
+		assertEquals(expectedCode, res.getStatus());
 	}
 	
 	@Test

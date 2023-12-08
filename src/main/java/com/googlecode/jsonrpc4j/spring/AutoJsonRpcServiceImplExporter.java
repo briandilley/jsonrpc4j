@@ -36,8 +36,6 @@ import static org.springframework.util.ClassUtils.getAllInterfacesForClass;
  * &lt;bean class=&quot;com.googlecode.jsonrpc4j.spring.AutoJsonRpcServiceImplExporter&quot;/&gt;
  * &lt;bean class="MyServiceBean"/&gt;
  * </pre>
- * <p>Note that this class replaces {@link AutoJsonRpcServiceExporter}.  See that class' javadoc
- * for details.</p>
  */
 @SuppressWarnings("unused")
 public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor {
@@ -274,19 +272,6 @@ public class AutoJsonRpcServiceImplExporter implements BeanFactoryPostProcessor 
 	 */
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
-	}
-
-	/**
-	 * See {@code org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
-	 * <p>
-	 * Note: this method is deprecated and marked for removal.
-	 * {@code RemoteExporter} and {@code TraceInterceptor-s} are no longer supported.
-	 *
-	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
-	 */
-	@Deprecated
-	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
-		// NOOP
 	}
 	
 	/**

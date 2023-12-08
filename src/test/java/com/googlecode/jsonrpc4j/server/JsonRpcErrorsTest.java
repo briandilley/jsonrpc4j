@@ -6,20 +6,14 @@ import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcError;
 import com.googlecode.jsonrpc4j.JsonRpcErrors;
 import com.googlecode.jsonrpc4j.util.CustomTestException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 
-import static com.googlecode.jsonrpc4j.util.Util.error;
-import static com.googlecode.jsonrpc4j.util.Util.errorCode;
-import static com.googlecode.jsonrpc4j.util.Util.errorData;
-import static com.googlecode.jsonrpc4j.util.Util.errorMessage;
-import static com.googlecode.jsonrpc4j.util.Util.exceptionType;
-import static com.googlecode.jsonrpc4j.util.Util.mapper;
-import static com.googlecode.jsonrpc4j.util.Util.messageWithListParamsStream;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static com.googlecode.jsonrpc4j.util.Util.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * For testing the @JsonRpcErrors and @JsonRpcError annotations
@@ -29,8 +23,8 @@ public class JsonRpcErrorsTest {
 	private ByteArrayOutputStream byteArrayOutputStream;
 	private CustomTestException testException;
 	private CustomTestException testExceptionWithMessage;
-	
-	@Before
+
+	@BeforeEach
 	public void setup() {
 		byteArrayOutputStream = new ByteArrayOutputStream();
 		testException = new CustomTestException();
