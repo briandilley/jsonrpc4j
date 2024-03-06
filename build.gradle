@@ -11,7 +11,6 @@ buildscript {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        jcenter()
         maven { url "https://plugins.gradle.org/m2/" }
     }
 
@@ -29,7 +28,6 @@ repositories {
     mavenLocal()
     gradlePluginPortal()
     mavenCentral()
-    jcenter()
 }
 
 apply plugin: "java"
@@ -41,8 +39,10 @@ description = """
 This project aims to provide the facility to easily implement JSON-RPC for the java programming language.
 """
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 compileJava {
     options.encoding = 'UTF-8'
@@ -73,17 +73,21 @@ jacoco {
 jacocoTestReport {
     dependsOn test
     reports {
-        xml.enabled true
-        csv.enabled true
-        html.enabled true
+        xml.required = true
+        csv.required = true
+        html.required = true
     }
 }
 
 java {
     registerFeature('servletSupport') {
+        // TODO: create a separate sourceSet for this library feature.
+        //  Gradle is planning to break this in v9.0
         usingSourceSet(sourceSets.main)
     }
     registerFeature('springSupport') {
+        // TODO: create a separate sourceSet for this library feature.
+        //  Gradle is planning to break this in v9.0
         usingSourceSet(sourceSets.main)
     }
 }
@@ -125,8 +129,8 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntime 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
-    testRuntime 'org.apache.logging.log4j:log4j-core:2.19.0'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.19.0'
 
 }
 
