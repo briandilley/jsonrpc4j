@@ -279,6 +279,8 @@ public class JsonRpcBasicServer {
 	 *
 	 * @param node the {@link JsonNode}
 	 * @return the {@link JsonResponse} instance
+	 * @throws JsonParseException when {@link JsonNode} read fails
+	 * @throws JsonMappingException when {@link JsonNode} read fails
 	 */
     protected JsonResponse handleJsonNodeRequest(final JsonNode node)
             throws JsonParseException, JsonMappingException {

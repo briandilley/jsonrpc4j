@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.MalformedURLException;
 
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 
@@ -21,13 +22,16 @@ public class HttpCodeTest extends BaseRestTest {
 
 	@Test
 	public void http405OnInvalidUrl() throws MalformedURLException {
-		expectedEx.expectMessage(anyOf(
+		expectedEx.expectMessage(
+			anyOf(
 				equalTo("405 HTTP method POST is not supported by this URL"),
 				equalTo("404 Not Found"),
 				equalTo("HTTP method POST is not supported by this URL"),
-                                equalTo("Method Not Allowed"),
-				startsWith("Server returned HTTP response code: 405 for URL: http://127.0.0.1")));
-		expectedEx.expect(Exception.class);
+				startsWith("Server returned HTTP response code: 405 for URL: http://127.0.0.1"),
+				endsWith("Method Not Allowed")
+			)
+		);
+		expectedEx.expect(JsonRpcClientException.class);
 		FakeServiceInterface service = ProxyUtil.createClientProxy(FakeServiceInterface.class, getClient("error"));
 		service.doSomething();
 	}

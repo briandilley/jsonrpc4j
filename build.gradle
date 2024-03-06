@@ -1,11 +1,13 @@
 buildscript {
 
     ext {
-        set("jacksonVersion", "2.13.4")
-        set("springVersion", "5.3.23")
-        set("springBotVersion", "2.7.4")
-        set("jettyVersion", "9.4.49.v20220914")
-        set("slf4jVersion", "2.0.3")
+        set("jacksonVersion", "2.16.1")
+        // Versions 6.0.0 and above no longer support Java 1.8
+        set("springVersion", "5.3.32")
+        // Versions 3.0.0 and above no longer support Java 1.8
+        set("springBootVersion", "2.7.18")
+        set("jettyVersion", "9.4.54.v20240208")
+        set("slf4jVersion", "2.0.12")
     }
 
     repositories {
@@ -15,8 +17,8 @@ buildscript {
     }
 
     dependencies {
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
-        classpath("com.adarshr:gradle-test-logger-plugin:1.6.0")
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
+        classpath("com.adarshr:gradle-test-logger-plugin:3.2.0")
     }
 }
 
@@ -67,7 +69,7 @@ test {
 }
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = "0.8.11"
 }
 
 jacocoTestReport {
@@ -114,23 +116,23 @@ dependencies {
     springSupportImplementation "org.springframework:spring-web:${springVersion}"
     springSupportImplementation "org.springframework:spring-webmvc:${springVersion}"
 
-    implementation 'commons-codec:commons-codec:1.15'
-    implementation 'org.apache.httpcomponents:httpcore-nio:4.4.15'
+    implementation 'commons-codec:commons-codec:1.16.1'
+    implementation 'org.apache.httpcomponents:httpcore-nio:4.4.16'
 
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.easymock:easymock:4.3'
-    testImplementation("org.springframework.boot:spring-boot-starter-web:${springBotVersion}") {
+    testImplementation 'org.easymock:easymock:5.2.0'
+    testImplementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
         exclude module: 'logback-classic'
     }
-    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBotVersion}"
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
     testImplementation("org.eclipse.jetty:jetty-server:${jettyVersion}") {
         exclude module: 'javax.servlet'
     }
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.19.0'
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.19.0'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.23.0'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.23.0'
 
 }
 
