@@ -412,29 +412,33 @@ public class JsonRpcHttpAsyncClient {
 		pool = new BasicNIOConnPool(ioReactor, nioConnFactory, Integer.getInteger("com.googlecode.jsonrpc4j.async.connect.timeout", 30000));
 		pool.setDefaultMaxPerRoute(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.route", 500));
 		pool.setMaxTotal(Integer.getInteger("com.googlecode.jsonrpc4j.async.max.inflight.total", 500));
-		
-		Thread t = new Thread(new Runnable() {
-			@Override
-			public void run() {
+
+		Thread t = new Thread(
+			() -> {
 				try {
 					HttpAsyncRequestExecutor protocolHandler = new HttpAsyncRequestExecutor();
-					IOEventDispatch ioEventDispatch = new DefaultHttpClientIODispatch(protocolHandler, sslContext, connectionConfig);
+					IOEventDispatch ioEventDispatch = new DefaultHttpClientIODispatch<>(
+						protocolHandler,
+						sslContext,
+						connectionConfig
+					);
 					ioReactor.execute(ioEventDispatch);
 				} catch (InterruptedIOException ex) {
 					System.err.println("Interrupted");
 				} catch (IOException e) {
 					System.err.println("I/O error: " + e.getMessage());
 				}
-			}
-		}, "jsonrpc4j HTTP IOReactor");
-		
+			},
+			"jsonrpc4j HTTP IOReactor"
+		);
+
 		t.setDaemon(true);
 		t.start();
 		
 		HttpProcessor httpProcessor = new ImmutableHttpProcessor(new RequestContent(), new RequestTargetHost(), new RequestConnControl(), new RequestUserAgent(), new RequestExpectContinue(false));
 		requester = new HttpAsyncRequester(httpProcessor, new DefaultConnectionReuseStrategy());
 	}
-	
+
 	private IOReactorConfig.Builder createConfig() {
 		IOReactorConfig.Builder config = IOReactorConfig.custom();
 		config = config.setSoTimeout(Integer.getInteger("com.googlecode.jsonrpc4j.async.socket.timeout", 30000));

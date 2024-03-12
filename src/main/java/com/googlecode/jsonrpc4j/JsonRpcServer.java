@@ -104,7 +104,11 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	}
 
 	private static InputStream createInputStream(ResourceRequest request) throws IOException {
-		return createInputStream(request.getParameter(METHOD), request.getParameter(ID), request.getParameter(PARAMS));
+		return createInputStream(
+			request.getRenderParameters().getValue(METHOD),
+			request.getRenderParameters().getValue(ID),
+			request.getRenderParameters().getValue(PARAMS)
+		);
 	}
 
 	/**
