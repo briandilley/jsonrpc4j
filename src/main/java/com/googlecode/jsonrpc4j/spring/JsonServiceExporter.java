@@ -9,10 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * {@link HttpRequestHandler} that exports services using Json
- * according to the JSON-RPC proposal specified at:
- * <a href="http://groups.google.com/group/json-rpc">
- * http://groups.google.com/group/json-rpc</a>.
+ * {@link HttpRequestHandler} that exports user services using JSON-RPC over HTTP protocol
  */
 public class JsonServiceExporter extends AbstractJsonServiceExporter implements HttpRequestHandler {
 
