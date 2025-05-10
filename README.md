@@ -25,9 +25,9 @@ JSON-RPC).
   * Composite services
 
 ## Maven
-This project is built with [Maven][Maven page]. Be
-sure to check the pom.xml for the dependencies if you're not using
-maven.  If you're already using spring you should have most (if not all)
+This project is built with Gralde. Be
+sure to check the build.gradle for the dependencies if you're not using
+gradle.  If you're already using spring you should have most (if not all)
 of the dependencies already - outside of maybe the
 [Jackson Library][Jackson page].  Jsonrpc4j is available
 from the maven central repo. Add the following to your pom.xml if you're
