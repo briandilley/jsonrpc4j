@@ -93,7 +93,7 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	 *
 	 * @throws Exception on error
 	 */
-	void exportService()
+	protected void exportService()
 			throws Exception {
 		// no-op
 	}

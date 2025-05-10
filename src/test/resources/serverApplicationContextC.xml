@@ -1,0 +1,14 @@
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean class="org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping"/>
+
+    <bean id="userService" class="com.googlecode.jsonrpc4j.spring.service.ServiceImpl">
+    </bean>
+
+    <bean name="/UserService.json" class="com.googlecode.jsonrpc4j.spring.JsonServiceExporter">
+        <property name="service" ref="userService"/>
+        <property name="serviceInterface" value="com.googlecode.jsonrpc4j.spring.service.Service"/>
+    </bean>
+</beans>
