@@ -194,14 +194,18 @@ public abstract class ReflectionUtil {
 		if (jsonRpcMethod != null)
 			paramsPassMode = jsonRpcMethod.paramsPassMode();
 
-		Map<String, Object> namedParams = getNamedParameters(method, arguments);
+		Map<String, Object> params = new LinkedHashMap<>();
+
+		params.putAll(getFixedParametersCollection(method));
+		params.putAll(getFixedParameters(method));
+		params.putAll(getNamedParameters(method, arguments));
 
 		switch (paramsPassMode) {
 			case ARRAY:
-				if (namedParams.size() > 0) {
-					Object[] parsed = new Object[namedParams.size()];
+				if (params.size() > 0) {
+					Object[] parsed = new Object[params.size()];
 					int i = 0;
-					for (Object value : namedParams.values()) {
+					for (Object value : params.values()) {
 						parsed[i++] = value;
 					}
 					return parsed;
@@ -209,8 +213,8 @@ public abstract class ReflectionUtil {
 					return arguments != null ? arguments : new Object[]{};
 				}
 			case OBJECT:
-				if (namedParams.size() > 0) {
-					return namedParams;
+				if (params.size() > 0) {
+					return params;
 				} else {
 					if (arguments == null) {
                         return new Object[]{};
@@ -221,8 +225,8 @@ public abstract class ReflectionUtil {
 				}
 			case AUTO:
 			default:
-				if (namedParams.size() > 0) {
-					return namedParams;
+				if (params.size() > 0) {
+					return params;
 				} else {
 					return arguments != null ? arguments : new Object[]{};
 				}
@@ -258,6 +262,49 @@ public abstract class ReflectionUtil {
 		}
 		
 		return namedParams;
+	}
+
+	/**
+	 * Checks method for @JsonRpcFixedParam annotations and returns fixed
+	 * parameters.
+	 * 
+	 * @param method the method
+	 * @return fixed parameters or empty if no annotations found
+	 */
+	public static Map<String, Object> getFixedParameters(Method method) {
+
+		Map<String, Object> fixedParams = new LinkedHashMap<>();
+
+		for (Annotation an : getAnnotations(method)) {
+			if (an instanceof JsonRpcFixedParam) {
+				JsonRpcFixedParam jAnn = (JsonRpcFixedParam) an;
+				fixedParams.put(jAnn.name(), jAnn.value());
+			}
+		}
+
+		return fixedParams;
+	}
+
+	/**
+	 * Checks method for @JsonRpcFixedParams annotation and returns fixed
+	 * parameters.
+	 * 
+	 * @param method the method
+	 * @return fixed parameters or empty if no annotations found
+	 */
+	public static Map<String, Object> getFixedParametersCollection(Method method) {
+
+		Map<String, Object> fixedParams = new LinkedHashMap<>();
+
+		JsonRpcFixedParams jsonRpcFixedParams = getAnnotation(method, JsonRpcFixedParams.class);
+
+		if (jsonRpcFixedParams != null) {
+			for (JsonRpcFixedParam fixedParam : jsonRpcFixedParams.fixedParams()) {
+				fixedParams.put(fixedParam.name(), fixedParam.value());
+			}
+		}
+
+		return fixedParams;
 	}
 
 	public static void clearCache() {
