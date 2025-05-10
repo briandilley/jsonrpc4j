@@ -8,7 +8,6 @@ JSON-RPC).
 
 [![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.5.0/)
 [![Download](https://img.shields.io/maven-central/v/com.github.briandilley.jsonrpc4j/jsonrpc4j.svg) ](https://repo1.maven.org/maven2/com/github/briandilley/jsonrpc4j/jsonrpc4j/1.5.3/)
-[![Travis CI](https://travis-ci.org/gaborbernat/jsonrpc4j.svg?branch=master)](https://travis-ci.org/gaborbernat/jsonrpc4j)
 [![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.5.3.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.5.3...master)
 
 ## Features Include:
