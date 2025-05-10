@@ -8,7 +8,6 @@ JSON-RPC).
 
 [![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.7/)
 [![Download](https://img.shields.io/maven-central/v/com.github.briandilley.jsonrpc4j/jsonrpc4j.svg) ](https://repo1.maven.org/maven2/com/github/briandilley/jsonrpc4j/jsonrpc4j/1.7/)
-[![GitHub commits](https://img.shields.io/github/commits-since/briandilley/jsonrpc4j/1.7.svg)](https://github.com/briandilley/jsonrpc4j/compare/1.7...master)
 
 ## Features Include:
   * Streaming server (`InputStream` \ `OutputStream`)
