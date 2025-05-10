@@ -41,14 +41,14 @@ In `<dependencies>`:
 	<dependency>
 		<groupId>com.github.briandilley.jsonrpc4j</groupId>
 		<artifactId>jsonrpc4j</artifactId>
-		<version>1.6</version>
+		<version>1.7</version>
 	</dependency>
 ```
 
 or with gradle:
 
 ```groovy
-    implementation('com.github.briandilley.jsonrpc4j:jsonrpc4j:1.6')
+    implementation('com.github.briandilley.jsonrpc4j:jsonrpc4j:1.7')
 ```
 
 If you want to just download the projects output JAR and it's dependencies you can
