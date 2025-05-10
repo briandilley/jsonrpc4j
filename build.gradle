@@ -117,8 +117,11 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'org.apache.httpcomponents:httpcore-nio:4.4.15'
 
+    implementation 'javax.validation:validation-api:2.0.1.Final'
+
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.easymock:easymock:4.3'
+
     testImplementation("org.springframework.boot:spring-boot-starter-web:${springBotVersion}") {
         exclude module: 'logback-classic'
     }

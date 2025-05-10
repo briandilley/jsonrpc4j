@@ -8,25 +8,58 @@ import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.ValidationException;
+import javax.validation.constraints.NotNull;
+
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.ERROR_NOT_HANDLED;
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.findCandidateMethods;
-import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
-import static com.googlecode.jsonrpc4j.Util.hasNonNullData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
+import net.iharder.Base64;
 
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an input stream and writes responses to an output stream.
@@ -258,6 +291,11 @@ public class JsonRpcBasicServer {
             JsonResponse responseError = createResponseError(VERSION, NULL, JsonError.PARSE_ERROR);
             writeAndFlushValue(output, responseError.getResponse());
             return responseError.getCode();
+		} catch (ValidationException e) {
+			JsonResponse responseError =
+					createResponseError(VERSION, NULL, JsonError.METHOD_PARAMS_INVALID);
+			writeAndFlushValue(output, responseError.getResponse());
+			return responseError.getCode();
 		}
 	}
 	
@@ -464,7 +502,7 @@ public class JsonRpcBasicServer {
 					return createResponseSuccess(jsonRpc, id, handler.result);
 				}
 				return new JsonResponse(null, JsonError.OK.code);
-			} catch (JsonParseException | JsonMappingException e) {
+			} catch (JsonParseException | JsonMappingException | ValidationException e) {
 				throw e; // rethrow this, it will be handled as PARSE_ERROR later
 			} catch (ParameterConvertException pce) {
 				handler.error = pce.getCause();
@@ -598,12 +636,68 @@ public class JsonRpcBasicServer {
 			if (convertedParameterTransformer != null) {
 				convertedParams = convertedParameterTransformer.transformConvertedParameters(target, convertedParams);
 			}
+			if (!allowLessParams) {
+				collectApiModelsAndValidate(convertedParams);
+			}
 			result = method.invoke(target, convertedParams);
         }
 
 		logger.debug("Invoked method: {}, result {}", method.getName(), result);
 
 		return hasReturnValue(method) ? mapper.valueToTree(result) : null;
+	}
+
+	private void collectApiModelsAndValidate(Object[] params) {
+
+		List<Object> requestModels = Arrays.stream(params)
+				.filter(param -> !param.getClass().isPrimitive())
+				.collect(Collectors.toList());
+		requestModels.forEach(this::validateFields);
+	}
+
+	private void validateFields(Object requestModel) {
+
+		Arrays.stream(requestModel.getClass().getDeclaredFields()).forEach(field -> {
+			validateField(requestModel, field);
+		});
+
+	}
+
+	private void validateField(Object requestModel, Field field) {
+
+		if (fieldIsRequired(field)) {
+			try {
+				for (PropertyDescriptor pd : Introspector.getBeanInfo(requestModel.getClass())
+						.getPropertyDescriptors()) {
+					if (pd.getReadMethod() != null && !"class".equals(pd.getName())
+							&& Objects.equals(pd.getName(), field.getName())) {
+						invokeGetterAndValidate(requestModel, pd.getReadMethod(), field.getName());
+					}
+				}
+			} catch (IntrospectionException e) {
+				logger.warn("Unable to find getter for field {} in class {}", field.getName(),
+						requestModel.getClass().getName());
+			}
+
+		}
+	}
+
+	private void invokeGetterAndValidate(Object o, Method gett, String fieldName) {
+
+		try {
+			if (gett.invoke(o) == null) {
+
+				throw new ValidationException(
+						String.format("Field %s cannot be empty", fieldName));
+			}
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private boolean fieldIsRequired(Field field) {
+
+		return field.getAnnotationsByType(NotNull.class).length > 0;
 	}
 
 	private Object invokePrimitiveVarargs(Object target, Method method, List<JsonNode> params, Class<?> componentType) throws IllegalAccessException, InvocationTargetException {
