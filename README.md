@@ -6,7 +6,6 @@ JSON-RPC for the java programming language.  jsonrpc4j uses the
 objects to and from json objects (and other things related to
 JSON-RPC).
 
-[![Javadoc](https://img.shields.io/badge/javadoc-OK-blue.svg)](http://briandilley.github.io/jsonrpc4j/javadoc/1.7/)
 [![Download](https://img.shields.io/maven-central/v/com.github.briandilley.jsonrpc4j/jsonrpc4j.svg) ](https://repo1.maven.org/maven2/com/github/briandilley/jsonrpc4j/jsonrpc4j/1.7/)
 
 ## Features Include:
