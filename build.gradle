@@ -1,12 +1,11 @@
 buildscript {
 
     ext {
-        set("jacksonVersion", "2.19.0")
-        // Versions 6.0.0 and above no longer support Java 1.8
-        set("springVersion", "5.3.39")
-        // Versions 3.0.0 and above no longer support Java 1.8
-        set("springBootVersion", "2.7.18")
-        set("jettyVersion", "9.4.57.v20241219")
+        // Sync with https://github.com/spring-projects/spring-boot/blob/3.4.x/gradle.properties
+        set("jacksonVersion", "2.18.4")
+        set("springVersion", "6.2.7")
+        set("springBootVersion", "3.4.5")
+        set("jettyVersion", "12.0.21")
         set("slf4jVersion", "2.0.17")
     }
 
@@ -101,9 +100,8 @@ dependencies {
     // TODO: remove deprecated portlet-api when support is removed from the code
     servletSupportImplementation 'javax.portlet:portlet-api:3.0.1'
     servletSupportImplementation 'javax.servlet:javax.servlet-api:4.0.1'
-    // TODO: Jakarta EE 9 and jakarta.servlet-api 5.x are still compatible with Java SE 8,
-    // update jakarta.servlet-api to version 6+ when JDK baseline is increased to 11+
-    servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+    // Sync with library("Jakarta Servlet", "6.0.0"): https://github.com/spring-projects/spring-boot/blob/3.4.x/spring-boot-project/spring-boot-dependencies/build.gradle#L770
+    servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 
     implementation group: 'jakarta.jws', name: 'jakarta.jws-api', version: '3.0.0'
 
@@ -116,9 +114,12 @@ dependencies {
     springSupportImplementation "org.springframework:spring-web:${springVersion}"
     springSupportImplementation "org.springframework:spring-webmvc:${springVersion}"
 
-    implementation 'commons-codec:commons-codec:1.18.0'
+    // Sync with https://github.com/spring-projects/spring-boot/blob/3.4.x/gradle.properties
+    implementation 'commons-codec:commons-codec:1.17.2'
+    // TODO: HttpCore 5 has been released in 2020 https://hc.apache.org/httpcomponents-core-5.3.x/
     implementation 'org.apache.httpcomponents:httpcore-nio:4.4.16'
 
+    // TODO: JUnit 5 has been released in 2017 https://www.baeldung.com/junit-5
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.easymock:easymock:5.5.0'
     testImplementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
