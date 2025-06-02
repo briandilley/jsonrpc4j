@@ -103,7 +103,7 @@ dependencies {
     servletSupportImplementation 'javax.servlet:javax.servlet-api:4.0.1'
     // TODO: Jakarta EE 9 and jakarta.servlet-api 5.x are still compatible with Java SE 8,
     // update jakarta.servlet-api to version 6+ when JDK baseline is increased to 11+
-    servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+    servletSupportImplementation 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 
     implementation group: 'jakarta.jws', name: 'jakarta.jws-api', version: '3.0.0'
 
