@@ -131,8 +131,8 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.24.3'
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.24.3'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.25.1'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.25.1'
 
 }
 
