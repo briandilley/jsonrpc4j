@@ -403,7 +403,7 @@ public class JsonRpcBasicServer {
 	    try {
             response = responseFuture.getValue().get(parallelBatchProcessingTimeout, TimeUnit.MILLISECONDS);
         } catch (Throwable t) {
-            JsonError jsonError = new JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName());
+            JsonError jsonError = new JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName(), true);
             return createResponseError(VERSION, responseFuture.getKey(), jsonError);
         }
 	    return response;
@@ -481,29 +481,27 @@ public class JsonRpcBasicServer {
 	private JsonResponse handleParameterConvertError(ParameterConvertException pce, Object id, String jsonRpc) {
 		String errorMsg = "Failed to read method parameter at index " + pce.paramIndex;
 		JsonError jsonError = new JsonError(
-			JsonError.METHOD_PARAMS_INVALID.code,
-			errorMsg,
-			null
+				JsonError.METHOD_PARAMS_INVALID.code,
+				errorMsg,
+				null,
+				true
 		);
 		return createResponseError(jsonRpc, id, jsonError);
 	}
 
     private JsonResponse handleError(Object id, String jsonRpc, AMethodWithItsArgs methodArgs, Throwable e) {
 		Throwable unwrappedException = getException(e);
-		
-		if (shouldLogInvocationErrors) {
-			logger.warn("Error in JSON-RPC Service", unwrappedException);
-		}
-		
 		JsonError error = resolveError(methodArgs, unwrappedException);
-        JsonResponse responseError = createResponseError(jsonRpc, id, error);
-        if (rethrowExceptions) {
-            responseError.setExceptionToRethrow(new RuntimeException(unwrappedException));
-        }
-        return responseError;
-
+		JsonResponse responseError = createResponseError(jsonRpc, id, error);
+		if (shouldLogInvocationErrors && error.isLoggingEnabled()) {
+			logger.warn("Error in JSON-RPC Service. Method: {}", methodArgs.method.getName(), e);
+		}
+		if (rethrowExceptions) {
+			responseError.setExceptionToRethrow(new RuntimeException(unwrappedException));
+		}
+		return responseError;
 	}
-	
+
 	private Throwable getException(final Throwable thrown) {
 		Throwable e = thrown;
 		while (e instanceof InvocationTargetException) {
@@ -522,7 +520,7 @@ public class JsonRpcBasicServer {
 		final ErrorResolver currentResolver = errorResolver == null ? DEFAULT_ERROR_RESOLVER : errorResolver;
 		error = currentResolver.resolveError(e, methodArgs.method, methodArgs.arguments);
 		if (error == null) {
-			error = new JsonError(ERROR_NOT_HANDLED.code, e.getMessage(), e.getClass().getName());
+			error = new JsonError(ERROR_NOT_HANDLED.code, e.getMessage(), e.getClass().getName(), true);
 		}
 		return error;
 	}
