@@ -52,7 +52,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	}
 
 	public JsonRpcMultiServer(ObjectMapper mapper) {
-		super(mapper);
+		super(mapper, (Object)null);
 		this.handlerMap = new HashMap<>();
 		this.interfaceMap = new HashMap<>();
 	}
