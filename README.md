@@ -22,7 +22,7 @@ JSON-RPC).
   * Composite services
 
 ## Maven
-This project is built with Gralde. Be
+This project is built with Gradle. Be
 sure to check the build.gradle for the dependencies if you're not using
 gradle.  If you're already using spring you should have most (if not all)
 of the dependencies already - outside of maybe the
