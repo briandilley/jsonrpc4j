@@ -216,14 +216,15 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 		try {
 			response = this.restTemplate.postForObject(serviceUrl.get().toExternalForm(), requestHttpEntity, ObjectNode.class);
 		} catch (HttpStatusCodeException httpStatusCodeException) {
-			logger.error("HTTP Error code={} status={}\nresponse={}"
-					, httpStatusCodeException.getStatusCode().value()
-					, httpStatusCodeException.getStatusText()
-					, httpStatusCodeException.getResponseBodyAsString()
+            int statusCode = httpStatusCodeException.getRawStatusCode();
+            logger.error("HTTP Error code={} status={}\nresponse={}",
+                statusCode,
+                httpStatusCodeException.getStatusText(),
+                httpStatusCodeException.getResponseBodyAsString()
 			);
-			Integer jsonErrorCode = DefaultHttpStatusCodeProvider.INSTANCE.getJsonRpcCode(httpStatusCodeException.getStatusCode().value());
+			Integer jsonErrorCode = DefaultHttpStatusCodeProvider.INSTANCE.getJsonRpcCode(statusCode);
 			if (jsonErrorCode == null) {
-				jsonErrorCode = httpStatusCodeException.getStatusCode().value();
+				jsonErrorCode = statusCode;
 			}
 			throw new JsonRpcClientException(jsonErrorCode, httpStatusCodeException.getStatusText(), null);
 		} catch (HttpMessageConversionException httpMessageConversionException) {
