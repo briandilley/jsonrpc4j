@@ -24,6 +24,7 @@ buildscript {
 
 plugins {
     id('jacoco')
+    id('java-library')
 }
 
 repositories {
@@ -81,6 +82,18 @@ jacocoTestReport {
     }
 }
 
+sourceSets {
+    beanValidationSupport {
+        java {
+            srcDir 'src/beanvalidation/java'
+        }
+    }
+    beanValidationSupportTest {
+        compileClasspath += sourceSets.test.output + sourceSets.beanValidationSupport.output
+        runtimeClasspath += sourceSets.test.output + sourceSets.beanValidationSupport.output
+    }
+}
+
 java {
     registerFeature('servletSupport') {
         // TODO: create a separate sourceSet for this library feature.
@@ -92,6 +105,20 @@ java {
         //  Gradle is planning to break this in v9.0
         usingSourceSet(sourceSets.main)
     }
+    registerFeature('beanValidationSupport') {
+        usingSourceSet(sourceSets.beanValidationSupport)
+        capability("com.github.briandilley.jsonrpc4j", "bean-validation-support", "1.0")
+        dependencies {
+            project(":")
+        }
+        withSourcesJar()
+        withJavadocJar()
+    }
+}
+
+configurations {
+    beanValidationSupportImplementation.extendsFrom(implementation)
+    beanValidationSupportTestImplementation.extendsFrom(testImplementation, beanValidationSupportImplementation)
 }
 
 dependencies {
@@ -131,9 +158,20 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-servlet:${jettyVersion}") {
         exclude module: 'org.eclipse.jetty.orbit'
     }
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl:2.24.3'
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.24.3'
 
+    beanValidationSupportImplementation 'jakarta.validation:jakarta.validation-api:3.0.0'
+    beanValidationSupportImplementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    beanValidationSupportImplementation(project(":"))
+
+    beanValidationSupportTestImplementation(project(":")) {
+        capabilities {
+            requireCapability("com.github.briandilley.jsonrpc4j:bean-validation-support")
+        }
+    }
+
+    beanValidationSupportTestRuntimeOnly 'org.hibernate.validator:hibernate-validator:7.0.5.Final'
+    beanValidationSupportTestRuntimeOnly 'org.glassfish:jakarta.el:4.0.2'
+    beanValidationSupportTestRuntimeOnly 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.19.0'
 }
 
 
@@ -143,15 +181,41 @@ jar {
    }
 }
 
-task documentationJar(type: Jar) {
+tasks.register('documentationJar', Jar) {
     archiveClassifier.set("javadoc")
     from javadoc
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     archiveClassifier.set("sources")
     from sourceSets.main.allSource
 }
+
+tasks.register('jacocoBeanValidationSupportTestReport', JacocoReport) {
+    description = 'Generates code coverage report for the beanValidationSupportTest task.'
+    group = 'verification'
+
+    sourceSets sourceSets.beanValidationSupportTest
+    executionData beanValidationSupportTest
+
+    reports {
+        xml.required = true
+        csv.required = true
+        html.required = true
+    }
+    mustRunAfter beanValidationSupportTest
+}
+
+tasks.register('beanValidationSupportTest', Test) {
+    description = 'Runs bean validation module tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.beanValidationSupportTest.output.classesDirs
+    classpath = sourceSets.beanValidationSupportTest.runtimeClasspath
+    shouldRunAfter test
+    finalizedBy jacocoBeanValidationSupportTestReport
+}
+check.dependsOn beanValidationSupportTest
 
 artifacts {
     archives documentationJar, sourcesJar

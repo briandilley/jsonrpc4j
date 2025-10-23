@@ -20,6 +20,7 @@ JSON-RPC).
   * Annotations support
   * Custom error resolving
   * Composite services
+  * Objects validation with [Jakarta Validation](https://beanvalidation.org/) (server only at the moment)
 
 ## Maven
 This project is built with Gradle. Be
@@ -150,7 +151,7 @@ be accessed by any JSON-RPC capable client, including the `JsonProxyFactoryBean`
         <property name="serviceInterface" value="com.mycompany.UserService"/>
     </bean>
 
-<beans>
+</beans>
 ```
 
 In the case that your JSON-RPC requires named based parameters rather than indexed
@@ -164,8 +165,8 @@ public interface UserService {
 }
 ```
 
-By default all error message responses contain the the message as returned by
-Exception.getmessage() with a code of 0.  This is not always desirable.
+By default, all error message responses contain the message as returned by
+`Exception.getMessage()` with a code of `0`.  This is not always desirable.
 jsonrpc4j supports annotated based customization of these error messages and
 codes, for example:
 
@@ -377,6 +378,229 @@ Of course, this is all possible in the Spring Framework as well:
 ```
 	}
 
+### Requests and responses validation with Jakarta Validation
+
+It is possible to use [Jakarta Validation](https://beanvalidation.org/) annotations
+on methods and returned values to validate objects.
+jsonrpc4j provides an additional module, which can intercept method calls,
+and validate method parameters and results with the `jakarta.validation.Validator`.
+
+#### Installation
+
+Validation support logic is packaged as a separate Maven artifact.
+It is necessary to include it separately in the `build.gradle` or `pom.xml`.
+
+```groovy
+...
+dependencies {
+    ...
+    implementation('com.github.briandilley.jsonrpc4j:jsonrpc4j:X.Y.Z')
+    implementation('com.github.briandilley.jsonrpc4j:jsonrpc4j:X.Y.Z') {
+        capabilities {
+            requireCapability("com.github.briandilley.jsonrpc4j:bean-validation-support")
+        }
+    }
+    implementation(
+        // Contains validation API and annotations
+        'jakarta.validation:jakarta.validation-api:3.1.1',
+        // Validation provider
+        'org.hibernate.validator:hibernate-validator:9.0.1.Final'
+    )
+    ...
+}
+...
+```
+
+```xml
+...
+<dependencies>
+    ...
+    <dependency>
+        <groupId>com.github.briandilley.jsonrpc4j</groupId>
+        <artifactId>jsonrpc4j</artifactId>
+        <version>X.Y.Z</version>
+    </dependency>
+    <dependency>
+        <groupId>com.github.briandilley.jsonrpc4j</groupId>
+        <artifactId>jsonrpc4j</artifactId>
+        <version>X.Y.Z</version>
+        <classifier>bean-validation-support</classifier>
+    </dependency>
+
+    <!-- Contains validation API and annotations -->
+    <dependency>
+        <groupId>jakarta.validation</groupId>
+        <artifactId>jakarta.validation-api</artifactId>
+        <version>3.1.1</version>
+    </dependency>
+    <!-- Validation provider -->
+    <dependency>
+        <groupId>org.hibernate.validator</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>9.0.1.Final</version>
+    </dependency>
+    ...
+</dependencies>
+...
+```
+
+The `jakarta.validation:jakarta.validation-api` is required for the validation specific annotations.
+The `org.hibernate.validator:hibernate-validator` is a reference implementation of the
+Jakarta Validation specification,
+this must be present in the JVM classpath if validation is enabled.
+Choose versions, which are compatible with your JVM and Jakarta EE platform dependencies.
+
+#### Server validation
+
+```java
+
+// annotate necessary classes
+
+class User {
+    @Positive
+    final long id;
+
+    @NotNull
+    @Size(min = 3, max = 255)
+    final String userName;
+
+    @NotNull
+    @Size(min = 12)
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+=]).{12,}$")
+    final String password;
+
+    public User(long id, String userName, String password) {
+        this.id = id;
+        this.userName = userName;
+        this.password = password;
+    }
+}
+
+interface UserService {
+    @Valid User createUser(
+        @JsonRpcParam("theUserName")
+        @NotNull
+        @Size(min = 3, max = 255)
+        String userName,
+
+        @JsonRpcParam("thePassword")
+        @NotNull
+        @Size(min = 12, max = 4096)
+        @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+=]).{12,}$",
+            message = "Password must be at least 12 characters long,"
+                + " and must contain small and capital letters,"
+                + " numbers and special symbols @#$%^&+="
+        )
+        String password
+    );
+}
+
+class UserServiceImpl implements UserService{
+    @Override
+    public User createUser(String userName, String password) {
+        return new User(1L, userName, password);
+    }
+}
+
+UserService userService = new UserServiceImpl();
+
+// create the jsonRpcServer
+JsonRpcServer jsonRpcServer = new JsonRpcServer(userService, UserService.class);
+
+// create the bean validation interceptor with default jakarta.validation.ValidatorFactory
+JsonRpcInterceptor beanValidationJsonRpcInterceptor = new BeanValidationJsonRpcInterceptor();
+
+// or create with existing ValidatorFactory
+// ValidatorFactory validatorFactory = getOrCreateValidatorFactory();
+// JsonRpcInterceptor beanValidationJsonRpcInterceptor = new BeanValidationJsonRpcInterceptor(validatorFactory);
+
+// Add validation interceptor
+jsonRpcServer.getInterceptorList().add(beanValidationJsonRpcInterceptor);
+
+// Validation must be configured now
+
+ByteArrayOutputStream output = new ByteArrayOutputStream();
+int errorCode;
+try {
+    errorCode = jsonRpcServer.handleRequest(
+        new ByteArrayInputStream(
+            (
+                "{\"jsonrpc\": \"2.0\",  \"id\": 54321, \"method\": \"createUser\", "
+                + "\"params\": {\"theUserName\": \"me\", \"thePassword\": \"123456\"}"
+                + "}"
+            ).getBytes(StandardCharsets.UTF_8)
+        ),
+        output
+    );
+} catch (IOException e) {
+    throw new RuntimeException("Failed to handle request", e);
+}
+
+assert errorCode == -32602 : "Request with invalid parameters must produce the Invalid params (-32602) error";
+String errorResponse = new String(output.toByteArray(), StandardCharsets.UTF_8);
+System.out.println(response);
+```
+
+The `errorResponse` looks like:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 54321,
+  "error": {
+    "code": -32602,
+    "message": "method parameters invalid",
+    "data": {
+      "errors": [
+        {
+          "paramName": "thePassword",
+          "detail": "size must be between 12 and 4096",
+          "jsonPointer": "/thePassword"
+        },
+        {
+          "paramName": "theUserName",
+          "detail": "size must be between 3 and 255",
+          "jsonPointer": "/theUserName"
+        },
+        {
+          "paramName": "thePassword",
+          "detail": "Password must be at least 12 characters long, and must contain small and capital letters, numbers and special symbols @#$%^&+=",
+          "jsonPointer": "/thePassword"
+        }
+      ]
+    }
+  }
+}
+```
+
+Error object can have the following fields:
+
+* `paramIndex` - the invalid method parameter index if parameters object is a JSON array.
+This field may be absent if parameter names are used.
+* `paramName` - the invalid method parameter name if parameters object is a JSON object
+and a corresponding annotated method parameter has been found
+(annotated with `@JsonRpcParam` or similar annotations).
+Server may return a parameter index instead in the `paramIndex` parameter,
+which is an index of a server's Java method parameter,
+and not a JSON field position in the request object.
+Either `paramIndex` or `paramName` is always returned.
+* `detail` - the error message. Contains a detailed description of a problem.
+* `jsonPointer` - the [RFC6901](https://www.rfc-editor.org/rfc/rfc6901) JSON Pointer,
+which points to the exact location within the invalid JSON parameter
+inside the JSON-RPC `params` request value.
+Pointers are returned only for the recognized server parameters.
+
+##### Response validation
+
+The response objects are also validated by the `BeanValidationJsonRpcInterceptor`.
+
+If server fails to prepare a valid response value,
+then the error `Internal error (-32603)` is written to the RPC method response.
+Configure a standard or custom `ErrorResolver` for the `JsonRpcServer`
+to receive and handle such response objects validation errors.
+See also `JsonRpcServer.setShouldLogInvocationErrors(boolean shouldLogInvocationErrors)`
+logging configuration option.
 
 ### `JsonRpcServer` settings explained
 The following settings apply to both the `JsonRpcServer` and `JsonServiceExporter`:

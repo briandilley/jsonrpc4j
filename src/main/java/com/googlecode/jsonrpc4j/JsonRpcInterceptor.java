@@ -51,14 +51,85 @@ public interface JsonRpcInterceptor {
     void preHandle(Object target, Method method, List<JsonNode> params);
 
     /**
+     * If exception will be thrown in this method, standard JSON RPC error will be generated.
+     * <p><b>Example</b>
+     * <pre>
+     * {
+     *      "jsonrpc":"2.0",
+     *      "id":0,
+     *      "error":{
+     *          "code":-32001,
+     *          "message":"123",
+     *          "data":{
+     *              "exceptionTypeName":"java.lang.RuntimeException",
+     *              "message":"123"
+     *          }
+     *      }
+     * }
+     * </pre>
+     * <p>
+     * For changing exception handling custom {@link ErrorResolver} could be generated.
+     * </p>
+     *
+     * @param target             target service
+     * @param method             target method
+     * @param paramsJsonNode     a JSON node received in the "params" request object field
+     * @param jsonParams         list of params as {@link JsonNode}s
+     * @param deserializedParams list of params as deserialized objects
+     * @param detectedParamNames list of params names.
+     *                           Names are present only if the request object contains
+     *                           a JSON object in the "parameters" field,
+     *                           and the target method has annotated parameters.
+     *                           This List may contain {@code null} elements.
+     */
+    default void preHandle(
+        Object target,
+        Method method,
+        JsonNode paramsJsonNode,
+        List<JsonNode> jsonParams,
+        List<Object> deserializedParams,
+        List<String> detectedParamNames
+    ) {
+    }
+
+    /**
      * If exception will be thrown in this method, standard JSON RPC error will be generated. Example in preHandle
-     * Even if target method retruns without exception.
+     * Even if target method returns without exception.
+     *
      * @param target target service
      * @param method target method
      * @param params list of params as {@link JsonNode}s
-     * @param result returned by target service
+     * @param result object returned by target service,
+     *               which is already converted to {@link JsonNode}s
      */
     void postHandle(Object target, Method method, List<JsonNode> params, JsonNode result);
+
+    /**
+     * If exception will be thrown in this method, standard JSON RPC error will be generated. Example in preHandle
+     * Even if target method returns without exception.
+     *
+     * @param target             target service
+     * @param method             target method
+     * @param paramsJsonNode     a JSON node received in the "params" request object field
+     * @param jsonParams         list of params as {@link JsonNode}s
+     * @param deserializedParams list of params as deserialized objects
+     * @param detectedParamNames list of params names.
+     *                           Names are present only if the request object contains
+     *                           a JSON object in the "parameters" field,
+     *                           and the target method has annotated parameters.
+     *                           This List may contain {@code null} elements.
+     * @param result             object returned by target service
+     */
+    default void postHandle(
+        Object target,
+        Method method,
+        List<JsonNode> jsonParams,
+        JsonNode paramsJsonNode,
+        List<Object> deserializedParams,
+        List<String> detectedParamNames,
+        Object result
+    ) {
+    }
 
     /**
      * If exception will be thrown in this method, standard JSON RPC error will be generated. Example in preHandle

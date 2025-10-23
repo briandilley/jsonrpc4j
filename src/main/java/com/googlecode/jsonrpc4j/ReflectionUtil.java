@@ -3,14 +3,19 @@ package com.googlecode.jsonrpc4j;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utilities for reflection.
@@ -24,8 +29,17 @@ public abstract class ReflectionUtil {
 	private static final Map<Method, List<Annotation>> methodAnnotationCache = new ConcurrentHashMap<>();
 	
 	private static final Map<Method, List<List<Annotation>>> methodParamAnnotationCache = new ConcurrentHashMap<>();
-	
-	/**
+
+    private static final Map<Method, List<JsonRpcParam>> parametersNamesCache = new ConcurrentHashMap<>();
+
+    private static final String NAME = "name";
+
+    private static final Logger logger = LoggerFactory.getLogger(ReflectionUtil.class);
+
+    private static final Set<Class<? extends Annotation>> webParamAnnotationClasses =
+        loadWebParamAnnotationClasses();
+
+    /**
 	 * Finds methods with the given name on the given class.
 	 *
 	 * @param classes                    the classes
@@ -264,6 +278,141 @@ public abstract class ReflectionUtil {
 		return namedParams;
 	}
 
+    private static Set<Class<? extends Annotation>> loadWebParamAnnotationClasses() {
+        final ClassLoader classLoader = ReflectionUtil.class.getClassLoader();
+        Set<Class<? extends Annotation>> webParamClasses = new HashSet<>(2, 1.0f);
+        for (String className: Arrays.asList("javax.jws.WebParam", "jakarta.jws.WebParam")) {
+            try {
+                Class<? extends Annotation> clazz =
+                    classLoader
+                        .loadClass(className)
+                        .asSubclass(Annotation.class);
+                // check that method with name "name" is present
+                clazz.getMethod(NAME);
+                webParamClasses.add(clazz);
+            } catch (ClassNotFoundException | NoSuchMethodException e) {
+                logger.debug("Could not find {}.{}", className, NAME);
+            }
+        }
+
+        if (webParamClasses.isEmpty()) {
+            logger.debug(
+                "Could not find any @WebParam classes in classpath." +
+                    " @WebParam support is disabled"
+            );
+        }
+
+        return Collections.unmodifiableSet(webParamClasses);
+    }
+
+    /**
+     * Checks method for {@link JsonRpcParam}, javax.jws.WebParam and jakarta.jws.WebParam annotations,
+     * and returns all parameters names declared for this method.
+     *
+     * @param method the method
+     * @param logger the logger
+     * @return a list of parameter names as {@link JsonRpcParam} objects.
+     * All names from the javax.jws.WebParam and jakarta.jws.WebParam annotations are copied into
+     * {@link JsonRpcParam} objects.
+     */
+    @SuppressWarnings("Convert2streamapi")
+    public static List<JsonRpcParam> getAnnotatedParameterNames(Method method, Logger logger) {
+        List<JsonRpcParam> paramNames = parametersNamesCache.get(method);
+        if (paramNames != null) {
+            return paramNames;
+        }
+
+        int parameterCount = method.getParameterCount();
+        paramNames = new ArrayList<>(parameterCount);
+
+        List<List<Annotation>> parametersAnnotations = getParameterAnnotations(method);
+        for (int i = 0; i < parameterCount; i++) {
+            List<Annotation> parameterAnnotations = parametersAnnotations.get(i);
+            List<JsonRpcParam> declaredNames = new ArrayList<>();
+
+            for (Annotation annotation : parameterAnnotations) {
+                if (annotation instanceof JsonRpcParam) {
+                    declaredNames.add((JsonRpcParam) annotation);
+                }
+
+                for (Class<? extends Annotation> clazz : webParamAnnotationClasses) {
+                    if (clazz.isInstance(annotation)) {
+                        declaredNames.add(
+                            createNewJsonRcpParamType(annotation)
+                        );
+                    }
+                }
+            }
+
+            JsonRpcParam paramName;
+            if (declaredNames.size() > 1) {
+                paramName = declaredNames.get(0);
+                for (JsonRpcParam name : declaredNames) {
+                    if (!Objects.equals(paramName.value(), name.value())) {
+                        logger.warn(
+                            "Method '{}' has multiple parameter names declared"
+                                + " for the parameter at index {}."
+                                + " Only the first name '{}' can be used."
+                                + " Create additional parameters "
+                                + " if alternative names are required.",
+                            method.toGenericString(),
+                            i,
+                            paramName.value()
+                        );
+                    }
+                }
+
+            } else if (!declaredNames.isEmpty()) {
+                paramName = declaredNames.get(0);
+            } else {
+                paramName = null;
+                logger.warn(
+                    "Method '{}' has no parameter name declared"
+                        + " for the parameter at index {}.",
+                    method.toGenericString(),
+                    i
+                );
+            }
+
+            paramNames.add(paramName);
+        }
+
+        parametersNamesCache.putIfAbsent(method, Collections.unmodifiableList(paramNames));
+
+        return paramNames;
+    }
+
+    private static JsonRpcParam createNewJsonRcpParamType(final Annotation annotation) {
+        return new JsonRpcParam() {
+            public Class<? extends Annotation> annotationType() {
+                return JsonRpcParam.class;
+            }
+
+            public String value() {
+                try {
+                    Method method = annotation.getClass().getMethod(JsonRpcBasicServer.NAME);
+                    return (String) method.invoke(annotation);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+    private static List<List<? extends Annotation>> getWebParameterAnnotations(Method method) {
+        List<List<? extends Annotation>> annotations = new ArrayList<>();
+        for (Class<? extends Annotation> clazz : webParamAnnotationClasses) {
+            annotations.addAll(
+                ReflectionUtil.getParameterAnnotations(method, clazz)
+            );
+        }
+        return annotations;
+    }
+
+    private List<List<JsonRpcParam>> getJsonRpcParamAnnotations(Method method) {
+        return ReflectionUtil.getParameterAnnotations(method, JsonRpcParam.class);
+    }
+
 	/**
 	 * Checks method for @JsonRpcFixedParam annotations and returns fixed
 	 * parameters.
@@ -312,5 +461,6 @@ public abstract class ReflectionUtil {
 		parameterTypeCache.clear();
 		methodAnnotationCache.clear();
 		methodParamAnnotationCache.clear();
+        parametersNamesCache.clear();
 	}
 }

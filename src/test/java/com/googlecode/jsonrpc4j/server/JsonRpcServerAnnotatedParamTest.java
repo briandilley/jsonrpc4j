@@ -16,6 +16,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
+import jakarta.jws.WebParam;
+
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.PARSE_ERROR;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.ID;
@@ -134,6 +136,66 @@ public class JsonRpcServerAnnotatedParamTest {
 		jsonRpcServerAnnotatedParam.handleRequest(messageWithMapParamsStream("overloadedMethod", param1, intParam1, param2, intParam2), byteArrayOutputStream);
 		assertEquals((intParam1 + intParam2) + "", result().textValue());
 	}
+
+    @Test
+    public void callMethodWithParamCopy() throws Exception {
+        EasyMock.expect(
+            mockService.methodWithParamCopy(
+                EasyMock.anyInt(),
+                EasyMock.anyInt()
+            )
+        ).andReturn((intParam1 + intParam2) + "");
+        EasyMock.replay(mockService);
+		jsonRpcServerAnnotatedParam.handleRequest(
+            messageWithMapParamsStream("methodWithParamCopy", param1, intParam1),
+            byteArrayOutputStream
+        );
+        assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+	}
+
+    @Test
+    public void callMethodWithAlternativeNames() throws Exception {
+        EasyMock
+            .expect(
+                mockService.methodWithAlternativeNames(
+                    EasyMock.anyInt(),
+                    EasyMock.anyInt()
+                )
+            ).andReturn((intParam1 + intParam2) + "");
+        EasyMock.replay(mockService);
+        jsonRpcServerAnnotatedParam.handleRequest(
+            messageWithMapParamsStream(
+                "methodWithAlternativeNames",
+                "param1alt", intParam1,
+                param2, intParam2
+            ),
+            byteArrayOutputStream
+        );
+        assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+    }
+
+    @Test
+    public void callMethodWithLessParamNames() throws Exception {
+        EasyMock
+            .expect(
+                mockService.methodWithLessParamNames(
+                    EasyMock.anyInt(),
+                    EasyMock.anyInt(),
+                    EasyMock.anyInt()
+                )
+            ).andReturn((intParam1 + intParam2) + "");
+        EasyMock.replay(mockService);
+        jsonRpcServerAnnotatedParam.handleRequest(
+            messageWithMapParamsStream(
+                "methodWithLessParamNames",
+                param1, intParam1,
+                param2, intParam2,
+                "otherParam", 0
+            ),
+            byteArrayOutputStream
+        );
+        assertEquals(METHOD_PARAMS_INVALID.code, errorCode(error(byteArrayOutputStream)).intValue());
+    }
 	
 	@Test
 	public void callOverloadedMethodNamedExtraParams() throws Exception {
@@ -223,7 +285,20 @@ public class JsonRpcServerAnnotatedParamTest {
 		String overloadedMethod(@JsonRpcParam("param1") int intParam1);
 		
 		String overloadedMethod(@JsonRpcParam("param1") int intParam1, @JsonRpcParam("param2") int intParam2);
-		
+
+		String methodWithParamCopy(@JsonRpcParam("param1") int intParam1, @JsonRpcParam("param1") int intParam1Copy);
+
+		String methodWithAlternativeNames(
+            @JsonRpcParam("param1") @WebParam(name = "param1alt") int intParam1,
+            @JsonRpcParam("param2") int intParam2
+        );
+
+        String methodWithLessParamNames(
+            @JsonRpcParam("param1") int intParam1,
+            @JsonRpcParam("param2") int intParam2,
+            Integer intParam3
+        );
+
 		String methodWithoutRequiredParam(@JsonRpcParam("param1") String stringParam1, @JsonRpcParam(value = "param2") String stringParam2);
 
 		String methodWithDifferentTypes(

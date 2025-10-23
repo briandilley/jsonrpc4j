@@ -20,6 +20,15 @@ public enum DefaultErrorResolver implements ErrorResolver {
 	 * {@inheritDoc}
 	 */
 	public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
+        if (t instanceof JsonRpcServerException) {
+            JsonRpcServerException serverException = (JsonRpcServerException) t;
+            return new JsonError(
+                serverException.getCode(),
+                serverException.getMessage(),
+                serverException.getData()
+            );
+        }
+
 		return new JsonError(ERROR_NOT_HANDLED.code, t.getMessage(), new ErrorData(t.getClass().getName(), t.getMessage()));
 	}
 	
