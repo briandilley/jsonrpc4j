@@ -116,7 +116,7 @@ dependencies {
     springSupportImplementation "org.springframework:spring-web:${springVersion}"
     springSupportImplementation "org.springframework:spring-webmvc:${springVersion}"
 
-    implementation 'commons-codec:commons-codec:1.18.0'
+    implementation 'commons-codec:commons-codec:1.19.0'
     implementation 'org.apache.httpcomponents:httpcore-nio:4.4.16'
 
     testImplementation 'junit:junit:4.13.2'
