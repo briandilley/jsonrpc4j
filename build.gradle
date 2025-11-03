@@ -120,7 +120,7 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpcore-nio:4.4.16'
 
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.easymock:easymock:5.5.0'
+    testImplementation 'org.easymock:easymock:5.6.0'
     testImplementation("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
         exclude module: 'logback-classic'
     }
