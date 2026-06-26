@@ -26,7 +26,7 @@ public class JettyServer implements AutoCloseable {
 	private Server jetty;
 	private int port;
 
-	JettyServer(Class<?> service) {
+	public JettyServer(Class<?> service) {
 		this.service = service;
 	}
 
