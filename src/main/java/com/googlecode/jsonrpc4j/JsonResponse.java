@@ -1,6 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Contains the JSON-RPC answer in {@code response}

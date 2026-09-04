@@ -1,7 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

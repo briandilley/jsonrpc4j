@@ -1,8 +1,8 @@
 package com.googlecode.jsonrpc4j.spring.rest;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.DefaultHttpStatusCodeProvider;
 import com.googlecode.jsonrpc4j.IJsonRpcClient;
 import com.googlecode.jsonrpc4j.JsonRpcClient;
@@ -38,15 +38,15 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	private final SslClientHttpRequestFactory requestFactory;
 
 	public JsonRpcRestClient(URL serviceUrl) {
-		this(serviceUrl, new ObjectMapper());
+		this(serviceUrl, new JsonMapper());
 	}
 
-	private JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper) {
+	private JsonRpcRestClient(URL serviceUrl, JsonMapper mapper) {
 		this(serviceUrl, mapper, null, new HashMap<String, String>());
 	}
 
 	@SuppressWarnings("WeakerAccess")
-	public JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, RestTemplate restTemplate, Map<String, String> headers) {
+	public JsonRpcRestClient(URL serviceUrl, JsonMapper mapper, RestTemplate restTemplate, Map<String, String> headers) {
 		super(mapper);
 		this.requestFactory = restTemplate != null ? null : new SslClientHttpRequestFactory();
 		this.restTemplate = restTemplate != null ? restTemplate : new RestTemplate(this.requestFactory);
@@ -94,15 +94,15 @@ public class JsonRpcRestClient extends JsonRpcClient implements IJsonRpcClient {
 	}
 
 	public JsonRpcRestClient(URL serviceUrl, Map<String, String> headers) {
-		this(serviceUrl, new ObjectMapper(), headers);
+		this(serviceUrl, new JsonMapper(), headers);
 	}
 
-	private JsonRpcRestClient(URL serviceUrl, ObjectMapper mapper, Map<String, String> headers) {
+	private JsonRpcRestClient(URL serviceUrl, JsonMapper mapper, Map<String, String> headers) {
 		this(serviceUrl, mapper, null, headers);
 	}
 
 	public JsonRpcRestClient(URL serviceUrl, RestTemplate restTemplate) {
-		this(serviceUrl, new ObjectMapper(), restTemplate, null);
+		this(serviceUrl, new JsonMapper(), restTemplate, null);
 	}
 
 	/**

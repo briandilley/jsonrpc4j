@@ -1,6 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Unchecked Exception thrown by a JSON-RPC client when

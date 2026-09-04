@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 import com.googlecode.jsonrpc4j.ExceptionResolver;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -34,7 +34,7 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 
 	private Object proxyObject = null;
 	private RequestListener requestListener = null;
-	private ObjectMapper objectMapper = null;
+	private JsonMapper objectMapper = null;
 	private JsonRpcHttpClient jsonRpcHttpClient = null;
 	private Map<String, String> extraHttpHeaders = new HashMap<>();
 	private String contentType;
@@ -57,17 +57,17 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 
 		if (jsonRpcHttpClient==null) {
 			if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
-				objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+				objectMapper = (JsonMapper) applicationContext.getBean("objectMapper");
 			}
 			if (objectMapper == null && applicationContext != null) {
 				try {
-					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, JsonMapper.class);
 				} catch (Exception e) {
 					logger.debug(e);
 				}
 			}
 			if (objectMapper == null) {
-				objectMapper = new ObjectMapper();
+				objectMapper = new JsonMapper();
 			}
 	
 			try {
@@ -143,7 +143,7 @@ public class JsonProxyFactoryBean extends UrlBasedRemoteAccessor implements Meth
 	/**
 	 * @param objectMapper the objectMapper to set
 	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
+	public void setObjectMapper(JsonMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 

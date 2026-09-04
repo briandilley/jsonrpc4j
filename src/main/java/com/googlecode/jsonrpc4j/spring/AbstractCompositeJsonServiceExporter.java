@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +7,7 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Abstract class for exposing composite services via spring.
@@ -16,7 +16,7 @@ import org.springframework.context.ApplicationContextAware;
 abstract class AbstractCompositeJsonServiceExporter implements InitializingBean, ApplicationContextAware {
 	private static final Logger logger = LoggerFactory.getLogger(AbstractCompositeJsonServiceExporter.class);
 
-	private ObjectMapper objectMapper;
+	private JsonMapper objectMapper;
 	private ApplicationContext applicationContext;
 	private ErrorResolver errorResolver = null;
 	private boolean backwardsCompatible = true;
@@ -47,17 +47,17 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 		if (objectMapper == null
 				&& applicationContext != null
 				&& applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+			objectMapper = (JsonMapper) applicationContext.getBean("objectMapper");
 		}
 		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, JsonMapper.class);
 			} catch (Exception e) {
 				logger.error("Could not load ObjectMapper from ApplicationContext", e);
 			}
 		}
 		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
+			objectMapper = new JsonMapper();
 		}
 
 		// create the service
@@ -108,7 +108,7 @@ abstract class AbstractCompositeJsonServiceExporter implements InitializingBean,
 	/**
 	 * @param objectMapper the objectMapper to set
 	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
+	public void setObjectMapper(JsonMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 

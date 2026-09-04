@@ -28,9 +28,9 @@ public class CompositeJsonServiceExporter extends AbstractCompositeJsonServiceEx
 	/**
 	 * {@inheritDoc}
 	 */
-	public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	@Override
+	public void handleRequest(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response) throws jakarta.servlet.ServletException, IOException {
 		jsonRpcServer.handle(request, response);
 		response.getOutputStream().flush();
 	}
-
 }

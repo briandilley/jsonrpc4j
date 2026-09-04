@@ -1,8 +1,8 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
@@ -24,31 +24,31 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	private String contentType = JSONRPC_CONTENT_TYPE;
 
 	/**
-	 * Creates the server with the given {@link ObjectMapper} delegating
+	 * Creates the server with the given {@link JsonMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
-	 * @param mapper          the {@link ObjectMapper}
+	 * @param mapper          the {@link JsonMapper}
 	 * @param handler         the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
+	public JsonRpcServer(JsonMapper mapper, Object handler, Class<?> remoteInterface) {
 		super(mapper, handler, remoteInterface);
 	}
 
 	/**
-	 * Creates the server with the given {@link ObjectMapper} delegating
+	 * Creates the server with the given {@link JsonMapper} delegating
 	 * all calls to the given {@code handler}.
 	 *
-	 * @param mapper  the {@link ObjectMapper}
+	 * @param mapper  the {@link JsonMapper}
 	 * @param handler the {@code handler}
 	 */
-	public JsonRpcServer(ObjectMapper mapper, Object handler) {
+	public JsonRpcServer(JsonMapper mapper, Object handler) {
 		super(mapper, handler, null);
 	}
 
 	/**
-	 * Creates the server with a default {@link ObjectMapper} delegating
+	 * Creates the server with a default {@link JsonMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
 	 *
@@ -56,17 +56,17 @@ public class JsonRpcServer extends JsonRpcBasicServer {
 	 * @param remoteInterface the interface
 	 */
 	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
-		super(new ObjectMapper(), handler, remoteInterface);
+		super(new JsonMapper(), handler, remoteInterface);
 	}
 
 	/**
-	 * Creates the server with a default {@link ObjectMapper} delegating
+	 * Creates the server with a default {@link JsonMapper} delegating
 	 * all calls to the given {@code handler}.
 	 *
 	 * @param handler the {@code handler}
 	 */
 	public JsonRpcServer(Object handler) {
-		super(new ObjectMapper(), handler, null);
+		super(new JsonMapper(), handler, null);
 	}
 
 	/**

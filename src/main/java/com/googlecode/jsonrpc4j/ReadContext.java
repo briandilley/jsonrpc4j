@@ -1,7 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,14 +11,14 @@ import java.net.SocketException;
 public class ReadContext {
 	
 	private final InputStream input;
-	private final ObjectMapper mapper;
+	private final JsonMapper mapper;
 	
-	private ReadContext(InputStream input, ObjectMapper mapper) {
+	private ReadContext(InputStream input, JsonMapper mapper) {
 		this.input = new NoCloseInputStream(input);
 		this.mapper = mapper;
 	}
 	
-	public static ReadContext getReadContext(InputStream input, ObjectMapper mapper) {
+	public static ReadContext getReadContext(InputStream input, JsonMapper mapper) {
 		return new ReadContext(input, mapper);
 	}
 	

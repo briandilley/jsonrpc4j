@@ -1,7 +1,8 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import tools.jackson.databind.JsonMappingException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -78,7 +79,7 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
 	 * @param gzipRequests        whether gzip the request
 	 * @param acceptGzipResponses whether accept gzip response
 	 */
-	public JsonRpcHttpClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers, boolean gzipRequests, boolean acceptGzipResponses) {
+	public JsonRpcHttpClient(JsonMapper mapper, URL serviceUrl, Map<String, String> headers, boolean gzipRequests, boolean acceptGzipResponses) {
 		super(mapper);
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
