@@ -6,13 +6,14 @@ import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 import com.googlecode.jsonrpc4j.ReflectionUtil;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -30,7 +31,12 @@ import java.util.Map;
  * @author toha
  */
 @SuppressWarnings("unused")
-class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements MethodInterceptor, InitializingBean, FactoryBean<T>, ApplicationContextAware {
+class JsonRestProxyFactoryBean<T> implements MethodInterceptor, InitializingBean, FactoryBean<T>, ApplicationContextAware {
+
+	private static final Logger logger = LoggerFactory.getLogger(JsonRestProxyFactoryBean.class);
+
+	private Class<?> serviceInterface;
+	private String serviceUrl;
 
 	private T proxyObject = null;
 	private RequestListener requestListener = null;
@@ -52,7 +58,12 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 	 */
 	@Override
 	public void afterPropertiesSet() {
-		super.afterPropertiesSet();
+		if (serviceInterface == null) {
+			throw new IllegalArgumentException("Property 'serviceInterface' is required");
+		}
+		if (serviceUrl == null) {
+			throw new IllegalArgumentException("Property 'serviceUrl' is required");
+		}
 
 		proxyObject = ProxyFactory.getProxy(getObjectType(), this);
 
@@ -66,7 +77,7 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 				try {
 					objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, JsonMapper.class);
 				} catch (Exception e) {
-					logger.debug(e);
+					logger.debug(e.getMessage(), e);
 				}
 			}
 			
@@ -192,6 +203,35 @@ class JsonRestProxyFactoryBean<T> extends UrlBasedRemoteAccessor implements Meth
 		this.exceptionResolver = exceptionResolver;
 	}
 
-	
-	
+	/**
+	 * @return the service interface for the proxy
+	 */
+	public Class<?> getServiceInterface() {
+		return serviceInterface;
+	}
+
+	/**
+	 * @param serviceInterface the service interface to proxy
+	 */
+	public void setServiceInterface(Class<?> serviceInterface) {
+		if (serviceInterface != null && !serviceInterface.isInterface()) {
+			throw new IllegalArgumentException("'serviceInterface' must be an interface");
+		}
+		this.serviceInterface = serviceInterface;
+	}
+
+	/**
+	 * @return the URL of the remote service
+	 */
+	public String getServiceUrl() {
+		return serviceUrl;
+	}
+
+	/**
+	 * @param serviceUrl the URL of the remote service
+	 */
+	public void setServiceUrl(String serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+
 }

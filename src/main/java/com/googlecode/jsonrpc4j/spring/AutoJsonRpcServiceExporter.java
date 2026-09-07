@@ -220,14 +220,12 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	}
 
 	/**
-	 * See {@code org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
-	 * <p>
-	 * Note: this method is deprecated and marked for removal.
-	 * {@code RemoteExporter} and {@code TraceInterceptor-s} are no longer supported.
+	 * No-op. Trace interceptors are no longer supported.
 	 *
-	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
+	 * @param registerTraceInterceptor ignored
+	 * @deprecated This method has no effect and will be removed in a future release.
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
 		// NOOP
 	}

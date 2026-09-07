@@ -1,10 +1,9 @@
 package com.googlecode.jsonrpc4j.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,7 +24,7 @@ public class Util {
 	public static final int intParam2 = 2;
 	public static final long longParam = 1600000000000L;
 	public static final String JSON_ENCODING = StandardCharsets.UTF_8.name();
-	public static final ObjectMapper mapper = new ObjectMapper();
+	public static final JsonMapper mapper = new JsonMapper();
 	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 	public static final String DEFAULT_LOCAL_HOSTNAME = "127.0.0.1";
 	private static final String invalidJsonRpcRequest = "{\"method\": \"subtract\", \"params\": [], \"id\": 1}";
@@ -49,16 +48,16 @@ public class Util {
 		return new ByteArrayInputStream(emptyLine.getBytes(StandardCharsets.UTF_8));
 	}
 	
-	public static InputStream messageWithListParamsStream(final Object id, final String methodName, final Object... args) throws JsonProcessingException {
+	public static InputStream messageWithListParamsStream(final Object id, final String methodName, final Object... args) {
 		return createStream(messageWithListParams(id, methodName, args));
 	}
 	
-	public static InputStream createStream(Object content) throws JsonProcessingException {
+	public static InputStream createStream(Object content) {
 		String data = mapper.writeValueAsString(content);
 		return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
 	}
 	
-	public static HashMap<String, Object> messageWithListParams(final Object id, final String methodName, final Object... args) throws JsonProcessingException {
+	public static HashMap<String, Object> messageWithListParams(final Object id, final String methodName, final Object... args) {
 		return messageOfStream(id, methodName, Arrays.asList(args));
 	}
 	
@@ -78,15 +77,15 @@ public class Util {
 		};
 	}
 	
-	public static InputStream multiMessageOfStream(Object... args) throws JsonProcessingException {
+	public static InputStream multiMessageOfStream(Object... args) {
 		return createStream(args);
 	}
 	
-	public static InputStream messageWithMapParamsStream(final String methodName, final Object... args) throws JsonProcessingException {
+	public static InputStream messageWithMapParamsStream(final String methodName, final Object... args) {
 		return createStream(messageWithMapParams(methodName, args));
 	}
 	
-	private static HashMap<String, Object> messageWithMapParams(final String methodName, final Object... args) throws JsonProcessingException {
+	private static HashMap<String, Object> messageWithMapParams(final String methodName, final Object... args) {
 		Map<String, Object> elements = new HashMap<>();
 		for (int i = 0; i < args.length; i += 2) {
 			final String key = (String) args[i];

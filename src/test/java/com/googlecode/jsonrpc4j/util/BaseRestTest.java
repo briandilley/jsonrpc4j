@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.spring.rest.JsonRpcRestClient;
 import org.junit.After;
@@ -8,6 +7,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -49,12 +49,12 @@ public abstract class BaseRestTest {
 
 	protected JsonRpcHttpClient getHttpClient(boolean gzipRequests, boolean acceptGzipResponses) throws MalformedURLException {
 		Map<String, String> header = new HashMap<>();
-		return new JsonRpcHttpClient(new ObjectMapper(), new URL(jettyServer.getCustomServerUrlString(JettyServer.SERVLET)), header, gzipRequests, acceptGzipResponses);
+		return new JsonRpcHttpClient(new JsonMapper(), new URL(jettyServer.getCustomServerUrlString(JettyServer.SERVLET)), header, gzipRequests, acceptGzipResponses);
 	}
 
 	protected JsonRpcHttpClient getHttpClient(final String servlet, boolean gzipRequests, boolean acceptGzipResponses) throws MalformedURLException {
 		Map<String, String> header = new HashMap<>();
-		return new JsonRpcHttpClient(new ObjectMapper(), new URL(jettyServer.getCustomServerUrlString(servlet)), header, gzipRequests, acceptGzipResponses);
+		return new JsonRpcHttpClient(new JsonMapper(), new URL(jettyServer.getCustomServerUrlString(servlet)), header, gzipRequests, acceptGzipResponses);
 	}
 	
 	@After

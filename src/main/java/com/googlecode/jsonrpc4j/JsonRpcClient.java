@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -57,10 +56,10 @@ public class JsonRpcClient {
     }
 
     /**
-     * Creates a client that uses the given {@link ObjectMapper} and
+     * Creates a client that uses the given {@link JsonMapper} and
      * {@link ExceptionResolver } to map to and from JSON and Java objects.
      *
-     * @param mapper            the {@link ObjectMapper}
+     * @param mapper            the {@link JsonMapper}
      * @param exceptionResolver the {@link ExceptionResolver}
      */
     public JsonRpcClient(JsonMapper mapper, ExceptionResolver exceptionResolver) {
@@ -594,10 +593,10 @@ public class JsonRpcClient {
     }
 
     /**
-     * Returns the {@link ObjectMapper} that the client
+     * Returns the {@link JsonMapper} that the client
      * is using for JSON marshalling.
      *
-     * @return the {@link ObjectMapper}
+     * @return the {@link JsonMapper}
      */
     public JsonMapper getObjectMapper() {
         return mapper;

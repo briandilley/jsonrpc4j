@@ -3,7 +3,7 @@ package com.googlecode.jsonrpc4j;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -107,7 +107,7 @@ public class JsonRpcHttpAsyncClient {
 	private static SSLContext sslContext;
 	private final ExceptionResolver exceptionResolver;
 	private final Map<String, String> headers = new HashMap<>();
-	private final ObjectMapper mapper;
+	private final JsonMapper mapper;
 	private final URL serviceUrl;
 	
 	{
@@ -120,7 +120,7 @@ public class JsonRpcHttpAsyncClient {
 	 * @param serviceUrl the service end-point URL
 	 */
 	public JsonRpcHttpAsyncClient(URL serviceUrl) {
-		this(new ObjectMapper(), serviceUrl, new HashMap<String, String>());
+		this(new JsonMapper(), serviceUrl, new HashMap<String, String>());
 	}
 	
 	/**
@@ -128,27 +128,27 @@ public class JsonRpcHttpAsyncClient {
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are added to every request
 	 * made to the {@code serviceUrl}.
 	 *
-	 * @param mapper     the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
+	 * @param mapper     the {@link JsonMapper} to use for json&lt;-&gt;java conversion
 	 * @param serviceUrl the service end-point URL
 	 * @param headers    the headers
 	 */
-	public JsonRpcHttpAsyncClient(ObjectMapper mapper, URL serviceUrl, Map<String, String> headers) {
+	public JsonRpcHttpAsyncClient(JsonMapper mapper, URL serviceUrl, Map<String, String> headers) {
 		this(mapper, DefaultExceptionResolver.INSTANCE, serviceUrl, headers);
 	}
 
 	/**
 	 * Creates the {@link JsonRpcHttpAsyncClient} using the specified
-	 * {@link ObjectMapper} and {@link ExceptionResolver}, bound to the given
+	 * {@link JsonMapper} and {@link ExceptionResolver}, bound to the given
 	 * {@code serviceUrl}. The headers provided in the {@code headers} map are
 	 * added to every request made to the {@code serviceUrl}.
 	 * The {@link ExceptionResolver} can not be null.
 	 *
-	 * @param mapper     the {@link ObjectMapper} to use for json&lt;-&gt;java conversion
+	 * @param mapper     the {@link JsonMapper} to use for json&lt;-&gt;java conversion
 	 * @param exceptionResolver the {@link ExceptionResolver} translating remote exceptions.
 	 * @param serviceUrl the service end-point URL
 	 * @param headers    the headers
 	 */
-	public JsonRpcHttpAsyncClient(ObjectMapper mapper, ExceptionResolver exceptionResolver, URL serviceUrl, Map<String, String> headers) {
+	public JsonRpcHttpAsyncClient(JsonMapper mapper, ExceptionResolver exceptionResolver, URL serviceUrl, Map<String, String> headers) {
 		this.mapper = mapper;
 		this.serviceUrl = serviceUrl;
 		this.headers.putAll(headers);
@@ -168,7 +168,7 @@ public class JsonRpcHttpAsyncClient {
 	 * @param headers    the headers
 	 */
 	public JsonRpcHttpAsyncClient(URL serviceUrl, Map<String, String> headers) {
-		this(new ObjectMapper(), serviceUrl, headers);
+		this(new JsonMapper(), serviceUrl, headers);
 	}
 	
 	/**

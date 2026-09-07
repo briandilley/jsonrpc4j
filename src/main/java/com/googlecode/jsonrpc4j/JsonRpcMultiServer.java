@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j;
 
-import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.databind.json.JsonMapper;
@@ -48,7 +47,7 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	private char separator = DEFAULT_SEPARATOR;
 
 	public JsonRpcMultiServer() {
-		this(new ObjectMapper());
+		this(new JsonMapper());
 		logger.debug("created empty multi server");
 	}
 
