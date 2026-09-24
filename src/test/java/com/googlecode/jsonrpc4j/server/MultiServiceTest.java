@@ -1,10 +1,13 @@
 package com.googlecode.jsonrpc4j.server;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+//import tools.jackson.databind.JsonSerializer;
+//import tools.jackson.databind.SerializerProvider;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import com.googlecode.jsonrpc4j.JsonRpcMultiServer;
 import com.googlecode.jsonrpc4j.JsonRpcParam;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
@@ -59,16 +62,16 @@ public class MultiServiceTest {
 	@Test
 	public void testCustomObjectMapperConstructor() throws Exception {
 		
-		ObjectMapper customMapper = new ObjectMapper();
+		JsonMapper customMapper = new JsonMapper();
 		SimpleModule module = new SimpleModule();
 		
-		module.addSerializer(String.class, new JsonSerializer<String>() {
+		module.addSerializer(String.class, new ValueSerializer<>() {
 			@Override
-			public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+			public void serialize(String value, JsonGenerator gen, SerializationContext ctxt) throws JacksonException {
 				gen.writeString(value.toUpperCase());
 			}
 		});
-		customMapper.registerModule(module);
+		customMapper.registeredModules().add(module);
 		
 		JsonRpcMultiServer customServer = new JsonRpcMultiServer(customMapper);
 		customServer.addService(serviceName, mockService, ServiceInterfaceWithParamNameAnnotation.class);

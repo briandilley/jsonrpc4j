@@ -9,9 +9,13 @@ import java.io.IOException;
  */
 @SuppressWarnings("WeakerAccess")
 class HttpException extends RuntimeException {
-	private static final long serialVersionUID = 1L;
-	
-	public HttpException(String message, IOException cause) {
-		super(message, cause);
-	}
+    private static final long serialVersionUID = 1L;
+
+    public HttpException(String message, IOException cause) {
+        super(message, cause);
+    }
+
+    public HttpException(String message, RuntimeException cause) {
+        super(message, cause);
+    }
 }

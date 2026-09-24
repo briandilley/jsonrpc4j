@@ -1,11 +1,10 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import com.googlecode.jsonrpc4j.JsonRpcServer;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.HttpRequestHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -13,22 +12,22 @@ import java.io.IOException;
  */
 public class JsonServiceExporter extends AbstractJsonServiceExporter implements HttpRequestHandler {
 
-	private JsonRpcServer jsonRpcServer;
+    private JsonRpcServer jsonRpcServer;
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	protected void exportService() {
-		jsonRpcServer = getJsonRpcServer();
-	}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void exportService() {
+        jsonRpcServer = getJsonRpcServer();
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		jsonRpcServer.handle(request, response);
-		response.getOutputStream().flush();
-	}
-
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws jakarta.servlet.ServletException, IOException {
+        jsonRpcServer.handle(request, response);
+        response.getOutputStream().flush();
+    }
 }

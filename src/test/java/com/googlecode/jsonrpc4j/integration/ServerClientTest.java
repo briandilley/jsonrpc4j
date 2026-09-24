@@ -1,6 +1,6 @@
 package com.googlecode.jsonrpc4j.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.ProxyUtil;
 import com.googlecode.jsonrpc4j.RequestInterceptor;
 import com.googlecode.jsonrpc4j.util.LocalThreadServer;

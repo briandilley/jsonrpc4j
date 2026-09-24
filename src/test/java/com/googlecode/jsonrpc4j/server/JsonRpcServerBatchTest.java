@@ -1,7 +1,7 @@
 package com.googlecode.jsonrpc4j.server;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.server.JsonRpcServerAnnotatedParamTest.ServiceInterfaceWithParamNameAnnotation;
 import com.googlecode.jsonrpc4j.util.Util;

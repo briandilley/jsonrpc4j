@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.*;
 
 import org.slf4j.Logger;
@@ -11,6 +10,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ClassUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 abstract class AbstractJsonServiceExporter implements InitializingBean, ApplicationContextAware {
 	private static final Logger logger = LoggerFactory.getLogger(AbstractJsonServiceExporter.class);
 
-	private ObjectMapper objectMapper;
+	private JsonMapper objectMapper;
 	private JsonRpcServer jsonRpcServer;
 	private ApplicationContext applicationContext;
 	private ErrorResolver errorResolver = null;
@@ -47,17 +47,17 @@ abstract class AbstractJsonServiceExporter implements InitializingBean, Applicat
 	public void afterPropertiesSet() throws Exception {
 
 		if (objectMapper == null && applicationContext != null && applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
+			objectMapper = (JsonMapper) applicationContext.getBean("objectMapper");
 		}
 		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+				objectMapper = BeanFactoryUtils.beanOfTypeIncludingAncestors(applicationContext, JsonMapper.class);
 			} catch (Exception e) {
 				logger.debug("Failed to obtain objectMapper from application context", e);
 			}
 		}
 		if (objectMapper == null) {
-			objectMapper = new ObjectMapper();
+			objectMapper = new JsonMapper();
 		}
 
 		// Create the server. The 'handler' parameter here is either a proxy or the real instance depending on
@@ -105,14 +105,14 @@ abstract class AbstractJsonServiceExporter implements InitializingBean, Applicat
 	/**
 	 * @return the objectMapper
 	 */
-	protected ObjectMapper getObjectMapper() {
+	protected JsonMapper getObjectMapper() {
 		return objectMapper;
 	}
 
 	/**
 	 * @param objectMapper the objectMapper to set
 	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
+	public void setObjectMapper(JsonMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 

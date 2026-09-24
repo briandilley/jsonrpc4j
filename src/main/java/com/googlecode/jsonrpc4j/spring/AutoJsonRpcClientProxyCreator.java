@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.SimpleMetadataReaderFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -37,7 +37,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 	private Environment environment;
 	private String scanPackage;
 	private URL baseUrl;
-	private ObjectMapper objectMapper;
+	private JsonMapper objectMapper;
 	private String contentType;
 	
 	@Override
@@ -124,7 +124,7 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
 		this.scanPackage = scanPackage;
 	}
 	
-	public void setObjectMapper(ObjectMapper objectMapper) {
+	public void setObjectMapper(JsonMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 	

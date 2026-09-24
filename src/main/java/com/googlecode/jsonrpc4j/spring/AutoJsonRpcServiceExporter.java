@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.ConvertedParameterTransformer;
 import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +42,7 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 
 	private static final String PATH_PREFIX = "/";
 
-	private ObjectMapper objectMapper;
+	private JsonMapper objectMapper;
 	private ErrorResolver errorResolver = null;
 	private boolean backwardsCompatible = true;
 	private boolean rethrowExceptions = false;
@@ -180,7 +180,7 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	/**
 	 * @param objectMapper the objectMapper to set
 	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
+	public void setObjectMapper(JsonMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 
@@ -220,14 +220,12 @@ public class AutoJsonRpcServiceExporter implements BeanFactoryPostProcessor {
 	}
 
 	/**
-	 * See {@code org.springframework.remoting.support.RemoteExporter#setRegisterTraceInterceptor(boolean)}
-	 * <p>
-	 * Note: this method is deprecated and marked for removal.
-	 * {@code RemoteExporter} and {@code TraceInterceptor-s} are no longer supported.
+	 * No-op. Trace interceptors are no longer supported.
 	 *
-	 * @param registerTraceInterceptor the registerTraceInterceptor value to set
+	 * @param registerTraceInterceptor ignored
+	 * @deprecated This method has no effect and will be removed in a future release.
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public void setRegisterTraceInterceptor(boolean registerTraceInterceptor) {
 		// NOOP
 	}

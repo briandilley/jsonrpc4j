@@ -1,8 +1,8 @@
 package com.googlecode.jsonrpc4j;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
@@ -47,11 +47,11 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 	private char separator = DEFAULT_SEPARATOR;
 
 	public JsonRpcMultiServer() {
-		this(new ObjectMapper());
+		this(new JsonMapper());
 		logger.debug("created empty multi server");
 	}
 
-	public JsonRpcMultiServer(ObjectMapper mapper) {
+	public JsonRpcMultiServer(JsonMapper mapper) {
 		super(mapper, (Object)null);
 		this.handlerMap = new HashMap<>();
 		this.interfaceMap = new HashMap<>();
