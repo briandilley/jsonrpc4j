@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.HostnameVerifier;
@@ -156,6 +157,8 @@ public class JsonRpcHttpClient extends JsonRpcClient implements IJsonRpcClient {
                     return super.readResponse(returnType, wrappedStream);
                 } catch (IOException ef) {
                     throw new HttpException(new String(errorText, UTF_8), ef);
+                } catch (JacksonException ex) {
+                    throw new HttpException(new String(errorText, UTF_8), ex);
                 }
             }
         } finally {
