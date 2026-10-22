@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INVALID_REQUEST;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.METHOD_PARAMS_INVALID;
 import static com.googlecode.jsonrpc4j.JsonRpcBasicServer.*;
 import static com.googlecode.jsonrpc4j.server.JsonRpcServerAnnotatedParamTest.METHOD_WITH_DIFFERENT_TYPES;
@@ -32,6 +33,21 @@ public abstract class JsonRpcServerBatchTest {
     @Mock(type = MockType.NICE)
     protected JsonRpcServerTest.ServiceInterface mockService;
     protected JsonRpcServer jsonRpcServer;
+
+    @Test
+    public void emptyBatchReturnsSingleInvalidRequestError() throws Exception {
+        EasyMock.replay(mockService);
+
+        MockHttpServletResponse response = handleRequest(multiMessageOfStream());
+
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, response.getStatus());
+        JsonNode answer = decodeAnswer(toByteArrayOutputStream(response.getContentAsByteArray()));
+        assertTrue(answer.isObject());
+        assertEquals(VERSION, answer.get(JSONRPC).asText());
+        assertTrue(answer.get(ID).isNull());
+        assertEquals(INVALID_REQUEST.code, answer.get(ERROR).get(ERROR_CODE).asInt());
+        EasyMock.verify(mockService);
+    }
 
     @Test
     public void parallelBatchProcessingTest() throws Exception {

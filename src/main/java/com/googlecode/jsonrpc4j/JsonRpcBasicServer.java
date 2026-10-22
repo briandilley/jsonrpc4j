@@ -306,6 +306,10 @@ public class JsonRpcBasicServer {
 	private JsonResponse handleArray(ArrayNode node) {
         logger.debug("Handling {} requests", node.size());
 
+        if (node.isEmpty()) {
+            return createResponseError(VERSION, null, JsonError.INVALID_REQUEST);
+        }
+
         if (batchExecutorService != null) {
             return getBatchResponseInParallel(node);
         } else {
